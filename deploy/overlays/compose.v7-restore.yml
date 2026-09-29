@@ -1,0 +1,79 @@
+# V7b 仅供全新隔离恢复项目使用，必须置于 compose.yml/overlays/compose.access.yml 之后。
+# 不发布宿主端口；候选 JAR、证书、日志与 Caddyfile 均须来自恢复私有目录。
+networks:
+  jagonzn:
+    internal: true
+
+services:
+  postgres:
+    ports: !override []
+    volumes: !override
+      - type: volume
+        source: postgres-data
+        target: /home/postgres/pgdata
+        volume: {nocopy: true}
+  redis:
+    ports: !override []
+    volumes: !override
+      - type: volume
+        source: redis-data
+        target: /data
+        volume: {nocopy: true}
+  redpanda:
+    ports: !override []
+    volumes: !override
+      - type: volume
+        source: redpanda-data
+        target: /var/lib/redpanda/data
+        volume: {nocopy: true}
+      - ${V7_RESTORE_REDPANDA_BOOTSTRAP:?missing}:/etc/redpanda/.bootstrap.yaml:ro
+  minio:
+    ports: !override []
+    volumes: !override
+      - type: volume
+        source: minio-data
+        target: /data
+        volume: {nocopy: true}
+    environment:
+      MINIO_BROWSER_REDIRECT_URL: http://minio:9001
+  emqx:
+    ports: !override []
+    extra_hosts: !override []
+    volumes: !override
+      - ${V7_RESTORE_EMQX_CONFIG_DIR:?missing}/base.local.hocon:/opt/emqx/etc/base.hocon:ro
+      - ${V7_RESTORE_EMQX_CONFIG_DIR:?missing}/api-keys.local.conf:/opt/emqx/etc/jagonzn-api-keys.conf:ro
+      - type: volume
+        source: emqx-data
+        target: /opt/emqx/data
+        volume: {nocopy: true}
+      - type: volume
+        source: emqx-log
+        target: /opt/emqx/log
+        volume: {nocopy: true}
+  emqx-app:
+    ports: !override []
+    volumes: !override
+      - ${V7_RESTORE_EMQX_APP_CONFIG_DIR:?missing}/base.local.hocon:/opt/emqx/etc/base.hocon:ro
+      - ${V7_RESTORE_EMQX_APP_CONFIG_DIR:?missing}/api-keys.local.conf:/opt/emqx/etc/jagonzn-app-api-keys.conf:ro
+      - type: volume
+        source: emqx-app-data
+        target: /opt/emqx/data
+        volume: {nocopy: true}
+      - type: volume
+        source: emqx-app-log
+        target: /opt/emqx/log
+        volume: {nocopy: true}
+  app:
+    container_name: ${V7_RESTORE_APP_CONTAINER:?missing}
+    ports: !override []
+    volumes: !override
+      - ${V7_RESTORE_JAR:?missing}:/app/jagonzn-service.jar:ro
+      - ${V7_RESTORE_LOG_DIR:?missing}:/app/logs
+      - ${V7_RESTORE_CERT_DIR:?missing}:/app/certs:ro
+    environment:
+      JAGONZN_MINIO_EXTERNAL_ENDPOINT: http://minio:9000
+  device-https:
+    ports: !override []
+    volumes: !override
+      - ${V7_RESTORE_CADDYFILE:?missing}:/etc/caddy/Caddyfile:ro
+      - ${V7_RESTORE_CERT_DIR:?missing}:/etc/caddy/certs:ro

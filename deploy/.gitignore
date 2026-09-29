@@ -1,0 +1,12 @@
+# 本机独立栈凭据、外置应用配置及渲染后的 EMQX 回调密钥不得入库。
+.env.local
+application-local.properties
+emqx/base.local.hocon
+emqx/api-keys.local.conf
+emqx-app/base.local.hocon
+emqx-app/api-keys.local.conf
+certs.local/
+logs/
+backups.local/
+artifacts.local/
+.mode.local

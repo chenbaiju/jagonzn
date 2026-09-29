@@ -1,0 +1,2 @@
+# 容器内 Bash 脚本在 Windows 检出后仍须保持 LF，避免 /bin/bash 读取 CRLF 失败。
+redpanda/*.sh text eol=lf

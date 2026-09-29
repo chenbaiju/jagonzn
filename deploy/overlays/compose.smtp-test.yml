@@ -1,0 +1,19 @@
+# Only for an isolated local SMTP acceptance check. Do not use as a production mail service.
+services:
+  smtp-sink:
+    image: eclipse-temurin:21-jdk
+    profiles: [smtp-test]
+    networks: [jagonzn]
+    command: [java, /app/SmokeSmtpSink.java]
+    volumes:
+      - ./tests/SmokeSmtpSink.java:/app/SmokeSmtpSink.java:ro
+      - ./logs/smtp-test.local:/capture
+  app:
+    environment:
+      JAGONZN_MAIL_SMTP_HOST: smtp-sink
+      JAGONZN_MAIL_SMTP_PORT: "1025"
+      JAGONZN_MAIL_SMTP_USERNAME: reuse-smtp@example.test
+      JAGONZN_MAIL_SMTP_PASSWORD: ""
+      SPRING_APPLICATION_JSON: '{"spring":{"mail":{"properties":{"mail.smtp.auth":"false","mail.smtp.ssl.enable":"false"}}}}'
+    depends_on:
+      smtp-sink: {condition: service_started}

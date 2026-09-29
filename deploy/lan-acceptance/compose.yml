@@ -1,0 +1,134 @@
+# 从 ../compose.yml 叠加；只用于新的独立双后端本机内网实验项目。
+name: jagonzn-lan-acceptance
+
+networks:
+  jagonzn:
+    internal: true
+  host-ingress:
+    # 仅两个 HTTPS 代理接入；启动时删除其默认路由，保留宿主回环映射。
+    driver: bridge
+
+volumes:
+  cloud-postgres-data:
+
+services:
+  postgres:
+    ports: !override []
+  redis:
+    ports: !override []
+  redpanda:
+    # 单网内网容器仍须解析自身 RPC 名称；显式 hostname 写入 /etc/hosts。
+    hostname: redpanda
+    ports: !override []
+  minio:
+    ports: !override []
+  emqx:
+    ports: !override []
+    extra_hosts: !override []
+    volumes: !override
+      - ./lan-acceptance/emqx.local/device-base.hocon:/opt/emqx/etc/base.hocon:ro
+      - ./lan-acceptance/emqx.local/device-api-keys.conf:/opt/emqx/etc/jagonzn-api-keys.conf:ro
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+  emqx-app:
+    ports: !override []
+    volumes: !override
+      - ./lan-acceptance/emqx.local/app-base.hocon:/opt/emqx/etc/base.hocon:ro
+      - ./lan-acceptance/emqx.local/app-api-keys.conf:/opt/emqx/etc/jagonzn-app-api-keys.conf:ro
+      - emqx-app-data:/opt/emqx/data
+      - emqx-app-log:/opt/emqx/log
+  app:
+    container_name: jagonzn-lan-acceptance-service
+    ports: !override []
+    volumes: !override
+      - ../jagonzn-service/target/jagonzn-service-0.0.1-SNAPSHOT.jar:/app/jagonzn-service.jar:ro
+      - ./lan-acceptance/logs/service:/app/logs
+    environment:
+      JAGONZN_SIGNED_GRANT_ENABLED: "false"
+      JAGONZN_PUBLIC_API_KEY_ENABLED: "false"
+      JAGONZN_PUBLIC_WEBHOOK_ENABLED: "false"
+      JAGONZN_PUBLIC_REALTIME_ENABLED: "false"
+      JAGONZN_CLOUD_INTERNAL_EVENT_SOURCE_ENABLED: "false"
+      JAGONZN_CLOUD_PRIVATE_DELIVERY_ENABLED: "false"
+      JAGONZN_INGRESS_HANDOFF_ENABLED: "false"
+      JAGONZN_MAIL_SMTP_HOST: smtp-sink
+      JAGONZN_MAIL_SMTP_PORT: "1025"
+      JAGONZN_MAIL_SMTP_USERNAME: lan-smtp@example.test
+      JAGONZN_MAIL_SMTP_PASSWORD: ""
+      SPRING_APPLICATION_JSON: '{"spring":{"mail":{"properties":{"mail.smtp.auth":"false","mail.smtp.ssl.enable":"false"}}}}'
+    depends_on:
+      smtp-sink: {condition: service_started}
+
+  smtp-sink:
+    image: eclipse-temurin:21-jre
+    networks: [jagonzn]
+    command: [java, -cp, /app/classes, SmokeSmtpSink]
+    volumes:
+      - ./lan-acceptance/bin.local:/app/classes:ro
+      - ./lan-acceptance/logs/smtp:/capture
+
+  service-https:
+    image: caddy:2.10.2-alpine
+    profiles: [app]
+    networks: [jagonzn, host-ingress]
+    cap_add: [NET_ADMIN]
+    entrypoint: [/bin/sh, -ec]
+    command: ["ip route del default; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
+    depends_on: [app]
+    ports: ["127.0.0.1:18444:8443"]
+    volumes:
+      - ./lan-acceptance/Caddyfile.service:/etc/caddy/Caddyfile:ro
+      - ./lan-acceptance/certs.local:/etc/caddy/certs:ro
+
+  cloud-postgres:
+    image: timescale/timescaledb-ha:pg17.4-ts2.18.2
+    networks: [jagonzn]
+    environment:
+      POSTGRES_USER: jagonzn_cloud
+      POSTGRES_PASSWORD: ${JAGONZN_CLOUD_DATABASE_PASSWORD:?missing}
+      POSTGRES_DB: jagonzn_cloud
+      PGDATA: /home/postgres/pgdata/data
+    volumes: [cloud-postgres-data:/home/postgres/pgdata]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U jagonzn_cloud -d jagonzn_cloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 25
+
+  cloud:
+    image: eclipse-temurin:21-jre
+    networks: [jagonzn]
+    working_dir: /app
+    command: [java, -jar, /app/jagonzn-cloud.jar]
+    environment:
+      JAGONZN_CLOUD_BIND_ADDRESS: 0.0.0.0
+      JAGONZN_CLOUD_DATABASE_URL: jdbc:postgresql://cloud-postgres:5432/jagonzn_cloud
+      JAGONZN_CLOUD_DATABASE_USER: jagonzn_cloud
+      JAGONZN_CLOUD_DATABASE_PASSWORD: ${JAGONZN_CLOUD_DATABASE_PASSWORD:?missing}
+      JAGONZN_CLOUD_SERVICE_EVENTS_ENABLED: "false"
+      JAGONZN_CLOUD_LOG_PATH: /app/logs
+    volumes:
+      - ../jagonzn-cloud/target/jagonzn-cloud-0.0.1-SNAPSHOT.jar:/app/jagonzn-cloud.jar:ro
+      - ./lan-acceptance/logs/cloud:/app/logs
+    depends_on:
+      cloud-postgres: {condition: service_healthy}
+
+  cloud-https:
+    image: caddy:2.10.2-alpine
+    networks: [jagonzn]
+    depends_on: [cloud]
+    volumes:
+      - ./lan-acceptance/Caddyfile.cloud:/etc/caddy/Caddyfile:ro
+      - ./lan-acceptance/certs.local:/etc/caddy/certs:ro
+
+  cloud-management-https:
+    image: caddy:2.10.2-alpine
+    networks: [jagonzn, host-ingress]
+    cap_add: [NET_ADMIN]
+    entrypoint: [/bin/sh, -ec]
+    command: ["ip route del default; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
+    depends_on: [cloud]
+    ports: ["127.0.0.1:18445:8443"]
+    volumes:
+      - ./lan-acceptance/Caddyfile.cloud-management:/etc/caddy/Caddyfile:ro
+      - ./lan-acceptance/certs.local:/etc/caddy/certs:ro

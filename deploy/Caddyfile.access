@@ -1,0 +1,26 @@
+:8443 {
+    tls /etc/caddy/certs/device.crt /etc/caddy/certs/device.key
+    @device path /device-access/*
+    handle @device {
+        reverse_proxy app:18080 {
+            header_up -Forwarded
+            header_up X-Forwarded-Proto https
+        }
+    }
+    handle {
+        respond 404
+    }
+}
+
+:8080 {
+    @device path /device-access/*
+    handle @device {
+        respond 404
+    }
+    handle {
+        reverse_proxy app:18080 {
+            header_up -Forwarded
+            header_up X-Forwarded-Proto http
+        }
+    }
+}

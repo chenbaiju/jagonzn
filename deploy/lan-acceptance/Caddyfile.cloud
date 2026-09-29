@@ -1,0 +1,4 @@
+:8443 {
+    tls /etc/caddy/certs/lan.crt /etc/caddy/certs/lan.key
+    reverse_proxy cloud:18081
+}

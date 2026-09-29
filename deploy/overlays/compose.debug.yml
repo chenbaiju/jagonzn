@@ -1,0 +1,7 @@
+# 本机 IDE 调试入口：应用仍在 Linux 容器运行，避免当前 Windows JDK Selector 故障。
+services:
+  app:
+    environment:
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    ports:
+      - "127.0.0.1:15005:5005"

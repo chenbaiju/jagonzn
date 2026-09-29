@@ -1,0 +1,265 @@
+# jagonzn 独立本机候选栈；凭据由 start.ps1 生成到忽略的 .env.local。
+name: jagonzn-service
+
+networks:
+  jagonzn:
+
+volumes:
+  postgres-data:
+  redis-data:
+  redpanda-data:
+  emqx-data:
+  emqx-log:
+  emqx-app-data:
+  emqx-app-log:
+  minio-data:
+
+services:
+  postgres:
+    image: timescale/timescaledb-ha:pg17.4-ts2.18.2
+    networks: [jagonzn]
+    environment:
+      POSTGRES_USER: jagonzn
+      POSTGRES_PASSWORD: ${JAGONZN_DATABASE_OWNER_PASSWORD:?missing}
+      POSTGRES_DB: jagonzn
+      PGDATA: /home/postgres/pgdata/data
+    command: [postgres, -c, shared_preload_libraries=timescaledb, -c, max_connections=200]
+    ports: ["127.0.0.1:15432:5432"]
+    volumes: ["postgres-data:/home/postgres/pgdata"]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U jagonzn -d jagonzn"]
+      interval: 5s
+      timeout: 5s
+      retries: 25
+
+  redis:
+    image: redis:7.4-alpine
+    networks: [jagonzn]
+    command: [redis-server, --requirepass, "${JAGONZN_REDIS_PASSWORD:?missing}", --maxmemory, 512mb, --maxmemory-policy, noeviction, --appendonly, "yes"]
+    ports: ["127.0.0.1:16379:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: [CMD-SHELL, "redis-cli -a '${JAGONZN_REDIS_PASSWORD:?missing}' ping 2>/dev/null | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 25
+
+  redpanda:
+    image: redpandadata/redpanda:v24.3.6
+    networks: [jagonzn]
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+      - --overprovisioned
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:29092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:29092
+      - --rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --schema-registry-addr=internal://0.0.0.0:8081
+    ports: ["127.0.0.1:29092:29092"]
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+      - ./redpanda/bootstrap.yaml:/etc/redpanda/.bootstrap.yaml:ro
+    healthcheck:
+      test: [CMD-SHELL, "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 25
+
+  redpanda-init:
+    image: redpandadata/redpanda:v24.3.6
+    profiles: [init]
+    networks: [jagonzn]
+    depends_on:
+      redpanda: {condition: service_healthy}
+    volumes: ["./redpanda/init-topics.sh:/init-topics.sh:ro"]
+    entrypoint: [/bin/bash, /init-topics.sh]
+    restart: "no"
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    networks: [jagonzn]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: jagonzn
+      MINIO_ROOT_PASSWORD: ${JAGONZN_MINIO_SECRET_KEY:?missing}
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:19001
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+    volumes: ["minio-data:/data"]
+    healthcheck:
+      test: [CMD-SHELL, "mc ready local || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 25
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    profiles: [init]
+    networks: [jagonzn]
+    depends_on:
+      minio: {condition: service_healthy}
+    environment:
+      MINIO_ROOT_PASSWORD: ${JAGONZN_MINIO_SECRET_KEY:?missing}
+      MINIO_APP_PASSWORD: ${JAGONZN_MINIO_APP_SECRET_KEY:?missing}
+    volumes: ["./minio/app-policy.json:/app-policy.json:ro"]
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        set -eu
+        mc alias set jagonzn http://minio:9000 jagonzn "$${MINIO_ROOT_PASSWORD}" >/dev/null
+        for bucket in firmware device-image export backup jagonzn-ota; do
+          mc mb --ignore-existing "jagonzn/$$bucket"
+          mc anonymous set none "jagonzn/$$bucket"
+        done
+        mc version enable jagonzn/firmware
+        mc version enable jagonzn/jagonzn-ota
+        users=$$(mc admin user list --json jagonzn)
+        case "$$users" in
+          *'"accessKey":"jagonzn_app"'*) :;;
+          '') mc admin user add jagonzn jagonzn_app "$${MINIO_APP_PASSWORD}" >/dev/null;;
+          *) echo 'MinIO 应用身份状态未知，拒绝覆盖' >&2; exit 1;;
+        esac
+        info=$$(mc admin user info --json jagonzn jagonzn_app)
+        case "$$info" in
+          *'"policyName":"jagonzn-app"'*) policy=jagonzn-app;;
+          *'"policyName":""'*) policy='';;
+          *'"policyName":'*) echo 'MinIO 应用身份已绑定未知策略，拒绝覆盖' >&2; exit 1;;
+          *'"accessKey":"jagonzn_app"'*) policy='';;
+          *) echo 'MinIO 应用身份已绑定未知策略，拒绝覆盖' >&2; exit 1;;
+        esac
+        mc admin policy create jagonzn jagonzn-app /app-policy.json >/dev/null
+        if [ "$$policy" != jagonzn-app ]; then
+          mc admin policy attach jagonzn jagonzn-app --user jagonzn_app >/dev/null
+        fi
+        mc alias set app http://minio:9000 jagonzn_app "$${MINIO_APP_PASSWORD}" >/dev/null
+        mc ls app/export >/dev/null
+        echo 'jagonzn 私有桶与受限应用身份已初始化'
+    restart: "no"
+
+  emqx:
+    image: emqx/emqx:6.2.3
+    networks: [jagonzn]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    environment:
+      EMQX_NODE__NAME: emqx@127.0.0.1
+      EMQX_NODE__COOKIE: ${JAGONZN_EMQX_COOKIE:?missing}
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${JAGONZN_EMQX_DASHBOARD_PASSWORD:?missing}
+      EMQX_CLUSTER__DISCOVERY_STRATEGY: singleton
+      EMQX_ALLOW_ANONYMOUS: "false"
+    ports:
+      - "127.0.0.1:21883:1883"
+      - "127.0.0.1:28883:8883"
+      - "127.0.0.1:28083:18083"
+    volumes:
+      - ./emqx/base.local.hocon:/opt/emqx/etc/base.hocon:ro
+      - ./emqx/api-keys.local.conf:/opt/emqx/etc/jagonzn-api-keys.conf:ro
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+    healthcheck:
+      test: [CMD, /opt/emqx/bin/emqx, ctl, status]
+      interval: 10s
+      timeout: 10s
+      retries: 25
+
+  emqx-app:
+    image: emqx/emqx:6.3.1@sha256:5ecbf93d04e34aaf4096af074e93b773d0838c8ea668cfabdec7976b272d9606
+    networks: [jagonzn]
+    environment:
+      EMQX_NODE__NAME: emqx@127.0.0.1
+      EMQX_NODE__COOKIE: ${JAGONZN_EMQX_APP_COOKIE:?missing}
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${JAGONZN_EMQX_APP_DASHBOARD_PASSWORD:?missing}
+    ports:
+      - "127.0.0.1:31883:1883"
+      - "127.0.0.1:38083:18083"
+    volumes:
+      - ./emqx-app/base.local.hocon:/opt/emqx/etc/base.hocon:ro
+      - ./emqx-app/api-keys.local.conf:/opt/emqx/etc/jagonzn-app-api-keys.conf:ro
+      - emqx-app-data:/opt/emqx/data
+      - emqx-app-log:/opt/emqx/log
+    healthcheck:
+      test: [CMD, /opt/emqx/bin/emqx, ctl, status]
+      interval: 10s
+      timeout: 10s
+      retries: 25
+
+  app:
+    image: eclipse-temurin:21-jre
+    profiles: [app]
+    container_name: jagonzn-service
+    networks: [jagonzn]
+    working_dir: /app
+    command: [java, -jar, /app/jagonzn-service.jar]
+    environment:
+      JAGONZN_DATABASE_URL: jdbc:postgresql://postgres:5432/jagonzn
+      JAGONZN_DATABASE_OWNER_PASSWORD: ${JAGONZN_DATABASE_OWNER_PASSWORD:?missing}
+      JAGONZN_DATABASE_APP_PASSWORD: ${JAGONZN_DATABASE_APP_PASSWORD:?missing}
+      JAGONZN_REDIS_HOST: redis
+      JAGONZN_REDIS_PORT: "6379"
+      JAGONZN_REDIS_PASSWORD: ${JAGONZN_REDIS_PASSWORD:?missing}
+      # Redis 短窗预算可降级，但连接必须有界返回，不能无限拖住设备请求。
+      SPRING_DATA_REDIS_TIMEOUT: 2s
+      SPRING_DATA_REDIS_CONNECT_TIMEOUT: 2s
+      JAGONZN_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      JAGONZN_MINIO_INTERNAL_ENDPOINT: http://minio:9000
+      JAGONZN_MINIO_EXTERNAL_ENDPOINT: http://localhost:19000
+      JAGONZN_MINIO_APP_ACCESS_KEY: jagonzn_app
+      JAGONZN_MINIO_APP_SECRET_KEY: ${JAGONZN_MINIO_APP_SECRET_KEY:?missing}
+      JAGONZN_EMQX_API_BASE_URL: http://emqx:18083
+      JAGONZN_EMQX_API_KEY: ${JAGONZN_EMQX_API_KEY:?missing}
+      JAGONZN_EMQX_API_SECRET: ${JAGONZN_EMQX_API_SECRET:?missing}
+      JAGONZN_EMQX_SESSION_API_BASE_URL: http://emqx:18083
+      JAGONZN_EMQX_SESSION_API_KEY: ${JAGONZN_EMQX_SESSION_API_KEY:?missing}
+      JAGONZN_EMQX_SESSION_API_SECRET: ${JAGONZN_EMQX_SESSION_API_SECRET:?missing}
+      JAGONZN_INGRESS_HANDOFF_BROKER_URI: tcp://emqx:1883
+      JAGONZN_INGRESS_HANDOFF_ENABLED: ${JAGONZN_INGRESS_HANDOFF_ENABLED:?missing}
+      JAGONZN_INGRESS_HANDOFF_PASSWORD: ${JAGONZN_INGRESS_HANDOFF_PASSWORD:?missing}
+      JAGONZN_SECURITY_JWT_SECRET: ${JAGONZN_SECURITY_JWT_SECRET:?missing}
+      JAGONZN_SECURITY_APP_JWT_SECRET: ${JAGONZN_SECURITY_APP_JWT_SECRET:?missing}
+      JAGONZN_SECURITY_BROKER_CALLBACK_SECRET: ${JAGONZN_SECURITY_BROKER_CALLBACK_SECRET:?missing}
+      JAGONZN_NOTIFICATION_WEBHOOK_SIGNING_SECRET: ${JAGONZN_NOTIFICATION_WEBHOOK_SIGNING_SECRET:?missing}
+      JAGONZN_PUBLIC_API_KEY_ENABLED: ${JAGONZN_PUBLIC_API_KEY_ENABLED:?missing}
+      JAGONZN_PUBLIC_WEBHOOK_ENABLED: ${JAGONZN_PUBLIC_WEBHOOK_ENABLED:?missing}
+      JAGONZN_PUBLIC_WEBHOOK_SIGNING_KEYS_JSON: '{"local-v1":"${JAGONZN_PUBLIC_WEBHOOK_SIGNING_KEY:?missing}"}'
+      JAGONZN_PUBLIC_WEBHOOK_CURRENT_SIGNING_KEY_ID: local-v1
+      JAGONZN_PUBLIC_REALTIME_ENABLED: ${JAGONZN_PUBLIC_REALTIME_ENABLED:?missing}
+      JAGONZN_REALTIME_WS_ALLOWED_ORIGINS: ${JAGONZN_REALTIME_WS_ALLOWED_ORIGINS:?missing}
+      JAGONZN_REALTIME_MQTT_API_BASE_URL: http://emqx-app:18083
+      JAGONZN_REALTIME_MQTT_API_KEY: ${JAGONZN_REALTIME_MQTT_API_KEY:?missing}
+      JAGONZN_REALTIME_MQTT_API_SECRET: ${JAGONZN_REALTIME_MQTT_API_SECRET:?missing}
+      JAGONZN_REALTIME_MQTT_SESSION_API_KEY: ${JAGONZN_REALTIME_MQTT_SESSION_API_KEY:?missing}
+      JAGONZN_REALTIME_MQTT_SESSION_API_SECRET: ${JAGONZN_REALTIME_MQTT_SESSION_API_SECRET:?missing}
+      JAGONZN_ENTITLEMENT_MODE: ${JAGONZN_ENTITLEMENT_MODE:?missing}
+      JAGONZN_TECHNICAL_PROJECTS: ${JAGONZN_TECHNICAL_PROJECTS:?missing}
+      JAGONZN_TECHNICAL_DEVICES: ${JAGONZN_TECHNICAL_DEVICES:?missing}
+      JAGONZN_TECHNICAL_END_USERS: ${JAGONZN_TECHNICAL_END_USERS:?missing}
+      JAGONZN_TECHNICAL_DASHBOARDS: ${JAGONZN_TECHNICAL_DASHBOARDS:?missing}
+      JAGONZN_TECHNICAL_EXTERNAL_SEATS: ${JAGONZN_TECHNICAL_EXTERNAL_SEATS:?missing}
+      JAGONZN_TECHNICAL_HISTORY_DAYS: ${JAGONZN_TECHNICAL_HISTORY_DAYS:?missing}
+      JAGONZN_TECHNICAL_DAILY_UPLINK_MESSAGE: ${JAGONZN_TECHNICAL_DAILY_UPLINK_MESSAGE:?missing}
+      JAGONZN_TECHNICAL_DAILY_DOWNLINK_MESSAGE: ${JAGONZN_TECHNICAL_DAILY_DOWNLINK_MESSAGE:?missing}
+      JAGONZN_TECHNICAL_DAILY_UPLINK_BYTES: ${JAGONZN_TECHNICAL_DAILY_UPLINK_BYTES:?missing}
+      JAGONZN_TECHNICAL_DAILY_TIME_SERIES_POINT: ${JAGONZN_TECHNICAL_DAILY_TIME_SERIES_POINT:?missing}
+      JAGONZN_TECHNICAL_DAILY_REST_API_CALL: ${JAGONZN_TECHNICAL_DAILY_REST_API_CALL:?missing}
+      JAGONZN_TECHNICAL_DAILY_NOTIFICATION_DELIVERY: ${JAGONZN_TECHNICAL_DAILY_NOTIFICATION_DELIVERY:?missing}
+      JAGONZN_TECHNICAL_DAILY_SCRIPT_EXECUTION: ${JAGONZN_TECHNICAL_DAILY_SCRIPT_EXECUTION:?missing}
+      JAGONZN_TECHNICAL_DAILY_AUTOMATION_EXECUTION: ${JAGONZN_TECHNICAL_DAILY_AUTOMATION_EXECUTION:?missing}
+      JAGONZN_TECHNICAL_DAILY_SCRIPT_CPU_MILLIS: ${JAGONZN_TECHNICAL_DAILY_SCRIPT_CPU_MILLIS:?missing}
+      JAGONZN_SERVICE_LOG_PATH: /app/logs
+    ports: ["127.0.0.1:18080:18080"]
+    volumes:
+      - ../jagonzn-service/target/jagonzn-service-0.0.1-SNAPSHOT.jar:/app/jagonzn-service.jar:ro
+      - ../jagonzn-service/logs:/app/logs
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      redpanda: {condition: service_healthy}
+      minio: {condition: service_healthy}
+      emqx: {condition: service_healthy}
+      emqx-app: {condition: service_healthy}

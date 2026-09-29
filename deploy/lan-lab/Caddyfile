@@ -1,0 +1,18 @@
+{
+    auto_https disable_redirects
+}
+
+:8443 {
+    tls /etc/caddy/certs/lan.crt /etc/caddy/certs/lan.key
+    @service_event path /api/v1/internal/service-events
+    handle @service_event {
+        reverse_proxy cloud:18081
+    }
+    @health path /actuator/health
+    handle @health {
+        reverse_proxy cloud:18081
+    }
+    handle {
+        respond 404
+    }
+}

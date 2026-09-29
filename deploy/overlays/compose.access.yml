@@ -1,0 +1,29 @@
+# 仅本机设备接入验证；私有证书由 start.ps1 生成，所有宿主机端口只绑定回环。
+services:
+  app:
+    environment:
+      JAGONZN_INGRESS_HANDOFF_ENABLED: "true"
+      JAGONZN_DEVICE_HTTP_ENABLED: "true"
+      JAGONZN_DEVICE_TCP_ENABLED: "true"
+      JAGONZN_DEVICE_COAP_ENABLED: "true"
+      JAGONZN_DEVICE_TLS_CERTIFICATE: file:/app/certs/device.crt
+      JAGONZN_DEVICE_TLS_PRIVATE_KEY: file:/app/certs/device.key
+      JAGONZN_DEVICE_TCP_BIND_ADDRESS: 0.0.0.0
+      JAGONZN_DEVICE_COAP_BIND_ADDRESS: 0.0.0.0
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+    ports: !override
+      - "127.0.0.1:18883:18883"
+      - "127.0.0.1:15684:15684/udp"
+    volumes:
+      - ./certs.local:/app/certs:ro
+  device-https:
+    image: caddy:2.10.2-alpine
+    profiles: [app]
+    networks: [jagonzn]
+    depends_on: [app]
+    ports:
+      - "127.0.0.1:18080:8080"
+      - "127.0.0.1:18443:8443"
+    volumes:
+      - ./Caddyfile.access:/etc/caddy/Caddyfile:ro
+      - ./certs.local:/etc/caddy/certs:ro

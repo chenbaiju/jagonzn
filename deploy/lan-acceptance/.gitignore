@@ -1,0 +1,7 @@
+.env.local
+certs.local/
+emqx.local/
+logs/
+bin.local/
+owner.local.json
+.env.delivery*.local

@@ -1,0 +1,2 @@
+# 独立 Broker 禁止自动建单分区主题；init-topics.sh 显式创建平台协议主题。
+auto_create_topics_enabled: false

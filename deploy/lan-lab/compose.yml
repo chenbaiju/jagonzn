@@ -1,0 +1,56 @@
+# cloud 接收端的独立无互联网实验栈；不与现有 service Compose 共享网络或数据库。
+name: jagonzn-cloud-lan-lab
+
+networks:
+  cloud-lan:
+    internal: true
+
+volumes:
+  cloud-postgres-data:
+
+services:
+  postgres:
+    image: timescale/timescaledb-ha:pg17.4-ts2.18.2
+    networks: [cloud-lan]
+    environment:
+      POSTGRES_USER: jagonzn_cloud
+      POSTGRES_PASSWORD: ${JAGONZN_CLOUD_DATABASE_PASSWORD:?missing}
+      POSTGRES_DB: jagonzn_cloud
+      PGDATA: /home/postgres/pgdata/data
+    volumes: [cloud-postgres-data:/home/postgres/pgdata]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U jagonzn_cloud -d jagonzn_cloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 25
+
+  cloud:
+    image: eclipse-temurin:21-jre
+    networks: [cloud-lan]
+    working_dir: /app
+    command: [java, -jar, /app/jagonzn-cloud.jar]
+    environment:
+      JAGONZN_CLOUD_BIND_ADDRESS: 0.0.0.0
+      JAGONZN_CLOUD_DATABASE_URL: jdbc:postgresql://postgres:5432/jagonzn_cloud
+      JAGONZN_CLOUD_DATABASE_USER: jagonzn_cloud
+      JAGONZN_CLOUD_DATABASE_PASSWORD: ${JAGONZN_CLOUD_DATABASE_PASSWORD:?missing}
+      JAGONZN_CLOUD_SERVICE_EVENTS_ENABLED: "true"
+      JAGONZN_CLOUD_SERVICE_SOURCE_DEPLOYMENT_ID: ${JAGONZN_CLOUD_SERVICE_SOURCE_DEPLOYMENT_ID:?missing}
+      JAGONZN_CLOUD_SERVICE_TENANT_ID: ${JAGONZN_CLOUD_SERVICE_TENANT_ID:?missing}
+      JAGONZN_CLOUD_SERVICE_PROJECT_ID: ${JAGONZN_CLOUD_SERVICE_PROJECT_ID:?missing}
+      JAGONZN_CLOUD_SERVICE_KEY_ID: lan-lab-v1
+      JAGONZN_CLOUD_SERVICE_SECRET_BASE64: ${JAGONZN_CLOUD_SERVICE_SECRET_BASE64:?missing}
+      JAGONZN_CLOUD_LOG_PATH: /app/logs
+    volumes:
+      - ../../jagonzn-cloud/target/jagonzn-cloud-0.0.1-SNAPSHOT.jar:/app/jagonzn-cloud.jar:ro
+      - ./logs:/app/logs
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  https:
+    image: caddy:2.10.2-alpine
+    networks: [cloud-lan]
+    depends_on: [cloud]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs.local:/etc/caddy/certs:ro

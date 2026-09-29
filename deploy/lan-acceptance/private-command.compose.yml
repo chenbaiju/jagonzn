@@ -1,0 +1,43 @@
+# 技术命令实验包含 private-delivery.compose.yml 的完整发送/接收配置。
+# Compose v5 对第四层空 extra_hosts 覆盖报错，因此作为第三层替代该文件。
+services:
+  emqx:
+    extra_hosts: !override []
+  app:
+    environment:
+      JAGONZN_INGRESS_HANDOFF_ENABLED: "true"
+      JAGONZN_CLOUD_INTERNAL_EVENT_SOURCE_ENABLED: "true"
+      JAGONZN_CLOUD_PRIVATE_DELIVERY_ENABLED: "true"
+      JAGONZN_CLOUD_PRIVATE_DELIVERY_URL: https://cloud-https:8443/api/v1/internal/service-events
+      JAGONZN_CLOUD_SOURCE_DEPLOYMENT_ID: ${LAN_SOURCE_DEPLOYMENT_ID:?missing}
+      JAGONZN_CLOUD_TENANT_ID: ${LAN_BUSINESS_TENANT_ID:?missing}
+      JAGONZN_CLOUD_PROJECT_IDS: ${LAN_PROJECT_IDS:?missing}
+      JAGONZN_CLOUD_KEY_ID: ${LAN_SENDER_KEY_ID:?missing}
+      JAGONZN_CLOUD_SECRET_BASE64: ${LAN_SENDER_SECRET_BASE64:?missing}
+      JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/app/cloud-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit
+    volumes: !override
+      - ${LAN_DELIVERY_SERVICE_JAR:-../jagonzn-service/target/jagonzn-service-0.0.1-SNAPSHOT.jar}:/app/jagonzn-service.jar:ro
+      - ./lan-acceptance/logs/service:/app/logs
+      - ./lan-acceptance/certs.local/cloud-truststore.p12:/app/cloud-truststore.p12:ro
+  cloud:
+    environment:
+      JAGONZN_CLOUD_SERVICE_EVENTS_ENABLED: "true"
+      JAGONZN_CLOUD_SERVICE_SOURCE_DEPLOYMENT_ID: ${LAN_SOURCE_DEPLOYMENT_ID:?missing}
+      JAGONZN_CLOUD_SERVICE_TENANT_ID: ${LAN_BUSINESS_TENANT_ID:?missing}
+      JAGONZN_CLOUD_SERVICE_PROJECT_IDS: ${LAN_PROJECT_IDS:?missing}
+      JAGONZN_CLOUD_SERVICE_KEY_ID: ${LAN_RECEIVER_KEY_ID:?missing}
+      JAGONZN_CLOUD_SERVICE_SECRET_BASE64: ${LAN_RECEIVER_SECRET_BASE64:?missing}
+      JAGONZN_CLOUD_SERVICE_PREVIOUS_KEY_ID: ${LAN_PREVIOUS_KEY_ID:-}
+      JAGONZN_CLOUD_SERVICE_PREVIOUS_SECRET_BASE64: ${LAN_PREVIOUS_SECRET_BASE64:-}
+    volumes: !override
+      - ${LAN_DELIVERY_CLOUD_JAR:-../jagonzn-cloud/target/jagonzn-cloud-0.0.1-SNAPSHOT.jar}:/app/jagonzn-cloud.jar:ro
+      - ./lan-acceptance/logs/cloud:/app/logs
+  mqtt-lab-proxy:
+    image: caddy:2.10.2-alpine
+    networks: [jagonzn, host-ingress]
+    cap_add: [NET_ADMIN]
+    entrypoint: [/bin/sh, -ec]
+    command: ["ip route del default; exec nc -lk -p 1883 -e /app/mqtt-forward.sh"]
+    ports: ["127.0.0.1:21884:1883"]
+    volumes:
+      - ./lan-acceptance/mqtt-forward.sh:/app/mqtt-forward.sh:ro

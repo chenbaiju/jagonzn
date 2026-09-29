@@ -1,0 +1,6 @@
+:8443 {
+    tls /etc/caddy/certs/lan.crt /etc/caddy/certs/lan.key
+    @private path /api/v1/internal/*
+    respond @private 404
+    reverse_proxy cloud:18081
+}

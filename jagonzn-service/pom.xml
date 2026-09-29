@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.jagonzn.service</groupId>
+    <artifactId>jagonzn-service</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>jagonzn-service</name>
+    <description>jagonzn-service</description>
+    <url/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
+    <properties>
+        <java.version>21</java.version>
+    </properties>
+    <dependencies>
+        <!-- 平台正式普通运行时 JAR：同一版本引入全部后端业务模块与生产保护。 -->
+        <dependency>
+            <groupId>com.things.cloud</groupId>
+            <artifactId>things-cloud-runtime</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <!-- 本地申请封套只使用平台公开的无发行私钥协议模块。 -->
+        <dependency>
+            <groupId>com.things.cloud</groupId>
+            <artifactId>things-cloud-entitlement</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <!-- 本地授权联调仅在测试源码中签造封套；正式运行时不依赖发行方模块。 -->
+        <dependency>
+            <groupId>com.things.cloud</groupId>
+            <artifactId>things-cloud-issuer</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- 基础 Spring Boot 运行环境。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <!-- 为独立服务提供真实 HTTP 健康请求的 Web 容器。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+        <!-- 当前仅公开最小健康端点，详细暴露范围由 application.properties 限制。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 外部应用通过自己的 MockMvc 测试验证平台管理 API 的真实授权链。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 独立空库与 Redis 真实装配，不借用 ThingsCloud 测试进程或数据库。 -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 本机 Windows NIO selector 故障只影响测试客户端，真实 Redis 仍由容器提供。 -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 从平台二进制提取不可变 SQL，仅将数据库角色标识改为本部署命名空间。 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.10.0</version>
+                <executions>
+                    <execution>
+                        <id>unpack-platform-migrations</id>
+                        <phase>generate-resources</phase>
+                        <goals><goal>unpack-dependencies</goal></goals>
+                        <configuration>
+                            <includeGroupIds>com.things.cloud</includeGroupIds>
+                            <includes>db/migration/**/*</includes>
+                            <outputDirectory>${project.build.directory}/generated-resources/jagonzn</outputDirectory>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>namespace-database-roles</id>
+                        <phase>generate-resources</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
+                                         includes="**/*.sql" token="thingscloud_app" value="jagonzn_app"/>
+                                <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
+                                         includes="**/*.sql" token="thingscloud_quota_operator" value="jagonzn_quota_operator"/>
+                                <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
+                                         includes="**/*.sql" token="thingscloud_commercial_admin" value="jagonzn_commercial_admin"/>
+                                <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
+                                         includes="**/*.sql" token="thingscloud_topology_guard" value="jagonzn_topology_guard"/>
+                                <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
+                                         includes="**/*.sql" token="thingscloud_constraint" value="jagonzn_constraint"/>
+                                <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
+                                         includes="**/*.sql" token="thingscloud_automation_cleanup" value="jagonzn_automation_cleanup"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-namespaced-migrations</id>
+                        <phase>generate-resources</phase>
+                        <goals><goal>add-resource</goal></goals>
+                        <configuration>
+                            <resources>
+                                <resource><directory>${project.build.directory}/generated-resources</directory></resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- 与平台测试一致：宿主启用系统代理时容器回环地址仍须直连。 -->
+                    <systemPropertyVariables>
+                        <socksNonProxyHosts>localhost|127.0.0.1</socksNonProxyHosts>
+                        <http.nonProxyHosts>localhost|127.0.0.1</http.nonProxyHosts>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
