@@ -2,7 +2,7 @@
 
 jagonzn-service 是 jagonzn 的设备接入与运行服务，当前通过平台普通运行时 JAR 复用 ThingsCloud 后端内核，目标是独立承担多协议接入、设备管理、遥测、规则、技术告警、任务、命令和可靠信息转发。
 
-service 不内嵌独立的浏览器管理页面，但必须保留受控设备及授权管理 API 和无前端时可用的运维/恢复入口；后续由 `jagonzn-console` 统一呈现技术操作，并集成 `jagonzn-cloud` 的业务操作。当前 console 尚未开发，见 [JADR-0007](../docs/adr/0007-unified-console-and-backend-boundary.md)。
+service 不内嵌独立的浏览器管理页面，但必须保留受控设备及授权管理 API 和无前端时可用的运维/恢复入口；后续由 `jagonzn-console` 统一呈现技术操作，并集成 `jagonzn-cloud` 的业务操作。当前已有免登录静态测试页，正式管理功能尚未开发，见 [JADR-0007](../docs/adr/0007-unified-console-and-backend-boundary.md)。
 
 jagonzn 是 ThingsCloud 租户，禁止修改 ThingsCloud 的任何代码或数据库表；仅通过已有受支持能力开发自身设备适配并验证。平台不足及建议登记到[独立反馈文档](../docs/PLATFORM_CAPABILITY_FEEDBACK.md)，由 ThingsCloud 自行评审。
 

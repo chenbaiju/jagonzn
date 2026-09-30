@@ -6,7 +6,7 @@ jagonzn-cloud 定位为未来 jagonzn 定制化设备 SaaS 的业务后端，负
 
 ## 当前状态
 
-当前已有**第一项独立业务后端基础能力**：显式启用的私有 service 事件接收 API、独立 PostgreSQL Inbox/nonce 迁移与健康入口。它只持久接收并去重已验签的技术事件，尚未实现人员、场所、开锁权限、业务投影、命令或统一前端；`jagonzn-console` 仍不存在。合同见 [JADR-0009](../docs/adr/0009-cloud-private-event-inbox.md)。
+当前已有**第一项独立业务后端基础能力**：显式启用的私有 service 事件接收 API、独立 PostgreSQL Inbox/nonce 迁移与健康入口。它只持久接收并去重已验签的技术事件，尚未实现人员、场所、开锁权限、业务投影、命令或统一前端；`jagonzn-console` 当前仅有免登录静态测试页。合同见 [JADR-0009](../docs/adr/0009-cloud-private-event-inbox.md)。
 
 | 配置项 | 当前值 |
 | --- | --- |
