@@ -8,7 +8,7 @@
 无登录、操作控件、业务 API 或伪造健康状态；沿用 HTTP 回环 13006。正式跨服务管理合同仍按 JADR-0007。
 首次离线安装因缺 Vue 插件失败，正常安装后构建退出 0、11 模块；版本见下表述。
 HTTP 200 不代表 LAN 资格；后续另用 HTTPS 13007 做隔离静态验证，原失败和限定通过保留如下。
-[初次实施原文](https://github.com/cimcitech/jagonzn/blob/91a664a688d89b6c471b9acaa06bfbeddde25940/jagonzn-console/docs/TEST_PAGE_20260929.md)。
+[初次实施原文](https://github.com/chenbaiju/jagonzn/blob/91a664a688d89b6c471b9acaa06bfbeddde25940/jagonzn-console/docs/TEST_PAGE_20260929.md)。
 
 ## 候选与环境
 

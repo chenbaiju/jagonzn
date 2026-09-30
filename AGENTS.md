@@ -1,6 +1,6 @@
 # jagonzn 工作约定
 
-- 本目录是独立 Git 仓库；先核对本仓库状态、[项目进度](docs/PROJECT_PROGRESS.md)和[实施债务](docs/IMPLEMENTATION_DEBT.md)。
+- 本目录是独立 Git 仓库，远端为 `https://github.com/chenbaiju/jagonzn.git`；先核对本仓库状态、[项目进度](docs/PROJECT_PROGRESS.md)和[实施债务](docs/IMPLEMENTATION_DEBT.md)。
 - 仅通过受支持的接口和配置复用 ThingsCloud。平台缺口登记到 [能力反馈](docs/PLATFORM_CAPABILITY_FEEDBACK.md)，不在 jagonzn 任务中擅改平台源码、表或迁移。
 - 同一功能在既有专题文档更新一条记录；项目进度只保留当前状态、阶段计划、阻塞和证据入口，不追加逐次调试流水。
 - 仅独立合同、手册、决策或绑定候选的审计新建文档，并加入 [文档索引](docs/README.md)。日期、一次测试或一次会话不是拆文件理由。
