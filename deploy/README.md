@@ -1,5 +1,7 @@
 # jagonzn-service 本机独立启动
 
+> 当前暂停面向商用服务器及真实域名的部署验收。以下本机隔离栈、合成网络、额度/用量及恢复测试仍可按其前置执行；不得把目标改为共享或正式服务器。正式签发、真实设备和完整 LAN 接收继续独立取证。
+
 本目录是 jagonzn 自己的开发部署入口，Compose 项目名为 `jagonzn-service`，数据库为 `jagonzn`，不连接或修改 ThingsCloud 的 `tc-*` 容器、数据库和 `deploy/.env`。它只用于本机候选验证，不是生产发布或设备链路验收。
 
 全内网双后端的本机只读预检使用 `python3 tests/audit-lan-readiness.py --service-ca <测试公开证书绝对路径>`；完整参数和放行边界见[全内网本机合同](../../docs/reuse-entry/THINGS_CLOUD_JAGONZN_LAN_LOCAL_READINESS.md)，隔离栈的目标入口与身份见[本机网络合同](../../docs/reuse-entry/THINGS_CLOUD_JAGONZN_LAN_NETWORK_CONTRACT.md)。当前 Compose 只运行 service 且网络允许默认出站，预检返回 BLOCKED 是正确结果；它不会停止现有栈或修改数据。
