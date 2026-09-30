@@ -1,6 +1,6 @@
 # jagonzn 项目知识库
 
-更新时间：2026-09-28。当前阶段优先建设设备接入与运行服务，暂不启动 cloud 业务开发；统一浏览器前端 `jagonzn-console` 目前仅有架构决策。jagonzn 是 ThingsCloud 的一个租户，目标是在独立的 jagonzn-service 与同构的 `jagonzn` 数据库中适配并验证设备。**jagonzn 禁止修改 ThingsCloud 的任何代码或数据库表；只记录不足、证据和改进建议，由 ThingsCloud 自行评审。**自定义数据流与公共协议扩展属于反馈方向，不是本项目的平台改造授权。
+更新时间：2026-09-29。当前阶段优先建设设备接入与运行服务，暂不启动 cloud 业务开发；统一浏览器前端 `jagonzn-console` 已新增[本机免登录静态测试页](../jagonzn-console/README.md)，正式管理功能仍仅有架构决策。负责人已交接后续开发与本地测试，结果和剩余前置见[进度总览](PROJECT_PROGRESS.md)及[本轮专项回执](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)。jagonzn 是 ThingsCloud 的一个租户，目标是在独立的 jagonzn-service 与同构的 `jagonzn` 数据库中适配并验证设备。**jagonzn 禁止修改 ThingsCloud 的任何代码或数据库表；只记录不足、证据和改进建议，由 ThingsCloud 自行评审。**自定义数据流与公共协议扩展属于反馈方向，不是本项目的平台改造授权。
 
 ## 项目分工
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | jagonzn-service | 复用 ThingsCloud 内核的独立 IoT 服务，负责多协议设备接入、数据处理、技术告警、命令和可靠转发 |
 | jagonzn-cloud | 后续定制化设备 SaaS，负责人员、场所、开锁权限与时段、业务审计和业务处置 |
-| jagonzn-console | 计划新增的统一浏览器前端，分别使用 service 的技术/授权 API 与 cloud 的业务 API；当前尚未开发 |
+| jagonzn-console | 已有独立静态测试页；[浏览器与网络复测](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)通过，Console 三项网络前置失败已复测通过；正式技术/授权与 cloud 业务界面尚未开发 |
 
 TCP 智能锁是既有业务场景，首台验证设备仍待裁定；service 的目标范围包含原方案中的完整后端能力，不能理解为只做 TCP 代理。service 的独立运行目标不依赖 ThingsCloud 应用或 cloud 的部署，但依赖实际启用能力所需的中间件。
 

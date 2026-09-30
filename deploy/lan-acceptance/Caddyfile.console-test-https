@@ -1,0 +1,9 @@
+{
+    admin off
+    auto_https off
+}
+
+:8443 {
+    tls /etc/caddy/certs/lan.crt /etc/caddy/certs/lan.key
+    reverse_proxy console:8080
+}

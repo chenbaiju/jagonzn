@@ -182,7 +182,7 @@ ThingsCloud 原 SaaS 继续从其订阅与目录解析权益；正式 jagonzn �
 - PlanQuotaTemplate 的多个维度使用正数 long，不能直接套用 null 或负数。
 - planQuota 为 null 表示没有绑定可售套餐模板，不能解释为全功能无限制。
 
-这些是旧实现的不同数据形状，不能被 jagonzn 解释为正式自部署权益。已批准修订必须完整给出代码、单位和额度；FREE 外部席位 0 是明确拒绝，其他必填维度缺失/未知不表示无限。平台在 Java、SQL、缓存、协议准入、后台任务及实际物理发送前强制同一签名来源。当前[四档待审稿](../../docs/reuse-entry/THINGS_CLOUD_SELF_HOSTED_REVISION_REVIEW_DRAFT.md)尚未获批准。
+这些是旧实现的不同数据形状，不能被 jagonzn 解释为正式自部署权益。已批准修订必须完整给出代码、单位和额度；FREE 外部席位 0 是明确拒绝，其他必填维度缺失/未知不表示无限。自部署目标要求平台在 Java、SQL、缓存、协议准入、后台任务及实际物理发送前强制同一签名来源；完整运行时尚待验收。[四档修订 V1](../../docs/reuse-entry/THINGS_CLOUD_SELF_HOSTED_APPROVED_REVISION_V1.md)已于 2026-09-28 获批，包含十九项额度和十六项能力；批准不代表正式签发、原子导入或全部入口强制已经完成。2026-09-29 按负责人授权校准此处旧“未批准”描述，见[Windows 接管记录](../../docs/reuse-entry/THINGS_CLOUD_WINDOWS_TAKEOVER_20260929.md)。
 
 ### 6.4 保留系统保护
 

@@ -1,0 +1,32 @@
+# 只用于免登录静态测试页的网络预检，不代理业务 API、不代替正式 Console。
+# 单独启动并接入既有实验网络；避免 Compose v5 多层 extra_hosts 合并错误。
+name: jagonzn-lan-acceptance
+
+networks:
+  jagonzn:
+    external: true
+    name: jagonzn-lan-acceptance_jagonzn
+  host-ingress:
+    external: true
+    name: jagonzn-lan-acceptance_host-ingress
+
+services:
+  console:
+    image: caddy:2.10.2-alpine
+    networks: [jagonzn]
+    volumes:
+      - ${LAN_CONSOLE_TEST_DIST:?missing}:/srv:ro
+      - ${LAN_CONSOLE_TEST_CONFIG_DIR:?missing}/Caddyfile.console-test:/etc/caddy/Caddyfile:ro
+
+  console-test-https:
+    image: caddy:2.10.2-alpine
+    networks: [jagonzn, host-ingress]
+    cap_add: [NET_ADMIN]
+    entrypoint: [/bin/sh, -ec]
+    command: ["ip route del default; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
+    depends_on: [console]
+    # 保留宿主 13006 的开发页；13007 为本轮测试的实际端口。
+    ports: ["127.0.0.1:${LAN_CONSOLE_TEST_HTTPS_PORT:-13007}:8443"]
+    volumes:
+      - ${LAN_CONSOLE_TEST_CONFIG_DIR:?missing}/Caddyfile.console-test-https:/etc/caddy/Caddyfile:ro
+      - ${LAN_CONSOLE_TEST_CONFIG_DIR:?missing}/certs.local:/etc/caddy/certs:ro

@@ -9,3 +9,6 @@
 .env.local
 __pycache__/
 *.pyc
+
+# 两个后端的运行日志只保留在本机，不随源码提交。
+logs/

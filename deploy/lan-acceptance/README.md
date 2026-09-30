@@ -4,6 +4,8 @@
 
 私有事件实验另叠加 `private-delivery.compose.yml`，以服务持久 Outbox、Kafka 和 cloud 独立库核对两个项目、断线恢复与 HMAC 轮换；不改变上述基础栈的默认关闭配置。[JADR-0011](../../docs/adr/0011-private-cloud-delivery-scope-rotation-and-recovery.md)规定范围和失败处置。合成 Outbox 事实不代表真实设备上报或 cloud 业务已处理。
 
+2026-09-29 已另提供 `console-test.compose.yml`：它单独启动免登录静态页和 HTTPS 代理，显式接入已经存在的上述两个实验网络，不叠加到后端文件（规避 Compose v5 多层 `extra_hosts` 合并错误）。先指定 `LAN_CONSOLE_TEST_DIST` 为构建目录、`LAN_CONSOLE_TEST_CONFIG_DIR` 为包含两个 Console Caddyfile 和 `certs.local` 的目录，再单独执行 `docker compose -f <console-test.compose.yml绝对路径> up -d`。路径须对 Docker daemon 可见；默认回环 HTTPS 13007 保留原 HTTP 13006。不要使用 `--remove-orphans` 或删除既有实验卷。实际[静态页与网络回执](../../jagonzn-console/docs/TEST_EXECUTION_20260929.md)只关闭 Console 网络前置，不提供正式登录/授权/业务功能。
+
 ## 建立与启动
 
 在仓库根目录构建两个 JAR：
