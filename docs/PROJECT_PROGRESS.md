@@ -1,6 +1,7 @@
 # jagonzn 项目开发进度总览
 
-> 更新日期：2026-09-29
+> 更新日期：2026-09-30
+> 最新补充验证：Windows 原生身份边界 9 项通过；实际 JAR 离线导入仍复现 POSIX 权限 API 不支持。普通候选配置拒绝 3 项、POSIX 实际 CLI 缺根拒绝 1 项通过。原 shc1 双 JAR 未找到，完整权益/业务/API/Console 矩阵缺实现和材料，见[专项结果](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_CONTINUATION_20260930.md)与[实施债务 001～003](IMPLEMENTATION_DEBT.md)。独立 rc4 V5g 已取得真实 UTC 跨日通过回执，历史等待/失败记录保留原日期。本轮未提交或推送。
 > 最新范围调整：负责人暂停原 Console/共享包复制，改为在 `jagonzn-console` 创建独立 Vue + Vite 免登录静态测试页。后续[002 测试回执](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)完成浏览器 5/5、静态网络 14/14及后端停止/静态重启稳定 16/16；新预检 15 PASS/0 FAIL，原 Console 三项失败已复测通过。HTTP 13006 保留，测试 HTTPS 实际用 13007；静态页无业务 API，正式 Console 和完整 LAN 验收仍待完成。
 > 2026-09-29 后续交接：负责人将 jagonzn 后续开发与具备本地条件的专项测试交给当前代理。执行前核对既有设计/平台边界；未定义业务合同仍先冻结。后端全量由负责人手动执行，当前代理不执行全量、不提交或推送。本轮计划与结果见[本地专项接管](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)。
 > 本轮本地专项：service 原生 24 项中 22 过/1 权限错/1 跳，同 8 项 POSIX 全过；cloud 6/6，商业真浏览器 5/5，TEST 授权跨进程两侧各 1/1。新 SNAPSHOT 双后端在正常 5 GiB Broker 门槛下完成私有交付、毒消息恢复及两条模拟 MQTT 技术命令；首次预检 11 PASS/3 FAIL 保留为历史快照，静态 Console 后续补入后的新预检为 15/15，完整资格仍 BLOCKED。Windows 原生离线导入尚不支持，正式根/完整套餐/业务开锁/真机仍待前置。本轮独立实验栈最终停止且保留卷；V5g 等待真实午夜，详见上述回执。

@@ -25,6 +25,7 @@ TCP 智能锁是既有业务场景，首台验证设备仍待裁定；service �
 9. [平台能力不足与改进建议](PLATFORM_CAPABILITY_FEEDBACK.md)：独立记录不足、来源证据、设备影响、改进建议和 ThingsCloud 评审/交付/复验状态。
 10. [提交 ThingsCloud 评审的正式复用入口需求](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_REQUEST.md)：记录负责人选择方案 A 后的平台交付合同和 jagonzn 接收范围；平台已受理并实施本机候选，当前进度以[专项台账](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md)为准，正式接收仍未完成。
 11. [jagonzn 架构决策记录（ADR）](adr/README.md)：逐项保存已获裁决的重大决策、备选与实施边界；不代替 ThingsCloud 的平台 ADR。
+12. [实施债务与测试阻塞](IMPLEMENTATION_DEBT.md)：Windows 导入、原 shc1 材料及完整 LAN/权益/业务矩阵的编号、证据、归属和关闭条件。
 
 首次接手按“主架构 → service 架构 → 进度总览 → ADR 索引 → 本轮审计 → 协议调研与候选建议”阅读；文档维护遵守仓库[文档维护指南](../../docs/DOCUMENTATION_GUIDE.md)。当前阶段只有进度总览一处记账，架构中的历史工作包编号不另行决定执行顺序。
 
