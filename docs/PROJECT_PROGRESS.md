@@ -1,41 +1,16 @@
 # jagonzn 项目开发进度总览
 
-> 更新日期：2026-09-30
-> 最新补充验证：Windows 原生身份边界 9 项通过；实际 JAR 离线导入仍复现 POSIX 权限 API 不支持。普通候选配置拒绝 3 项、POSIX 实际 CLI 缺根拒绝 1 项通过。原 shc1 双 JAR 未找到，完整权益/业务/API/Console 矩阵缺实现和材料，见[专项结果](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_CONTINUATION_20260930.md)与[实施债务 001～003](IMPLEMENTATION_DEBT.md)。独立 rc4 V5g 已取得真实 UTC 跨日通过回执，历史等待/失败记录保留原日期。本轮未提交或推送。
-> 最新范围调整：负责人暂停原 Console/共享包复制，改为在 `jagonzn-console` 创建独立 Vue + Vite 免登录静态测试页。后续[002 测试回执](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)完成浏览器 5/5、静态网络 14/14及后端停止/静态重启稳定 16/16；新预检 15 PASS/0 FAIL，原 Console 三项失败已复测通过。HTTP 13006 保留，测试 HTTPS 实际用 13007；静态页无业务 API，正式 Console 和完整 LAN 验收仍待完成。
-> 2026-09-29 后续交接：负责人将 jagonzn 后续开发与具备本地条件的专项测试交给当前代理。执行前核对既有设计/平台边界；未定义业务合同仍先冻结。后端全量由负责人手动执行，当前代理不执行全量、不提交或推送。本轮计划与结果见[本地专项接管](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)。
-> 本轮本地专项：service 原生 24 项中 22 过/1 权限错/1 跳，同 8 项 POSIX 全过；cloud 6/6，商业真浏览器 5/5，TEST 授权跨进程两侧各 1/1。新 SNAPSHOT 双后端在正常 5 GiB Broker 门槛下完成私有交付、毒消息恢复及两条模拟 MQTT 技术命令；首次预检 11 PASS/3 FAIL 保留为历史快照，静态 Console 后续补入后的新预检为 15/15，完整资格仍 BLOCKED。Windows 原生离线导入尚不支持，正式根/完整套餐/业务开锁/真机仍待前置。本轮独立实验栈最终停止且保留卷；V5g 等待真实午夜，详见上述回执。
-> 状态：开发路线按“复用 ThingsCloud 能力 → 接入设备 → 验证闭环 → 汇总缺口反馈”分阶段；平台已受理正式复用入口并开始本地候选实施，阶段 1 接收门禁尚未通过。
-> 本文记录 jagonzn 项目进展，不替代 ThingsCloud 仓库的 [开发进度总览](../../docs/PROGRESS.md)，也不改变 ThingsCloud 当前执行轨迹。
-> 2026-09-29 负责人授权 Windows 接管测试：已批准修订状态校准，可靠受理与业务完成按[ADR0231](../../docs/adr/0231-self-hosted-uplink-admission-and-business-completion.md)分别验收；[接管记录](../../docs/reuse-entry/THINGS_CLOUD_WINDOWS_TAKEOVER_20260929.md)登记 rc4 V5g、宿主 UDP、当前源码及 SHC 可执行回归，阶段接收与正式签发门禁仍开放。
-> 本轮 rc4 [Windows 宿主 UDP/DTLS](../../docs/reuse-entry/audits/G3-REUSE-V3d-rc4-windows-host-udp-2026-09-29.md)及可靠交接故障恢复通过；V5g 新 D 日准备通过，等待真实午夜。当前平台 SHC 持久聚焦 13 项通过，密钥 2 项原生 POSIX 错误；平台全量两轮失败，第二轮 issuer 3 项权限错误，后续模块未执行。jagonzn 原生申请/授权目标 6 过、1 错、1 跳；独立 POSIX 的同 8 项全部通过并单列留证，不能写成 Windows 全过或正式签发。
-> 2026-09-28 负责人已把未来正式独立部署的商业目标从旧无限额度调整为平台签名四档权益，见 [JADR-0005](adr/0005-signed-self-hosted-entitlement.md)。当前本机有限 `NONCOMMERCIAL` 仍是未发行候选；ThingsCloud 的待审申请登记、运营端只读队列、[已批准四档产品修订](../../docs/reuse-entry/THINGS_CLOUD_SELF_HOSTED_APPROVED_REVISION_V1.md)和可复用公钥验签组件不代表正式授权已可用。后续本机 TEST 授权导入与三项额度实验已通过，见[专项台账](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md)；正式签发及完整套餐强制仍未取得回执。
+更新日期：2026-09-30。阶段 1 正式接收未通过；本页不改变 ThingsCloud 的执行轴或门禁。
+历史任务中的“本轮/等待/授权”仅适用于其原日期，当前执行以负责人最新请求为准。
 
-> 2026-09-28 负责人进一步确定 [JADR-0007](adr/0007-unified-console-and-backend-boundary.md)：service 与 cloud 都是后端，后续 `jagonzn-console` 统一浏览器操作。cloud 继续负责人员、组织、场所、开锁权限/时段、业务审计和处置及自己的业务数据库，不接管设备协议或 service 技术事实。当时 console 尚不存在；2026-09-29 新增的是独立静态测试页，正式界面仍待交付，不改变阶段 0/1 完成状态。
-
-> 2026-09-28 全内网优先：现有本机 Compose 的[只读预检回执](../../docs/reuse-entry/audits/G3-SHC-JAG-LAN-PREFLIGHT-1-2026-09-28.md)为 4 PASS/9 FAIL；cloud/console 缺席、网络未隔绝互联网，正式 LAN 门禁未放行。内网实验与正式资格的完成定义见[专项合同](../../docs/reuse-entry/THINGS_CLOUD_JAGONZN_LAN_LOCAL_READINESS.md)。
-
-> 后续 [TEST 运行时装配回执](../../docs/reuse-entry/audits/G3-SHC-JAG-LAB-RUNTIME-WIRING-1-2026-09-28.md)已验证仅测试类路径可注入当轮临时公钥，普通 JAR 缺正式根或误选测试源均拒绝启动；3 项轻量装配测试通过，普通 JAR 不含测试根。该工作包当时待复验的跨进程交接已由[后续 TEST 回执](../../docs/reuse-entry/audits/G3-SHC-JAG-LAB-RUNTIME-HANDOFF-2-2026-09-28.md)完成；固定候选完整双后端授权验收及正式现场资格仍开放。
-
-> [私网命令结果来源回执](../../docs/reuse-entry/audits/G3-SHC-JAG-COMMAND-RESULT-SOURCE-1-2026-09-28.md)验证公开 Webhook 关闭时可信内部 `command.completed` 的身份、终态与发送器重试字段；该工作包是无容器聚焦合同。后续[双后端技术命令回执](../../docs/reuse-entry/audits/G3-SHC-JAG-TECH-COMMAND-LAB-1-2026-09-28.md)已覆盖模拟 MQTT 设备 ACK/终态和 cloud Inbox；物理设备回复、cloud 开锁业务授权/投影仍未验。
-
-> [JADR-0013](adr/0013-technical-command-lab-and-business-unlock-boundary.md)已限定本机先测无害技术命令与 cloud Inbox 终态接收；现有技术 API 无每次业务操作的服务端失效字段，不能直接作为人员开锁入口。[技术命令动态回执](../../docs/reuse-entry/audits/G3-SHC-JAG-TECH-COMMAND-LAB-1-2026-09-28.md)已完成模拟 MQTT 设备链，人员权限和物理锁语义保持后续门禁。
-
-> 同日 [cloud 私有事件 Inbox](../../docs/reuse-entry/audits/G3-SHC-JAG-CLOUD-INBOX-1-2026-09-28.md)已在本工作树以独立 PostgreSQL、真实 HTTP 和签名/去重负例通过；当时尚未部署到前述 rc4 Compose 栈，也没有 service 私网发送、业务命令或 console。后续[固定候选私网交付回执](../../docs/reuse-entry/audits/G3-SHC-JAG-PRIVATE-DELIVERY-1-2026-09-28.md)已补技术发送链；负责人选择正式客户资格为关闭口径，正式签名及完整双后端交付前继续阻塞。
-
-> 其后 [cloud 无互联网实验栈](../../docs/reuse-entry/audits/G3-SHC-JAG-CLOUD-LAN-LAB-1-2026-09-28.md)仅验证 cloud 一端独立库、内部受信 HTTPS 与签名事件；未与 service 组网，未提供浏览器 LAN 入口，正式双后端资格继续阻塞。
-
-> 平台 [ADR0228](../../docs/adr/0228-internal-event-source-independent-from-public-webhook.md)已把可信内部事件源与公开 Webhook 开关分离；当时 jagonzn-service 仅新增默认关闭的部署变量映射。后续私网发送端与固定候选技术交付见[专项台账](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md)；Kafka 积压本身仍不能算 cloud 签收。
-
-> 后续 [JADR-0010](adr/0010-service-cloud-signed-event-forwarder.md)实现默认关闭的单项目 Kafka→cloud 签名 HTTPS 适配，外部 service 装配和真实回环 TLS 聚焦通过；前一句记录的是源开关工作包当时状态。[固定候选交付回执](../../docs/reuse-entry/audits/G3-SHC-JAG-PRIVATE-DELIVERY-1-2026-09-28.md)已补实际 Kafka→cloud 独立库、断线积压、多项目及轮换，所用来源为合成事实且 Broker 容量受限；正式内网资格仍阻塞。
-
-> 同日负责人将首版双后端部署限定为公网双后端、无互联网但彼此可达的全内网双后端，见 [JADR-0008](adr/0008-two-deployment-network-modes.md)。混合公网/私网拓扑不进入当前计划；两种形态的目标环境、授权交付和双后端动态验收均未完成。
-
-> [G3-SHC-REV-3](../../docs/reuse-entry/audits/G3-SHC-REV-3-shared-approved-revision-binding-2026-09-28.md)已给平台可复用模块增加获批修订的严格读取与已验签授权精确匹配；该工作包当时尚无 jagonzn 导入或热路径门禁。后续[本机 TEST 授权导入](../../docs/reuse-entry/audits/G3-SHC-LAB-IMPORT-1-local-test-grant-import-2026-09-28.md)与[三项额度回执](../../docs/reuse-entry/audits/G3-SHC-LAB-QUOTA-1-local-test-quota-admission-2026-09-28.md)不能升级为正式现场授权或完整套餐资格。
-
-现场 [G3-SHC-ENROLL-LOCAL-1](../../docs/reuse-entry/audits/G3-SHC-ENROLL-LOCAL-1-jagonzn-offline-request-2026-09-28.md) 已提供稳定身份与可离线传递的 V1 待审申请；该包当时尚无授权导入或套餐强制。后续本机 TEST 导入与三项额度实验见上，申请文件仍须经正式审核签发才可用于客户现场。
-
-[G3-SHC-ENROLL-E2E-1](../../docs/reuse-entry/audits/G3-SHC-ENROLL-E2E-1-cross-process-pending-intake-2026-09-28.md)已从本工作树真实 jagonzn JAR 生成申请文件，再经 ThingsCloud 运营受控入口完成本机跨进程 `PENDING` 联调；该包不提供客户在线自助申请、已审核组织归属或正式签发。其后的 TEST 授权导入与三项额度仅属实验回执，不构成正式现场套餐强制。
+| 功能 | 当前状态与恢复入口 |
+| --- | --- |
+| 正式复用 | rc4 Windows V5g 限定本机真实 UTC 跨日已通过，Mac 旧失败保留；V1c/V8 未完成，[平台统一清单](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ACCEPTANCE_CHECKLIST.md)为接收依据 |
+| Windows 身份与导入 | 身份边界 9 项通过；实际 JAR 导入仍受 POSIX API 限制。候选和复现见 [专项结果](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_CONTINUATION_20260930.md)，缺口见 [实施债务](IMPLEMENTATION_DEBT.md) |
+| 固定制品与双后端 | 原 shc1 双 JAR 未找到；新 SNAPSHOT 正常容量、私有交付和模拟命令不补原件资格，[本地专项](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)保留各自候选 |
+| 静态 Console | 免登录/无业务请求测试页已交付；浏览器 5/5、静态网络 14/14、稳定重启 16/16、新预检 15/15，详见 [静态验证](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)。正式 Console 和完整 LAN 仍开放 |
+| 签名权益及业务 | TEST 导入与三项额度有本地回执；其余 16 项数值、16 项能力及业务/API 映射、正式信任设施仍待完成；参见 [专项台账](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md) |
+| 设备接入 | 厂商型号/固件、事件语义、真实闭环仍按 [平台反馈](PLATFORM_CAPABILITY_FEEDBACK.md)登记，不把技术模拟作为真机验收 |
 
 ## 1. 目标与状态摘要
 
@@ -53,12 +28,6 @@ jagonzn 是当前 ThingsCloud 项目中的一个租户。jagonzn-service 作为�
 
 阶段顺序依据：[service 后端复用与独立部署架构](jagonzn-service-backend-architecture.md)、[隔离验证部署与平台合同演进](tenant-validation-and-contract-evolution.md)、[多协议建设优先级](protocol-expansion-priority.md)。
 已获裁决的长期边界逐项归档于 [jagonzn ADR 索引](adr/README.md)；候选建议和未交付能力不能因归档而改变本页实施状态。
-
-2026-09-25 本机一键部署候选已使用 `jagonzn-service` Compose 项目启动独立数据库、Redis、Redpanda、MinIO、EMQX 与服务容器；健康入口返回 200，独立库 313 条迁移成功，`jagonzn` 与 `jagonzn_app` 等角色已核对。生成的本机凭据与外置配置均被 Git 忽略且未进入应用 JAR。当前 Windows/Temurin 21.0.11 直接从 IDE 运行会在 Kafka Selector 初始化时失败；容器内运行和回环远程调试端口可用。这些只证明本地部署与进程启动，不替代设备 MQTT、HTTP/TCP/CoAP、MinIO 业务或正式部署验收。
-
-2026-09-25 又补充独立 Caddy HTTPS 设备入口、EMQX API 身份、MinIO 受限应用身份、显式非商业有限技术容量及一次性数据库恢复演练；HTTPS/MQTT/TCP/CoAP 四协议各一条标准属性路径、OTA 固件草稿上传到独立 MinIO、含样例数据的数据库恢复与单对象恢复已通过。非商业项目/设备/终端用户/看板/外部协作者席位的独立 HTTP 技术限额与公开 API Key 读/撤销、实时 WS/独立应用 Broker MQTT 设备事件交付、Webhook 管理创建/撤销也已通过；Webhook 对外投递待验。上述[本机核对](../../docs/reuse-entry/audits/G3-REUSE-3-5-local-candidate-2026-09-25.md)只覆盖已列路径，不关闭阶段 1 接收门。
-
-2026-09-26 正式复用入口仍未完整接收；历史边界见[补充登记](../../docs/reuse-entry/audits/G3-REUSE-status-2026-09-26.md)，新一轮四协议、故障交接、独立应用8项、样例恢复、平台Webhook专项及本机隔离SMTP注册/告警邮件复验见[本机回执](../../docs/reuse-entry/audits/G3-REUSE-local-reverification-2026-09-26.md)。按[统一清单](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ACCEPTANCE_CHECKLIST.md)登记；负责人要求完成SMTP验证和提交后暂停，JPF-001/003继续开放。未来厂商真机适配不混作本入口已交付能力。
 
 ## 2. 阶段总览
 
@@ -225,4 +194,4 @@ jagonzn 是当前 ThingsCloud 项目中的一个租户。jagonzn-service 作为�
 | JCH-011 | 2026-09-24 | 为现有两个应用的启动入口、上下文/健康验证代码及 service 新增依赖补齐中文注释，说明职责、NIO2 原因和健康检查边界；不改变运行逻辑或阶段状态。 |
 | JCH-012 | 2026-09-24 | ThingsCloud 普通运行时 JAR 已接入 service 本地候选；独立 `jagonzn` 库的空库/历史升级、角色命名与 RLS、健康/敏感端点及注册登录后的项目/设备授权共 6 项测试通过。MQTT 身份、Kafka 消费组、签名密钥变量及标准 TCP/CoAP 端口使用 jagonzn 配置；真实外部业务路径、非商业策略、制品发布与恢复未验，阶段 1 门禁仍开放。 |
 | JCH-013 | 2026-09-29 | 负责人交接后续开发并授权执行本地专项；原生/POSIX、TEST 授权、商业浏览器与正常容量双后端实验逐项留证，记录 Windows 导入权限债务。完整 LAN、正式签发及设备阶段仍开放，全量由负责人手动执行，未提交或推送。见[专项回执](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)。 |
-| JCH-014 | 2026-09-29 | 负责人暂停 Console 全量复制，改为创建独立 Vue + Vite 免登录、无操作的本机静态测试页；原 Console 和共享包均未复制。只新增前端访问实验，不关闭正式界面、初始化/授权 API 或完整 LAN 门禁，见[记录](../jagonzn-console/docs/TEST_PAGE_20260929.md)。 |
+| JCH-014 | 2026-09-29 | 负责人暂停 Console 全量复制，改为创建独立 Vue + Vite 免登录、无操作的本机静态测试页；原 Console 和共享包均未复制。只新增前端访问实验，不关闭正式界面、初始化/授权 API 或完整 LAN 门禁，见[记录](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)。 |

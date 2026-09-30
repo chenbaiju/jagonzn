@@ -21,7 +21,7 @@
 | --- | --- | --- | --- | --- | --- |
 | JPF-001 | 外部应用正式复用、自动装配及迁移交付边界未闭合 | 本地运行时 JAR、独立空库/升级/RLS、四协议属性链路和含样例数据的数据库恢复已验证；正式发布与外部集成未验 | 阶段 1 前需正式复用入口；负责人已选方案 A | 已采纳，见平台 ADR0214 | 本地候选实施中 / 完整接收未通过 |
 | JPF-002 | 设备自报逐次事件缺少通用接入处理路径 | 标准合同明文排除，通用标准化实现边界已核对；未真机验证 | 烟感报警/恢复、锁事件完整闭环受阻 | 已登记，待 ThingsCloud 自行评审 | 无新增交付记录 / 未复验 |
-| JPF-003 | 独立部署的非商业运行策略尚缺完整可用性证据 | rc4 的商业全量、Console 与 Chromium 已有同源码回执；六资源及九日指标已有限定本机证据，真实跨日和完整接收仍缺，见统一接收清单 | 阶段 1 接收门禁未通过；正式签名权益另验 | 已纳入平台 G3-REUSE-4 候选合同 | 本地候选 / 未完整接收 |
+| JPF-003 | 独立部署的非商业运行策略尚缺完整可用性证据 | rc4 的商业全量、Console 与 Chromium 已有同源码回执；六资源及九日指标已有限定本机证据，rc4 Windows 真实跨日已有限定本机回执，完整接收仍缺，见统一接收清单 | 阶段 1 接收门禁未通过；正式签名权益另验 | 已纳入平台 G3-REUSE-4 候选合同 | 本地候选 / 未完整接收 |
 | JPF-004 | 厂商协议适配的公共业务接口和受控扩展边界未明确 | 标准合同排除自定义 codec/私有 TCP；已有两种协议调研样例 | 需核对自身适配可用接口，缺失部分不能靠修改平台实现 | 已登记，待 ThingsCloud 自行评审 | 无新增交付记录 / 未复验 |
 
 排序仅反映 jagonzn 依赖关系：阶段 1 先核对 JPF-001/003，设备完整闭环受 JPF-002/004 影响；不是给 ThingsCloud 安排开发优先级。D-190 已开发、验证并关闭，不列为不足；公共 Webhook 也不是从零待建能力。
@@ -52,9 +52,9 @@
 
 ## 5. JPF-003：非商业运行与系统保护
 
-**发现依据：**[service 架构 §6～7](jagonzn-service-backend-architecture.md#6.%20无限额度、计量与系统保护)记录非商业运行目标及 `TenantSubscriptionProvisioning`、`SubscriptionExpansionGuard`、配额服务、生命周期 Worker 和数据库函数耦合。`standalone-unlimited` 是方案名称，不是已存在的配置项。
+**发现依据：**[service 架构 §6～7](jagonzn-service-backend-architecture.md#6.%20%E7%AD%BE%E5%90%8D%E6%9D%83%E7%9B%8A%E3%80%81%E8%AE%A1%E9%87%8F%E4%B8%8E%E7%B3%BB%E7%BB%9F%E4%BF%9D%E6%8A%A4)记录非商业运行目标及 `TenantSubscriptionProvisioning`、`SubscriptionExpansionGuard`、配额服务、生命周期 Worker 和数据库函数耦合。`standalone-unlimited` 是方案名称，不是已存在的配置项。
 
-**不足与影响：**旧“商业整合 4 项、浏览器未验”是早期候选状态；rc4 [V6b 同源码回执](../../docs/reuse-entry/audits/G3-REUSE-V6b-commercial-regression-2026-09-27.md)已有完整后端、Console 与 Chromium 5/5，六资源及九项日计量的限定证据见[统一接收清单](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ACCEPTANCE_CHECKLIST.md)。真实午夜 V5g、正式发布/接收仍开放，当前合流源码不能继承 rc4 资格，完整阶段门不关闭。正式签名四档运行时及全部能力入口另按 SHC 验收；本次状态校准不改写旧审计。
+**不足与影响：**旧“商业整合 4 项、浏览器未验”是早期候选状态；rc4 [V6b 同源码回执](../../docs/reuse-entry/audits/G3-REUSE-V6b-commercial-regression-2026-09-27.md)已有完整后端、Console 与 Chromium 5/5，六资源及九项日计量的限定证据见[统一接收清单](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ACCEPTANCE_CHECKLIST.md)。[rc4 Windows V5g](../../docs/reuse-entry/audits/G3-REUSE-V5g-rc4-windows-midnight-2026-09-30.md)已限定本机通过，Mac 旧失败保留；正式发布/接收仍开放，当前合流源码不能继承 rc4 资格，完整阶段门不关闭。正式签名四档运行时及全部能力入口另按 SHC 验收；本次状态校准不改写旧审计。
 
 **改进建议（供 ThingsCloud 评审）：**先明确现有独立运行模式能支持哪些能力；如不足，评审商业准入与安全/容量保护的公开策略边界。jagonzn 不自行覆写公共内部类、设置特殊魔法额度或改数据库函数。
 
