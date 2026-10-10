@@ -1,0 +1,157 @@
+{
+  "upstreamCommit": "fb349e1f80649a2f795c6645e291fc90cb31a3b8",
+  "total": 900,
+  "identical": 877,
+  "missing": [],
+  "differences": [
+    {
+      "path": ".env",
+      "upstreamSha256": "cd288002c4c9d65b74b295408f04601028c4463a73bcd6400d59dd89b940e19d",
+      "localSha256": "7d29e1d9abc0b92228706ccd5426b131030c93430b7ca104093ee535b93bb0e4"
+    },
+    {
+      "path": ".env.development",
+      "upstreamSha256": "07eb039fc961cd2cfdab620baf615ae644af763a832c5156d5346414ef430a37",
+      "localSha256": "b0bd7476396747dc617daddbee73e958a075912ddd1613462d9c1e4f20956ba3"
+    },
+    {
+      "path": "AGENTS.md",
+      "upstreamSha256": "e7a62047a422203fd39b51c61293af761763feb0052288ae0ee60a2942f34de7",
+      "localSha256": "cc71a4b079412381e31cb854acf3b6863252b41d39684725bb9d92effeff0e89"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "upstreamSha256": "cef25be2b013e66f6ed671195d385ee237ae760fedd0e806d68062e65d7c251e",
+      "localSha256": "f7909ac5d2e6502ca9896c2ec74158a06e7b305581e1fac67661688a3bb1ae44"
+    },
+    {
+      "path": "README.md",
+      "upstreamSha256": "88fff545253b962cb43a004ed2503a61f9553ef59dabf8b0fd764a9d12c38729",
+      "localSha256": "e8d4d2631cf56817e22d0cc87fb4e7b5b556ea30591c0cd9da96ce577f517c81"
+    },
+    {
+      "path": "README.zh-CN.md",
+      "upstreamSha256": "db8c30d4808ff572cf36a9b0e852b557541f2557fac35338c64ff24ab60f30c1",
+      "localSha256": "70c410c24ecfad4eb0c5cf95fc27f8030b8d735b7b5368955af4c5de4aa7208a"
+    },
+    {
+      "path": "index.html",
+      "upstreamSha256": "63869091539f4cdfe03edb561ce6fb932b0fa6b1c7721bd7b0a29329a6dad2f2",
+      "localSha256": "b17d4fe72a5199375ad0531074c5af417ff5538ba8c64636f55d5504cf622eec"
+    },
+    {
+      "path": "package.json",
+      "upstreamSha256": "9d85a0f4e7e645b99a81445684e3b60ada3f1105e61362e60e6e848c1dc32d62",
+      "localSha256": "583f4a476b5e689fb7dafb51a3319ab703f9de0f6f7c65a257a55e13f68429b5"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "upstreamSha256": "4f2b1f560d8078bec3b0f54e8f85bbf2bea578540981c95b8ca358cae0490959",
+      "localSha256": "a4675cf146650ab220bc936509b38a95e06f121a1ff84fd0551438e1a0f5dba6"
+    },
+    {
+      "path": "scripts/check-api.ts",
+      "upstreamSha256": "63dcad51983022aea03f29dadde1c98371875d2cba248f0ff0abd57b2546a28e",
+      "localSha256": "cb180bb15ef383c73f7963e08f1a8f5c1dc8a8fd8400f3ca3302b0d2381b8215"
+    },
+    {
+      "path": "src/components/core/forms/art-excel-export/index.vue",
+      "upstreamSha256": "35203c31f5e3f28a61863fdf0e46e331be51b4ce50962fb4d07e455ffbc0c862",
+      "localSha256": "d4f1af4e89a334c7b87ae79575cdd31f80e66ea47c267f079e5cf7033fe68223"
+    },
+    {
+      "path": "src/config/index.ts",
+      "upstreamSha256": "fc5b971432d0a59bfa7090df0c8fbe6535f182e3cbb6150bb90cb68f5a220818",
+      "localSha256": "049eae16f985a7af3deed0993a3ee0dce8ef1e5abd3dcf78dc57610c516e2cac"
+    },
+    {
+      "path": "src/hooks/core/useAuth.ts",
+      "upstreamSha256": "eabe75732521f4c22f3d6bbc936dbd4a82e19e51d059a6e28569badbdf20ffd7",
+      "localSha256": "e71483e25511219763c9f804ea07911d6cca62598aa4044bb46c389df2386ab5"
+    },
+    {
+      "path": "src/utils/app-project-entry.ts",
+      "upstreamSha256": "5e217cac9f7f967c498833e300f7d8556a842555648accce58446996f2fa2020",
+      "localSha256": "7f8496c7ad597e4f6536b4900a388413d49a50a6b6ea374d1cdc118e345211db"
+    },
+    {
+      "path": "src/utils/constants/links.ts",
+      "upstreamSha256": "9bb8aa27615bcd896b192c2dd87dd549f2aa3fb65fcffb5ca4b2e71f65e26744",
+      "localSha256": "c52f53627c60ffcd756cdcba41f1ab5b024ba0a29be015f2c508b90e158b570a"
+    },
+    {
+      "path": "src/utils/http/refresh-coordinator.ts",
+      "upstreamSha256": "d665fd211553395c8c99c0c2824813878ee63d84acb2375baa69a5007f5e3e00",
+      "localSha256": "9c3b1b16d2e863771874db3c702a03d567fc28c619171d2d4318c3839b0aadbe"
+    },
+    {
+      "path": "src/utils/sys/console.ts",
+      "upstreamSha256": "5d9ea4f11d57ca0219dff94da94fd9d9813d031b4f012620c8dbb685b7801444",
+      "localSha256": "f3536a7c9bbda7aa5ed69541ac6a155383b51673f7f66b7f9ccd9eed6ccf2235"
+    },
+    {
+      "path": "src/utils/workbench-recent.ts",
+      "upstreamSha256": "3e38a8db521fd58da845cabbf1ac3be9febd27489f9da003effe0b324e4b08b6",
+      "localSha256": "09a886f7c9918241966ec8f87ced01b7f56d44acb60620ac589763b8e44cdcb1"
+    },
+    {
+      "path": "src/views/project/list/AppProjectEntryDialog.vue",
+      "upstreamSha256": "42e04f72308ba437392f8eac0dc247dd92752a02eb6fe147e26fd349718a6341",
+      "localSha256": "b6bc1f391432f43b301d16cb54eb8671afc54865525a8fdc3f6caabf4297fc14"
+    },
+    {
+      "path": "tests/appProjectEntry.test.ts",
+      "upstreamSha256": "2847c2851bc9175124acad884c24ce36573ae21e4be59e22eaf756471954a879",
+      "localSha256": "06bb9300ff92a9eeeced53d7f043012053236919246aa3b9a6ac9327699fd120"
+    },
+    {
+      "path": "tests/appProjectEntryDialog.test.ts",
+      "upstreamSha256": "4e03492b845a3b8723742ea11ef6cb41e2cb68f830d022df165ee047986c4b8d",
+      "localSha256": "d4d67271d6fb13b9599259ae752c8142fffd53c8bd21d284f3938073ecb1dabf"
+    },
+    {
+      "path": "tests/menuCatalogContract.test.ts",
+      "upstreamSha256": "1ed66372c2b55742642a01f2bf84fbe6e344cb120f63590d6486574fb97571f0",
+      "localSha256": "258dd778e060d75707668500e604307988b04968750283c73da5ef37519a00e5"
+    },
+    {
+      "path": "vite.config.ts",
+      "upstreamSha256": "9ea2c2635aa1e8dc16a595d18f6574628411128638a1fcc3536f2cb96e26157f",
+      "localSha256": "0c11d171f18391634512909b0fe485285d485e5df8735d091258e435f696504a"
+    }
+  ],
+  "groups": {
+    "e2e": {
+      "total": 108,
+      "identical": 108
+    },
+    "src/api": {
+      "total": 57,
+      "identical": 57
+    },
+    "src/assets": {
+      "total": 75,
+      "identical": 75
+    },
+    "src/components": {
+      "total": 98,
+      "identical": 97
+    },
+    "src/features": {
+      "total": 36,
+      "identical": 36
+    },
+    "src/locales": {
+      "total": 2,
+      "identical": 2
+    },
+    "src/router": {
+      "total": 29,
+      "identical": 29
+    },
+    "src/views": {
+      "total": 115,
+      "identical": 114
+    }
+  }
+}

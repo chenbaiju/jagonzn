@@ -1,5 +1,7 @@
 # jagonzn 双项目架构与分阶段实施方案
 
+> Console 当前实施已按 [JADR-0014](adr/0014-console-full-copy-and-upstream-sync.md) 完整复制上游并直接引用共享合同包；下文原阶段中的“尚未交付”保留其历史范围，当前前端验证与剩余范围见[专题方案](console-reuse-and-evolution.md)。
+
 > 更新日期：2026-09-28。
 > 状态：架构规划；service 已有本机复用装配，cloud 已有私有事件 Inbox，人员/场所业务、私网发送和 console 尚未交付；本文不把局部能力当成完整双后端联动。
 > 本文是 jagonzn 项目职责的主文档，取代早期由 jagonzn-cloud 承担设备接入的定位。

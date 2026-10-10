@@ -1,0 +1,313 @@
+<template>
+  <section class="console-editor-section console-fragment" aria-label="应用发布与历史恢复">
+    <ElDivider content-position="left">发布与历史版本</ElDivider>
+    <ElAlert class="console-hint" type="info" show-icon :closable="false"
+      >发布使用已保存草稿；回滚和撤回只改变运行版本，保留当前草稿。</ElAlert
+    >
+    <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" show-icon />
+    <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" show-icon />
+    <p
+      class="console-description"
+      v-if="state.catalog"
+      data-testid="application-publication-status"
+      :data-version-id="state.catalog.currentVersionId ?? ''"
+    >
+      当前发布：<span>{{
+        state.catalog.currentVersionId ? currentVersionLabel : '未发布或已撤回'
+      }}</span>
+      <small>（发布修订 {{ state.catalog.publicationRevision }}）</small>
+    </p>
+    <div class="console-actions">
+      <el-button
+        data-testid="application-publication-refresh"
+        :disabled="!canRead || !available || state.loading || state.writing || confirming"
+        @click="refresh"
+      >
+        {{ state.pending ? '读取当前发布事实' : '刷新发布状态' }}
+      </el-button>
+      <template v-if="canManage">
+        <el-button
+          data-testid="application-publication-publish"
+          type="primary"
+          :disabled="!publishable"
+          @click="confirmAction('PUBLISH')"
+          >发布已保存草稿</el-button
+        >
+        <el-button
+          data-testid="application-publication-withdraw"
+          :disabled="!writable || !state.catalog?.currentVersionId"
+          @click="confirmAction('WITHDRAW')"
+          >撤回当前发布</el-button
+        >
+        <el-button
+          data-testid="application-publication-soft-delete"
+          type="danger"
+          :disabled="!publishable"
+          @click="confirmAction('SOFT_DELETE')"
+          >软删除应用</el-button
+        >
+      </template>
+    </div>
+    <template v-if="canManage">
+      <ElAlert
+        v-if="dirty || saving || conflict"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >请先完成草稿保存并处理冲突，再发布。</ElAlert
+      >
+    </template>
+    <template v-if="state.pending">
+      <ElAlert
+        v-if="state.pending.status === 'UNKNOWN'"
+        class="console-hint"
+        type="warning"
+        show-icon
+        :closable="false"
+        >上次操作结果尚未确认。读取当前状态不会证明上次操作是否完成，请重试原操作后再执行新操作。</ElAlert
+      >
+      <ElAlert v-else class="console-hint" type="info" show-icon :closable="false"
+        >上次操作已有完成回执，请读取当前发布事实；当前状态可能包含后续变更。</ElAlert
+      >
+      <el-button
+        data-testid="application-publication-retry"
+        v-if="state.pending.status === 'UNKNOWN' && canManage"
+        :disabled="!available || state.loading || state.writing || confirming"
+        @click="publication.retry()"
+        >重试原操作</el-button
+      >
+    </template>
+    <p class="console-description" v-if="state.catalog && !state.loading && !state.history.length"
+      >暂无已发布历史版本。</p
+    >
+    <ul>
+      <li
+        v-for="version in state.history"
+        :key="version.id"
+        :data-testid="`application-publication-version-${version.id}`"
+        :data-version-number="version.versionNumber"
+      >
+        <span>版本 {{ version.versionNumber }} · {{ version.publishedAt }}</span>
+        <span v-if="version.id === state.catalog?.currentVersionId">（当前发布）</span>
+        <div class="console-actions">
+          <el-button
+            :disabled="!available || !canRead || state.loading || state.detailLoading"
+            @click="publication.selectVersion(version.id)"
+            >查看版本 {{ version.versionNumber }}</el-button
+          >
+          <el-button
+            v-if="canManage"
+            :disabled="!writable || version.id === state.catalog?.currentVersionId"
+            @click="confirmAction('ROLLBACK', version.id)"
+            >回滚到版本 {{ version.versionNumber }}</el-button
+          >
+        </div>
+      </li>
+    </ul>
+    <el-button
+      v-if="state.nextCursor"
+      :disabled="!available || !canRead || state.loading"
+      @click="publication.loadMore()"
+      >下一页历史版本</el-button
+    >
+    <section v-if="state.selectedVersion" aria-label="不可变版本详情">
+      <ElDivider content-position="left">版本 {{ state.selectedVersion.versionNumber }}</ElDivider>
+      <p class="console-description"
+        >发布于 {{ state.selectedVersion.publishedAt }}；来源草稿修订
+        {{ state.selectedVersion.sourceDraftRevision }}。</p
+      >
+      <ElAlert class="console-hint" type="info" show-icon :closable="false"
+        >该版本只读，查看不会覆盖当前草稿。</ElAlert
+      >
+      <p class="console-description"
+        >公开展示名：{{ state.selectedVersion.snapshot.displayName }}</p
+      >
+      <ol>
+        <li
+          v-for="reference in state.selectedVersion.snapshot.dashboardRefs"
+          :key="reference.dashboardId"
+        >
+          {{ reference.title }} · 看板版本 {{ reference.dashboardVersionNumber }}
+          <span v-if="reference.dashboardId === state.selectedVersion.snapshot.entryDashboardId"
+            >（入口）</span
+          >
+          <ul
+            ><li v-for="page in reference.pages" :key="page.id">{{ page.title }}</li></ul
+          >
+        </li>
+      </ol>
+      <details>
+        <summary>查看版本内容</summary>
+        <pre>{{ JSON.stringify(state.selectedVersion.snapshot, null, 2) }}</pre>
+      </details>
+    </section>
+  </section>
+</template>
+<script setup lang="ts">
+  import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+  import { ElMessageBox } from 'element-plus'
+  import { useUserStore } from '@/store/modules/user'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
+  import { createApplicationPublication } from '@/features/application/publication-model'
+  import type { PublicationSnapshot } from '@/features/application/publication-model'
+  import {
+    fetchApplicationPublicationCatalog,
+    fetchApplicationPublicationHistory,
+    fetchApplicationPublicationVersion,
+    writeApplicationPublicationIntent
+  } from '@/api/application-publication'
+  const props = defineProps<{
+    projectId: string
+    applicationId: string
+    draftRevision: string
+    dirty: boolean
+    saving: boolean
+    conflict: boolean
+    available: boolean
+    canRead: boolean
+    canManage: boolean
+  }>()
+  const emit = defineEmits<{
+    pending: [value: boolean]
+    working: [value: boolean]
+    accessDenied: [code?: number]
+    deleteResourceUnavailable: []
+    deleteLock: [locked: boolean]
+    deleted: [result: NonNullable<PublicationSnapshot['deleted']>]
+  }>()
+  const user = useUserStore()
+  const confirming = ref(false)
+  let emittedDeletion = false
+  const context = () => ({ ...props, identity: currentIdentityEpoch() })
+  const publication = createApplicationPublication({
+    context,
+    accessDenied: (code) => emit('accessDenied', code),
+    deleteResourceUnavailable: () => emit('deleteResourceUnavailable'),
+    detail: fetchApplicationPublicationCatalog,
+    list: fetchApplicationPublicationHistory,
+    version: fetchApplicationPublicationVersion,
+    write: writeApplicationPublicationIntent,
+    newKey: () => crypto.randomUUID(),
+    changed: (snapshot) => {
+      state.value = snapshot
+      emit('pending', !!snapshot.pending)
+      emit('deleteLock', snapshot.pending?.kind === 'SOFT_DELETE' || !!snapshot.deleted)
+      if (snapshot.deleted && !emittedDeletion) {
+        emittedDeletion = true
+        emit('deleted', snapshot.deleted)
+      }
+    }
+  })
+  const state = shallowRef(publication.getSnapshot())
+  watch(
+    () => state.value.writing || confirming.value,
+    (value) => emit('working', value),
+    { flush: 'sync' }
+  )
+  const writable = computed(
+    () =>
+      props.canManage &&
+      props.canRead &&
+      props.available &&
+      !!state.value.catalog &&
+      !state.value.loading &&
+      !state.value.writing &&
+      !state.value.pending &&
+      !confirming.value
+  )
+  const publishable = computed(
+    () => writable.value && !props.dirty && !props.saving && !props.conflict
+  )
+  const currentVersionLabel = computed(() => {
+    const version = state.value.history.find(
+      (entry) => entry.id === state.value.catalog?.currentVersionId
+    )
+    return version ? `版本 ${version.versionNumber}` : '已有发布版本（未在当前历史页）'
+  })
+  watch(
+    [
+      () => props.projectId,
+      () => props.applicationId,
+      () => props.canRead,
+      () => props.canManage,
+      () => user.info.userId,
+      () => user.info.tenantId,
+      () => JSON.stringify([...(user.info.roles ?? [])].sort()),
+      () => currentIdentityEpoch()
+    ],
+    () => {
+      emittedDeletion = false
+      publication.reset()
+      if (props.available && props.canRead && props.projectId && props.applicationId)
+        void publication.open()
+    },
+    { immediate: true, flush: 'sync' }
+  )
+  watch(
+    () => props.available,
+    () => {
+      // 删除未知期间暂时离线不撤销服务器请求，保留同身份原键供联网后恢复。
+      if (state.value.pending?.kind === 'SOFT_DELETE' || state.value.deleted) return
+      publication.reset()
+      if (props.available && props.canRead && props.projectId && props.applicationId)
+        void publication.open()
+    },
+    { flush: 'sync' }
+  )
+  onBeforeUnmount(() => {
+    publication.reset()
+    emit('working', false)
+  })
+  function refresh() {
+    return state.value.pending ? publication.recover() : publication.open()
+  }
+  async function confirmAction(
+    kind: 'PUBLISH' | 'ROLLBACK' | 'WITHDRAW' | 'SOFT_DELETE',
+    versionId?: string
+  ) {
+    if (!writable.value || ((kind === 'PUBLISH' || kind === 'SOFT_DELETE') && !publishable.value))
+      return
+    const confirmationContext = () =>
+      JSON.stringify({
+        context: context(),
+        user: {
+          userId: user.info.userId,
+          tenantId: user.info.tenantId,
+          roles: [...(user.info.roles ?? [])].sort(),
+          canRead: props.canRead,
+          canManage: props.canManage
+        },
+        publicationRevision: state.value.catalog?.publicationRevision
+      })
+    const before = confirmationContext()
+    const texts = {
+      PUBLISH: ['发布当前已保存草稿？尚未保存的内容不会进入发布版本。', '确认发布', '发布'],
+      ROLLBACK: ['将运行入口切换到选中的历史版本？当前草稿保持不变。', '确认回滚', '回滚'],
+      WITHDRAW: ['撤回后该应用的运行入口不可用。历史版本和当前草稿会保留。', '确认撤回', '撤回'],
+      SOFT_DELETE: [
+        '软删除不可恢复，只停止此应用的运行入口。草稿、不可变版本及历史看板引用保留；引用的看板、分享和用户历史授权不会被删除。请先保存本地修改。',
+        '确认软删除应用',
+        '软删除'
+      ]
+    } as const
+    confirming.value = true
+    try {
+      await ElMessageBox.confirm(texts[kind][0], texts[kind][1], {
+        confirmButtonText: texts[kind][2],
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      // 确认窗口停留期间草稿、账号或项目发生变化，不能把旧意图应用到新上下文。
+      if (confirmationContext() !== before) return
+      if (kind === 'PUBLISH') await publication.publish()
+      else if (kind === 'ROLLBACK' && versionId) await publication.rollback(versionId)
+      else if (kind === 'WITHDRAW') await publication.withdraw()
+      else if (kind === 'SOFT_DELETE') await publication.softDelete()
+    } catch {
+      /* 取消确认不发写请求。领域错误由发布状态模型提供安全提示。 */
+    } finally {
+      confirming.value = false
+    }
+  }
+</script>

@@ -1,6 +1,6 @@
 # jagonzn 项目知识库
 
-更新时间：2026-09-29。当前阶段优先建设设备接入与运行服务，暂不启动 cloud 业务开发；统一浏览器前端 `jagonzn-console` 已新增[本机免登录静态测试页](../jagonzn-console/README.md)，正式管理功能仍仅有架构决策。负责人已交接后续开发与本地测试，结果和剩余前置见[进度总览](PROJECT_PROGRESS.md)及[本轮专项回执](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)。jagonzn 是 ThingsCloud 的一个租户，目标是在独立的 jagonzn-service 与同构的 `jagonzn` 数据库中适配并验证设备。**jagonzn 禁止修改 ThingsCloud 的任何代码或数据库表；只记录不足、证据和改进建议，由 ThingsCloud 自行评审。**自定义数据流与公共协议扩展属于反馈方向，不是本项目的平台改造授权。
+更新时间：2026-10-10。当前阶段优先建设设备接入与运行服务，暂不启动 cloud 业务开发；统一浏览器前端 `jagonzn-console` 曾新增[本机免登录静态测试页](upstream/static-console/README.md)，现已完整复制上游 Console 并适配品牌和 service 代理，本机验证见专题记录；真实登录及16个主要页面读取已通过，设备业务与正式接收仍未验收，见[复用与同步方案](console-reuse-and-evolution.md)。负责人已交接后续开发与本地测试，结果和剩余前置见[进度总览](PROJECT_PROGRESS.md)及[本轮专项回执](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)。jagonzn 是 ThingsCloud 的一个租户，目标是在独立的 jagonzn-service 与同构的 `jagonzn` 数据库中适配并验证设备。**jagonzn 禁止修改 ThingsCloud 的任何代码或数据库表；只记录不足、证据和改进建议，由 ThingsCloud 自行评审。**自定义数据流与公共协议扩展属于反馈方向，不是本项目的平台改造授权。
 
 ## 项目分工
 
@@ -8,9 +8,13 @@
 | --- | --- |
 | jagonzn-service | 复用 ThingsCloud 内核的独立 IoT 服务，负责多协议设备接入、数据处理、技术告警、命令和可靠转发 |
 | jagonzn-cloud | 后续定制化设备 SaaS，负责人员、场所、开锁权限与时段、业务审计和业务处置 |
-| jagonzn-console | 已有独立静态测试页；[浏览器与网络复测](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)通过，Console 三项网络前置失败已复测通过；正式技术/授权与 cloud 业务界面尚未开发 |
+| jagonzn-console | 已完整复制上游界面，品牌及默认代理适配至 jagonzn-service，见[复用与同步方案](console-reuse-and-evolution.md)；历史静态页的[浏览器与网络复测](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)通过，Console 三项网络前置失败已复测通过；新 Console 已完成真实 service 登录及16个主要页面读取；设备业务、cloud 与正式接收仍待验收 |
 
 TCP 智能锁是既有业务场景，首台验证设备仍待裁定；service 的目标范围包含原方案中的完整后端能力，不能理解为只做 TCP 代理。service 的独立运行目标不依赖 ThingsCloud 应用或 cloud 的部署，但依赖实际启用能力所需的中间件。
+
+## Console 复用与后续方向
+
+[完整复制、上游同步与后续精简方案](console-reuse-and-evolution.md)：当前保留全部上游菜单，后续再做业务精简；包含固定版本、独立后端配置、三方合并流程与验证边界；[源码差异清单](upstream/console-parity-audit.json)记录本次900文件复核，[联调验证摘要](upstream/console-service-verification.json)保留脱敏页面结果和运行时模块摘要。
 
 ## 阅读顺序
 
@@ -33,7 +37,7 @@ TCP 智能锁是既有业务场景，首台验证设备仍待裁定；service �
 
 ## 状态约定
 
-需求方向、设计建议、已存在的内核能力与已接入应用的能力必须分别描述。service 已有平台运行时的本机装配候选；同一固定本机候选已用合成来源验证 service 经 Kafka/私网 HTTPS 向 cloud 独立 Inbox 交付、断线恢复和轮换，模拟 MQTT 设备的无害技术命令也已取得双后端回执，见[专项台账](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md)。后续工作树另通过 TEST 授权跨进程交接与三项额度实验；这些结果不互相拼接为正式资格。cloud 人员/场所业务、console、正式签发及完整内网接收仍缺。文档不代表 TCP 厂家协议、真实设备业务闭环或 SaaS 已实现。后续变更先同步主文档，再更新对应项目说明。
+需求方向、设计建议、已存在的内核能力与已接入应用的能力必须分别描述。service 已有平台运行时的本机装配候选；同一固定本机候选已用合成来源验证 service 经 Kafka/私网 HTTPS 向 cloud 独立 Inbox 交付、断线恢复和轮换，模拟 MQTT 设备的无害技术命令也已取得双后端回执，见[专项台账](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md)。后续工作树另通过 TEST 授权跨进程交接与三项额度实验；这些结果不互相拼接为正式资格。cloud 人员/场所业务、Console 全业务矩阵、正式签发及完整内网接收仍缺。文档不代表 TCP 厂家协议、真实设备业务闭环或 SaaS 已实现。后续变更先同步主文档，再更新对应项目说明。
 
 ## 编码与配置规范（强制）
 

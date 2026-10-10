@@ -39,6 +39,26 @@ class JagonznMigrationNamespaceTests {
         }
     }
 
+    /** 新平台模块加入后，显式迁移位置必须同步；发行方模块仅因测试依赖出现。 */
+    @Test
+    void configuredLocationsCoverEveryRuntimeMigrationDomain() throws IOException {
+        var resolver = new PathMatchingResourcePatternResolver();
+        var expected = new java.util.TreeSet<String>();
+        for (Resource resource : resolver.getResources("classpath*:db/migration/**/*.sql")) {
+            String url = resource.getURL().toString();
+            String domain = url.substring(url.indexOf("/db/migration/") + "/db/migration/".length()).split("/")[0];
+            if (!domain.equals("issuer")) expected.add("classpath:jagonzn/db/migration/" + domain);
+        }
+        var properties = new java.util.Properties();
+        try (var reader = java.nio.file.Files.newBufferedReader(
+                java.nio.file.Path.of("src/main/resources/application.properties"), StandardCharsets.UTF_8)) {
+            properties.load(reader);
+        }
+        var actual = new java.util.TreeSet<>(java.util.Arrays.asList(
+                properties.getProperty("spring.flyway.locations").split(",")));
+        assertEquals(expected, actual, "运行时迁移域变化后须更新 jagonzn 的显式位置，不可漏接新能力");
+    }
+
     private static Map<String, String> resources(String location) throws IOException {
         var resolver = new PathMatchingResourcePatternResolver();
         Map<String, String> result = new HashMap<>();

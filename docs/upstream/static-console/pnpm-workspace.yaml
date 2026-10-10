@@ -1,0 +1,3 @@
+# Vite 的 esbuild 需要安装脚本准备本机二进制；只授权本项目实际需要的构建脚本。
+allowBuilds:
+  esbuild: true

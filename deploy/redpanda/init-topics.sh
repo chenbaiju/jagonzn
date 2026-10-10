@@ -17,6 +17,8 @@ create() {
 create tc.device.uplink.raw 12 604800000
 create tc.device.uplink.normalized 12 604800000
 create tc.device.uplink.processed 12 604800000
+# 当前运行时新增的设备事件事实消费主题，保持设备内顺序。
+create tc.device.event.normalized 12 604800000
 create tc.device.topo 12 604800000
 create tc.device.batch 12 604800000
 create tc.device.topo.reply 12 604800000

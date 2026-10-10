@@ -11,7 +11,7 @@
 | --- | --- | --- |
 | [jagonzn-service](jagonzn-service/README.md) | 复用平台运行时，承担设备接入、技术数据、告警、命令及事件转发 | 已有本地装配和隔离验证候选，正式制品与完整接收尚未完成 |
 | [jagonzn-cloud](jagonzn-cloud/README.md) | 承接人员、场所、权限和业务处置 | 已有私有签名事件 Inbox；人员、场所及开锁业务仍待开发 |
-| [jagonzn-console](jagonzn-console/README.md) | 统一呈现技术管理与业务操作 | 当前仅免登录静态测试页，没有业务 API 请求或正式管理功能 |
+| [jagonzn-console](jagonzn-console/README.md) | 统一呈现技术管理与业务操作 | 已完整复制上游 Console，独立 service 登录及16个主要页面读取通过；设备业务及正式接收仍未验收 |
 | [deploy](deploy/README.md) | 本机独立部署、网络实验及验证工具 | 用于隔离候选验证，不代表生产交付 |
 | [docs](docs/README.md) | 架构、进度、ADR、能力反馈与实施债务 | 当前状态以项目进度为准 |
 
@@ -36,17 +36,18 @@ cd jagonzn
 `jagonzn-service` 依赖 `com.things.cloud:things-cloud-runtime`，构建前须取得与 POM 一致的运行时依赖及迁移资源。
 这些依赖当前来自受控的平台制品或本地 Maven 仓库，公开克隆本项目不等于已具备完整后端运行环境。
 
-## 先运行静态前端
+## 运行 Console
 
-安装 Node.js 22 和 `package.json` 指定的 pnpm 11.8.0，在仓库根运行：
+使用 Node >=20.19.0 与 pnpm 11.9.0。共享包直接引用父目录中的 `things-cloud-client-contracts`，单独克隆须先取得配套共享包。在仓库根运行：
 
 ```bash
+pnpm --dir ../things-cloud-client-contracts install --frozen-lockfile
 pnpm --dir jagonzn-console install --frozen-lockfile
 pnpm --dir jagonzn-console dev
 ```
 
-访问 `http://127.0.0.1:13006/`。该页面只用于前端访问验证，不连接后端，也不显示伪造业务状态。
-构建使用 `pnpm --dir jagonzn-console build`；预览使用 `pnpm --dir jagonzn-console preview`，与开发服务共用端口，须先停止开发服务。
+访问 `http://127.0.0.1:13006/`，开发代理默认指向独立 jagonzn-service 的 `18080`。完整菜单保留，登录和业务请求需要实际运行的 service；生产使用同源反代，不依赖 ThingsCloud 应用进程。
+构建使用 `pnpm --dir jagonzn-console build`。版本、验证范围与后续同步见[Console 复用方案](docs/console-reuse-and-evolution.md)。
 
 ## 后端构建与本机部署
 

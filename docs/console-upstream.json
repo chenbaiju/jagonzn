@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/chenbaiju/things-cloud.git",
+  "revision": "fb349e1f80649a2f795c6645e291fc90cb31a3b8",
+  "paths": {
+    "things-cloud-console/": "jagonzn-console/",
+    "docs/openapi.json": "docs/upstream/console-openapi.json",
+    "docs/delivery/verification/menu-catalog-baseline.json": "docs/upstream/console-menu-catalog-baseline.json"
+  },
+  "sharedContractDependency": {
+    "path": "../../things-cloud-client-contracts",
+    "package": "@things-cloud/client-contracts",
+    "verifiedSourceRevision": "fb349e1f80649a2f795c6645e291fc90cb31a3b8",
+    "mode": "direct-local-reference"
+  }
+}

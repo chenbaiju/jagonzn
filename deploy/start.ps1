@@ -1,7 +1,9 @@
-﻿param(
+param(
     [ValidateSet('docker', 'ide')]
     [string]$Mode = 'docker',
-    [switch]$EnableAccess
+    [switch]$EnableAccess,
+    # 本机 Console 联调使用隔离 SMTP 接收器，不向外网发信。
+    [switch]$ConsoleSmoke
 )
 
 # 独立本机候选：生成本机秘密并装配中间件；不修改 ThingsCloud 部署或数据库。
@@ -14,6 +16,10 @@ $appFile = Join-Path $deployDir 'application-local.properties'
 $composeFile = Join-Path $deployDir 'compose.yml'
 $composeArguments = @('-f', $composeFile)
 if ($EnableAccess) { $composeArguments += @('-f', (Join-Path $deployDir 'overlays/compose.access.yml')) }
+if ($ConsoleSmoke) {
+    $composeArguments += @('-f', (Join-Path $deployDir 'overlays/compose.smtp-test.yml'), '--profile', 'smtp-test')
+    [void][IO.Directory]::CreateDirectory((Join-Path $deployDir 'logs/smtp-test.local'))
+}
 $modeFile = Join-Path $deployDir '.mode.local'
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 
@@ -142,7 +148,7 @@ if (-not $values.ContainsKey('JAGONZN_PUBLIC_REALTIME_ENABLED')) {
     $additions += 'JAGONZN_PUBLIC_REALTIME_ENABLED=true'
 }
 if (-not $values.ContainsKey('JAGONZN_REALTIME_WS_ALLOWED_ORIGINS')) {
-    $values['JAGONZN_REALTIME_WS_ALLOWED_ORIGINS'] = 'http://localhost:3006,http://127.0.0.1:3006'
+    $values['JAGONZN_REALTIME_WS_ALLOWED_ORIGINS'] = 'http://localhost:13006,http://127.0.0.1:13006'
     $additions += "JAGONZN_REALTIME_WS_ALLOWED_ORIGINS=$($values['JAGONZN_REALTIME_WS_ALLOWED_ORIGINS'])"
 }
 if (-not $values.ContainsKey('JAGONZN_INGRESS_HANDOFF_ENABLED')) {
@@ -321,7 +327,7 @@ if ($EnableAccess) {
 
 # 本机 IntelliJ 运行配置只引用外置配置，不再单独保存第二份 JWT。
 $workspaceFile = Join-Path $rootDir '.idea\workspace.xml'
-if (Test-Path -LiteralPath $workspaceFile) {
+if ($Mode -eq 'ide' -and (Test-Path -LiteralPath $workspaceFile)) {
     $xml = New-Object System.Xml.XmlDocument
     $xml.PreserveWhitespace = $true
     $xml.Load($workspaceFile)
@@ -388,12 +394,26 @@ Invoke-Compose -arguments @('run', '--rm', 'minio-init')
 [IO.File]::WriteAllText($modeFile, $Mode + "`n", $utf8)
 
 # 两种模式都在 Linux 容器启动应用；IDE 模式额外开放回环 JDWP，避开本机 JDK Selector 故障。
-$maven = Join-Path $serviceDir 'mvnw.cmd'
+# 按宿主系统选择 Wrapper；macOS/Linux 不执行 Windows 批处理。
+$maven = Join-Path $serviceDir $(if ($env:OS -eq 'Windows_NT') { 'mvnw.cmd' } else { 'mvnw' })
 Push-Location $serviceDir
 try {
-    & $maven '-DskipTests' 'package'
+    & $maven 'clean' '-DskipTests' 'package'
     if ($LASTEXITCODE -ne 0) { throw 'jagonzn-service 打包失败。' }
 } finally { Pop-Location }
+# 运行容器挂载摘要命名的固定副本，避免 Maven 重打包 target 时破坏运行中的类加载。
+$builtJar = Join-Path $serviceDir 'target/jagonzn-service-0.0.1-SNAPSHOT.jar'
+$jarHash = (Get-FileHash -LiteralPath $builtJar -Algorithm SHA256).Hash.ToLowerInvariant()
+$artifactDir = Join-Path $deployDir 'artifacts.local'
+[void][IO.Directory]::CreateDirectory($artifactDir)
+$runtimeJar = Join-Path $artifactDir ("jagonzn-service-$jarHash.jar")
+if (-not (Test-Path -LiteralPath $runtimeJar)) { Copy-Item -LiteralPath $builtJar -Destination $runtimeJar }
+if ((Get-FileHash -LiteralPath $runtimeJar -Algorithm SHA256).Hash.ToLowerInvariant() -ne $jarHash) {
+    throw '固定运行 JAR 摘要不匹配，拒绝启动。'
+}
+$envLines = @([IO.File]::ReadAllLines($envFile) | Where-Object { -not $_.StartsWith('JAGONZN_SERVICE_JAR=') })
+$envLines += "JAGONZN_SERVICE_JAR=$runtimeJar"
+[IO.File]::WriteAllText($envFile, ($envLines -join "`n") + "`n", $utf8)
 if ($Mode -eq 'ide') {
     Invoke-Compose -arguments @('-f', (Join-Path $deployDir 'overlays/compose.debug.yml'), '--profile', 'app', 'up', '-d', '--force-recreate', '--remove-orphans', 'app')
 } else {

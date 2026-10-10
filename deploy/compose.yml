@@ -254,7 +254,7 @@ services:
       JAGONZN_SERVICE_LOG_PATH: /app/logs
     ports: ["127.0.0.1:18080:18080"]
     volumes:
-      - ../jagonzn-service/target/jagonzn-service-0.0.1-SNAPSHOT.jar:/app/jagonzn-service.jar:ro
+      - ${JAGONZN_SERVICE_JAR:-../jagonzn-service/target/jagonzn-service-0.0.1-SNAPSHOT.jar}:/app/jagonzn-service.jar:ro
       - ../jagonzn-service/logs:/app/logs
     depends_on:
       postgres: {condition: service_healthy}

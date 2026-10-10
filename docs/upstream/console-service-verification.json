@@ -1,0 +1,301 @@
+{
+  "scope": "macOS local isolated service; real browser login and 16 read paths; no physical-device or production acceptance",
+  "upstreamCommit": "fb349e1f80649a2f795c6645e291fc90cb31a3b8",
+  "runtime": {
+    "sourceCommit": "fb349e1f80649a2f795c6645e291fc90cb31a3b8",
+    "serviceSha256": "397387974761ddf88cf9fedee5fa7e49b4799014f3781895ecc4c87d86c20e5d",
+    "modules": [
+      {
+        "module": "things-cloud-runtime",
+        "sha256": "070eb223fb2a74a2ebb0e453e859b83ef2193e9c1ad302da9a8298cef0de9cb1",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-shared",
+        "sha256": "0b1bb5d5d1aab2d2f8ea573f19630cacc17656f7590102eb7efdd688eef0554f",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-support",
+        "sha256": "eaf4bfd0b00ada8d2ccd10ee150cfdc7effc19050b62fbe5d4934a989243ec44",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-iam",
+        "sha256": "07d64bf43c9c376e2b5bdb964a0f9077095b61f964bdc0e8451473ff789647cb",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-project",
+        "sha256": "5a2244930713b6c5ece4e2331f36ce933efc86506e36f41dade80340f141e738",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-device",
+        "sha256": "7ce9325da2f74728bf83ccc37257eb6216e66dd6942c19ebb51ab46eea50b4a0",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-telemetry",
+        "sha256": "642fe8b3c2d7a20f7c91282b7e635cdbc636f40f4cb1616e0e4ec320fadba166",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-ingestion",
+        "sha256": "ad5cc8f9d52e415f015b8881d86438f5876c8910c1dbeb4422ea9e0be1d149d4",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-assistant",
+        "sha256": "f6c1de196ea436a30a5698d239b17d8e7b512c960842687216435e488297b1aa",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-alarm",
+        "sha256": "15e42d46405b2186778d38573355074fcd849c124982a7ba77f6d32156e41a5a",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-task",
+        "sha256": "78b011a87b61333eae3215ce623796d86345ccf7f91a0d7bbcdf20f75eb81189",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-rule",
+        "sha256": "a21d292f9cf13ead1ffbd1a916a151571c1222090516eed3ad61f10242f6e306",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-enduser",
+        "sha256": "5c28640e2a3c8d13bbdf6fe3a1b92c1f5ed863939b1cbc6b06b331bcdb591956",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-export",
+        "sha256": "25ff19c3e09bd64229b014e7daeff743acd996eea9293d4359a281c14ded5bb1",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-dashboard",
+        "sha256": "7f5b12fcf3fdbb52ec277bdd100ad02518c9f78fd07564eeae5a1313aa0eaa1e",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-ota",
+        "sha256": "ed8f36f37065217f9ee0e08e599889090a476c472fa4c23b766c4810f76446eb",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-integration",
+        "sha256": "38ad2551ca6643a25961261cdc7529f43802c9b05f26e6c866ddd2bbb86d8583",
+        "matchesSourceBuild": true
+      },
+      {
+        "module": "things-cloud-entitlement",
+        "sha256": "adebadf5c8eb72d2f468c1193e83db6336e151ddfa6bdecf4f87746fe5e93955",
+        "matchesSourceBuild": true
+      }
+    ],
+    "migrations": 356,
+    "errors": [],
+    "migrationDomains": [
+      "alarm",
+      "assistant",
+      "dashboard",
+      "device",
+      "enduser",
+      "export",
+      "iam",
+      "integration",
+      "ota",
+      "project",
+      "rule",
+      "support",
+      "task",
+      "telemetry"
+    ],
+    "topics": 25,
+    "passed": true
+  },
+  "browser": {
+    "origin": "http://127.0.0.1:13006",
+    "backend": "http://127.0.0.1:18080",
+    "pages": [
+      {
+        "route": "/dashboard/workbench",
+        "actualHash": "#/dashboard/workbench",
+        "title": "首页 - jagonzn",
+        "apiRequests": 11,
+        "expectedDataPath": "/overview",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/dashboard/overview",
+        "actualHash": "#/dashboard/overview",
+        "title": "项目概况 - jagonzn",
+        "apiRequests": 10,
+        "expectedDataPath": "/overview/trends",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/device/list",
+        "actualHash": "#/device/list",
+        "title": "所有设备 - jagonzn",
+        "apiRequests": 11,
+        "expectedDataPath": "/devices/search",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/device/groups",
+        "actualHash": "#/device/groups",
+        "title": "设备组 - jagonzn",
+        "apiRequests": 10,
+        "expectedDataPath": "/device-groups",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/device/types",
+        "actualHash": "#/device/types",
+        "title": "设备类型 - jagonzn",
+        "apiRequests": 9,
+        "expectedDataPath": "/device-types/search",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/alarm/history",
+        "actualHash": "#/alarm/history",
+        "title": "告警历史 - jagonzn",
+        "apiRequests": 9,
+        "expectedDataPath": "/alarms",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/alarm/rules",
+        "actualHash": "#/alarm/rules",
+        "title": "告警规则 - jagonzn",
+        "apiRequests": 10,
+        "expectedDataPath": "/alarm-rules",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/rule/automations",
+        "actualHash": "#/rule/automations",
+        "title": "自动化 - jagonzn",
+        "apiRequests": 11,
+        "expectedDataPath": "/automations",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/rule/scenes",
+        "actualHash": "#/rule/scenes",
+        "title": "手动场景 - jagonzn",
+        "apiRequests": 10,
+        "expectedDataPath": "/scenes",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/task/jobs",
+        "actualHash": "#/task/jobs",
+        "title": "任务调度 - jagonzn",
+        "apiRequests": 11,
+        "expectedDataPath": "/task-jobs",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/dashboard/applications",
+        "actualHash": "#/dashboard/applications",
+        "title": "应用管理 - jagonzn",
+        "apiRequests": 9,
+        "expectedDataPath": "/applications",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/project/list",
+        "actualHash": "#/project/list",
+        "title": "项目列表 - jagonzn",
+        "apiRequests": 9,
+        "expectedDataPath": "/projects",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/project/members",
+        "actualHash": "#/project/members",
+        "title": "项目成员 - jagonzn",
+        "apiRequests": 10,
+        "expectedDataPath": "/members",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/project/end-users",
+        "actualHash": "#/project/end-users",
+        "title": "终端用户 - jagonzn",
+        "apiRequests": 10,
+        "expectedDataPath": "/end-users",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/project/settings",
+        "actualHash": "#/project/settings",
+        "title": "项目设置 - jagonzn",
+        "apiRequests": 12,
+        "expectedDataPath": "/quota",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      },
+      {
+        "route": "/ota/firmwares",
+        "actualHash": "#/ota/firmwares",
+        "title": "固件管理 - jagonzn",
+        "apiRequests": 9,
+        "expectedDataPath": "/ota/firmwares",
+        "sessionRecovered": true,
+        "failures": [],
+        "visibleError": false
+      }
+    ],
+    "apiOrigins": [
+      "http://127.0.0.1:13006"
+    ],
+    "scriptErrors": [],
+    "passed": true
+  },
+  "tests": {
+    "frontendFiles": 194,
+    "frontendTests": 2390,
+    "migrationTests": 2,
+    "syncTests": 7,
+    "build": "PASS",
+    "apiCheck": "PASS"
+  },
+  "rawReportSha256": "61855ee46ba9a5346d62bb7395c26f47ba5b0f0d135f76ebbf5ae004d18428b9",
+  "remoteCI": "NOTRUN; no workflows in this repository"
+}

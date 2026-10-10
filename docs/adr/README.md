@@ -18,6 +18,8 @@
 | [JADR-0012](0012-test-only-signed-grant-runtime-assembly.md) | TEST 公钥只由测试类路径装配到 service 签名模式 | 已接受 | 普通 JAR 缺正式公钥或误选测试来源均拒绝；双后端动态实验仍开放 |
 | [JADR-0013](0013-technical-command-lab-and-business-unlock-boundary.md) | 本机无害技术命令实验与未来物理开锁业务入口分离 | 已接受 | cloud 业务授权、服务端有效期与首台锁语义仍待实施和验收 |
 
+| [JADR-0014](0014-console-full-copy-and-upstream-sync.md) | Console 全量复制、共享合同直引与上游三方合并；暂不精简菜单 | 已接受 | 本机前端验证；真实 service 联调仍待完成 |
+
 ## 维护规则
 
 - 每一项新的重大架构裁决单独建一份 ADR，写明依据、备选项、取舍、影响和实施状态，并更新本索引及相关正文。普通实现细节、候选建议和待裁决问题不冒充已接受 ADR。

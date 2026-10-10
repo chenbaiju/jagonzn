@@ -12,3 +12,6 @@ __pycache__/
 
 # 两个后端的运行日志只保留在本机，不随源码提交。
 logs/
+
+# Console 公共默认配置随源码交付，禁止在其中写入秘密。
+!jagonzn-console/.env

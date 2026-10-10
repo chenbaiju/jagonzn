@@ -2,7 +2,7 @@
 
 > 平台当前阶段暂停商用服务器、域名及公开部署验收；本仓库继续本机/隔离 LAN、订阅额度与用量回归。此调整不改变已确认客户身份、许可模式或正式签发/接收未完成状态；不以平台内部使用决策自动放行 jagonzn。
 
-更新日期：2026-09-30。阶段 1 正式接收未通过；本页不改变 ThingsCloud 的执行轴或门禁。
+更新日期：2026-10-10。阶段 1 正式接收未通过；本页不改变 ThingsCloud 的执行轴或门禁。
 历史任务中的“本轮/等待/授权”仅适用于其原日期，当前执行以负责人最新请求为准。
 
 | 功能 | 当前状态与恢复入口 |
@@ -10,7 +10,7 @@
 | 正式复用 | rc4 Windows V5g 限定本机真实 UTC 跨日已通过，Mac 旧失败保留；V1c/V8 未完成，[平台统一清单](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ACCEPTANCE_CHECKLIST.md)为接收依据 |
 | Windows 身份与导入 | 身份边界 9 项通过；实际 JAR 导入仍受 POSIX API 限制。候选和复现见 [专项结果](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_CONTINUATION_20260930.md)，缺口见 [实施债务](IMPLEMENTATION_DEBT.md) |
 | 固定制品与双后端 | 原 shc1 双 JAR 未找到；新 SNAPSHOT 正常容量、私有交付和模拟命令不补原件资格，[本地专项](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)保留各自候选 |
-| 静态 Console | 免登录/无业务请求测试页已交付；浏览器 5/5、静态网络 14/14、稳定重启 16/16、新预检 15/15，详见 [静态验证](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)。正式 Console 和完整 LAN 仍开放 |
+| Console | 已复核900个上游文件全部保留，877个内容一致，23个为品牌/连接/权限等适配；独立 Docker service/数据库启动，真实注册、邮箱验证、登录及 16 个主要页面读取通过；2390 项前端单测通过，运行时18模块与当前上游构建一致。版本、限定范围与同步方法见[复用方案](console-reuse-and-evolution.md)。[历史静态验证](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)保留，不代替新界面联调与完整 LAN 验收 |
 | 签名权益及业务 | TEST 导入与三项额度有本地回执；其余 16 项数值、16 项能力及业务/API 映射、正式信任设施仍待完成；参见 [专项台账](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md) |
 | 设备接入 | 厂商型号/固件、事件语义、真实闭环仍按 [平台反馈](PLATFORM_CAPABILITY_FEEDBACK.md)登记，不把技术模拟作为真机验收 |
 

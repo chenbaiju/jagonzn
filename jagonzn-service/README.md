@@ -2,13 +2,15 @@
 
 jagonzn-service 是 jagonzn 的设备接入与运行服务，当前通过平台普通运行时 JAR 复用 ThingsCloud 后端内核，目标是独立承担多协议接入、设备管理、遥测、规则、技术告警、任务、命令和可靠信息转发。
 
-service 不内嵌独立的浏览器管理页面，但必须保留受控设备及授权管理 API 和无前端时可用的运维/恢复入口；后续由 `jagonzn-console` 统一呈现技术操作，并集成 `jagonzn-cloud` 的业务操作。当前已有免登录静态测试页，正式管理功能尚未开发，见 [JADR-0007](../docs/adr/0007-unified-console-and-backend-boundary.md)。
+service 不内嵌独立的浏览器管理页面，但必须保留受控设备及授权管理 API 和无前端时可用的运维/恢复入口；后续由 `jagonzn-console` 统一呈现技术操作，并集成 `jagonzn-cloud` 的业务操作。当前已完整复用 Console，真实联调与运行时同步见[专题记录](../docs/console-reuse-and-evolution.md)，旧静态页回执不代替新候选验证，见 [JADR-0007](../docs/adr/0007-unified-console-and-backend-boundary.md)。
 
 jagonzn 是 ThingsCloud 租户，禁止修改 ThingsCloud 的任何代码或数据库表；仅通过已有受支持能力开发自身设备适配并验证。平台不足及建议登记到[独立反馈文档](../docs/PLATFORM_CAPABILITY_FEEDBACK.md)，由 ThingsCloud 自行评审。
 
 TCP 智能锁是既有业务场景，首台验证设备以项目进度文档中的裁定为准；范围不限于 TCP，也不只是透传报文。MQTT／EMQX、HTTP、TCP、CoAP、Kafka／Redpanda、Worker、Webhook、Outbox、PostgreSQL／TimescaleDB、Redis、MinIO 等按已交付能力和装配需要复用。
 
 ## 当前状态
+
+2026-10-10 已按上游 `fb349e1f8` 重建当前本机运行时，使用独立 Docker 数据库启动；14 个迁移域、355 条数据库迁移及25个 Kafka主题已核对。具体模块/制品摘要和 Console 验证见[专题记录](../docs/console-reuse-and-evolution.md)。后续平台源码变化不会自动更新本服务，须重新构建依赖、打包、核对迁移并重建容器。以下早期接收材料保留原限定范围。
 
 当前已引入 `com.things.cloud:things-cloud-runtime:0.0.1-SNAPSHOT` 本地候选，形成约 194 MB 的独立可执行 JAR。独立 `jagonzn` 库的空库/历史升级、权限 RLS、管理 HTTP 授权和最小健康入口已通过本地测试；真实 EMQX/Kafka/MinIO 标准设备链路、非商业模式、不可变制品及恢复仍未验收。当前进度以[项目总览](../docs/PROJECT_PROGRESS.md)为准。
 

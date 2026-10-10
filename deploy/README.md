@@ -8,6 +8,12 @@
 
 cloud 接收端另有[无互联网实验栈](lan-lab/README.md)，在单独 Compose 项目与数据库中验证私有事件签收、HTTPS 和无默认出站；它不会连接或重建本目录的 service 栈，不能与现有 rc4 service 回执拼接成双后端放行。
 
+## Console 本机真实联调
+
+macOS/Linux/Windows 的 PowerShell 7 可执行 `./start.ps1 -ConsoleSmoke`，按宿主选择 Maven Wrapper，独立 SMTP 接收器仅用于本机注册和邮箱验证。前端为 13006，service 为 18080；当前候选、数据库隔离与主要页面验证统一见 [Console 复用与真实联调](../docs/console-reuse-and-evolution.md#真实-service-联调与运行时同步2026-10-10)。
+
+脚本构建后将 JAR 按 SHA-256 保存到忽略的 `artifacts.local/`，Compose 挂载该固定副本，避免重新打包 target 破坏运行进程。`.env.local` 保存当前副本路径；已有数据升级前先备份，不清卷、不自动 repair。
+
 ## 一键启动
 
 在 PowerShell 7 中运行：
