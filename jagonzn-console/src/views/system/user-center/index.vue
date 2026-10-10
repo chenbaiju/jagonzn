@@ -67,7 +67,7 @@
   import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { storeToRefs } from 'pinia'
   import ProjectInvitations from '@/components/ProjectInvitations.vue'
-  import defaultAvatar from '@imgs/user/avatar.webp'
+  import defaultAvatar from '@imgs/brand/jagonzn-original.png'
   import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'UserCenter' })
@@ -147,8 +147,10 @@
     &__avatar {
       width: 64px;
       height: 64px;
-      object-fit: cover;
-      border-radius: 50%;
+      object-fit: contain;
+      padding: 5px;
+      background: #fff;
+      border-radius: 10px;
     }
 
     &__text {

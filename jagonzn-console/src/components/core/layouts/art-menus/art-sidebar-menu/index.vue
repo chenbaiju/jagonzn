@@ -11,7 +11,7 @@
       class="dual-menu-left"
       :style="{ width: dualMenuShowText ? '80px' : '64px', background: getMenuTheme.background }"
     >
-      <ArtLogo class="logo" @click="navigateToHome" />
+      <ArtLogo class="logo" :size="44" @click="navigateToHome" />
 
       <ElScrollbar style="height: calc(100% - 135px)">
         <ul>
@@ -77,17 +77,7 @@
           background: getMenuTheme.background
         }"
       >
-        <ArtLogo v-if="!isDualMenu" class="logo" />
-
-        <p
-          :class="{ 'is-dual-menu-name': isDualMenu }"
-          :style="{
-            color: getMenuTheme.systemNameColor,
-            opacity: !menuOpen ? 0 : 1
-          }"
-        >
-          {{ AppConfig.systemInfo.name }}
-        </p>
+        <ArtLogo class="logo" :size="menuOpen ? 188 : 36" />
       </div>
       <ElScrollbar :style="scrollbarStyle">
         <ElMenu
@@ -134,7 +124,6 @@
 <script setup lang="ts">
   import { activeWorkspace } from '@/utils/workspace-navigation'
   import { formatMenuTitle } from '@/utils/router'
-  import AppConfig from '@/config'
   import { useSettingStore } from '@/store/modules/setting'
   import { MenuTypeEnum, MenuWidth } from '@/enums/appEnum'
   import { useMenuStore } from '@/store/modules/menu'

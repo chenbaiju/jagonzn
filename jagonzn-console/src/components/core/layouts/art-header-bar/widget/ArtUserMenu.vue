@@ -13,17 +13,17 @@
   >
     <template #reference>
       <img
-        class="size-8.5 mr-5 c-p rounded-full max-sm:w-6.5 max-sm:h-6.5 max-sm:mr-[16px]"
-        src="@imgs/user/avatar.webp"
-        alt="avatar"
+        class="brand-avatar size-8.5 mr-5 c-p rounded-full max-sm:w-6.5 max-sm:h-6.5 max-sm:mr-[16px]"
+        src="@imgs/brand/jagonzn-original.png"
+        alt="简工智能品牌头像"
       />
     </template>
     <template #default>
       <div class="pt-3">
         <div class="flex-c pb-1 px-0">
           <img
-            class="w-10 h-10 mr-3 ml-0 overflow-hidden rounded-full float-left"
-            src="@imgs/user/avatar.webp"
+            class="brand-avatar w-10 h-10 mr-3 ml-0 overflow-hidden rounded-full float-left"
+            src="@imgs/brand/jagonzn-original.png"
           />
           <div class="w-[calc(100%-60px)] h-full">
             <span class="block text-sm font-medium text-g-800 truncate">{{
@@ -141,5 +141,15 @@
     transition-all
     duration-200
     hover:shadow-xl;
+  }
+</style>
+
+<style scoped>
+  /* 方形留白容纳完整双行标识，避免圆形裁切字样。 */
+  .brand-avatar {
+    object-fit: contain;
+    background: #fff;
+    padding: 3px;
+    border-radius: 6px;
   }
 </style>

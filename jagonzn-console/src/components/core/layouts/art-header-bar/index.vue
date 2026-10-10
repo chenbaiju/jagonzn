@@ -20,8 +20,7 @@
       <div class="flex-c flex-1 min-w-0 overflow-hidden leading-15" style="display: flex">
         <!-- 系统信息  -->
         <div class="flex-c shrink-0 c-p" @click="toHome" v-if="isTopMenu">
-          <ArtLogo class="pl-4.5" />
-          <p v-if="width >= 1400" class="my-0 mx-2 ml-2 text-lg">{{ AppConfig.systemInfo.name }}</p>
+          <ArtLogo class="pl-4.5" :size="188" />
         </div>
 
         <ArtLogo
@@ -190,7 +189,6 @@
   import { useSettingStore } from '@/store/modules/setting'
   import { useUserStore } from '@/store/modules/user'
   import { useMenuStore } from '@/store/modules/menu'
-  import AppConfig from '@/config'
   import { languageOptions } from '@/locales'
   import { mittBus } from '@/utils/sys'
   import { themeAnimation } from '@/utils/ui/animation'

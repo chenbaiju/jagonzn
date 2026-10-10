@@ -38,7 +38,7 @@ import { headerBarConfig } from './modules/headerBar'
 const appConfig: SystemConfig = {
   // 系统信息
   systemInfo: {
-    name: 'jagonzn' // 独立产品显示名称；不改变平台接口合同。
+    name: '安智云' // 独立产品显示名称；不改变平台接口合同。
   },
   // 系统主题
   systemThemeStyles: {
