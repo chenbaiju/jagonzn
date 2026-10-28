@@ -1,7 +1,7 @@
 # JADR-0011：私有 cloud 事件的项目范围、签名轮换和受控恢复
 
 - 状态：已接受（2026-09-28；`G3-SHC-JAG-PRIVATE-DELIVERY-1` 的同固定候选验收结果仍以专项回执为准）。
-- 依据：[JADR-0010](0010-service-cloud-signed-event-forwarder.md)、[JADR-0009](0009-cloud-private-event-inbox.md)、[内网网络合同](../../../docs/reuse-entry/THINGS_CLOUD_JAGONZN_LAN_NETWORK_CONTRACT.md)。
+- 依据：[JADR-0010](0010-service-cloud-signed-event-forwarder.md)、[JADR-0009](0009-cloud-private-event-inbox.md)、[内网网络合同](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_JAGONZN_LAN_NETWORK_CONTRACT.md)。
 
 ## 四维审计
 

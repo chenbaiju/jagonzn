@@ -28,6 +28,9 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <!-- 与独立仓库约定一致，构建和测试原件使用已核验外盘映射。 -->
+        <jagonzn.build.directory>${project.basedir}/../.private/workspaces/cloud-build</jagonzn.build.directory>
+        <jagonzn.python>python3</jagonzn.python>
     </properties>
     <dependencies>
         <dependency>
@@ -84,14 +87,42 @@
     </dependencies>
 
     <build>
+        <directory>${jagonzn.build.directory}</directory>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>verify-external-storage</id>
+                        <phase>validate</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <exec executable="${jagonzn.python}" failonerror="true">
+                                    <arg value="${project.basedir}/../scripts/check-storage.py"/>
+                                    <arg value="--build-directory"/>
+                                    <arg value="${project.build.directory}"/>
+                                    <arg value="--maven-repository"/>
+                                    <arg value="${settings.localRepository}"/>
+                                </exec>
+                                <mkdir dir="${project.build.directory}/tmp"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- 在测试JVM启动前指定临时目录，避免JDK提前缓存本机系统临时路径。 -->
+                    <argLine>-Djava.io.tmpdir=${project.build.directory}/tmp</argLine>
                     <!-- 系统代理不能接管 Testcontainers 发布在宿主回环上的 PostgreSQL。 -->
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <systemPropertyVariables>
+                        <JAGONZN_CLOUD_LOG_PATH>${project.build.directory}/logs</JAGONZN_CLOUD_LOG_PATH>
                         <socksNonProxyHosts>localhost|127.0.0.1</socksNonProxyHosts>
                         <http.nonProxyHosts>localhost|127.0.0.1</http.nonProxyHosts>
                     </systemPropertyVariables>

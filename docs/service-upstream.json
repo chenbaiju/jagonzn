@@ -1,0 +1,151 @@
+{
+  "upstreamRepository": "https://github.com/chenbaiju/thingslink.git",
+  "upstreamCommit": "260fa694876fce1b728ba87a4b91466765942aac",
+  "coordinates": "com.things.link:things-link-runtime:0.0.1-SNAPSHOT",
+  "jagonznBaseCommit": "59a006124632e63a2f857cab6c0442afed1b7001",
+  "serviceJarSha256": "09c6207bd6fc5f2103f7b3788429d4e898a67ac5d4a41e6b021fea7c75070850",
+  "modules": [
+    {
+      "module": "things-link-runtime",
+      "sha256": "a96f1c19529b542e1e20939a01cf911c82cb742b01fb024014d54f74ab15d877",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-shared",
+      "sha256": "46b2117b06878e295581d9563b70f2b505f87670aa425c35e0f2d6532fa2750d",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-support",
+      "sha256": "770cf0697c86bca4f9c330c7839d023b632993d887c52f8b8373c2e83cf505c5",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-iam",
+      "sha256": "0477339fc253c0770a7390ab6f2f65f50db945ccf0a4e79b797d130d29094a8f",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-project",
+      "sha256": "c31755822d3c5e2e32da657f15ad3d6e0e08f7886c9bd61d1a77742e1aac8687",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-device",
+      "sha256": "f98d920c0de997e89adf7fa8b529ff0ae858f4be8a00a7e54ffe4cff08d9f287",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-telemetry",
+      "sha256": "441bd7373128acb60fee92bbd7aca9e2c10e2223f273bb766eae2f3f4a8d196a",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-ingestion",
+      "sha256": "b0d42fa47ef4d0c74fc3f59bf89e82531f8a489ad4b0052365344bc173cff345",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-assistant",
+      "sha256": "c3f9be4079b5e66253bdbeea877e1882efaa5132675fe2112f0f26df09e3d992",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-alarm",
+      "sha256": "fc896bf8780419a63ae2f7291994259746bab8b787c978d0a4f2b1ed1dca85fc",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-task",
+      "sha256": "d031fc403959ddaf57dc033a5e3fc7fb6f6d0634514c9bcb68969b00ced1e51c",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-rule",
+      "sha256": "86a9af10f5376688fac614c2c74cae8b0865af55bba86b27f7148e86723b3bc8",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-enduser",
+      "sha256": "8225acfd3e21745158568822132d5693a27f451a222bbd16a02e0f2f01460844",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-export",
+      "sha256": "bc9be2b53bf90b315bb88b348b4f460782fc35e19e0cdf8f351c0d1d1941c57e",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-dashboard",
+      "sha256": "e52e23289837225a8bb9d06f7ef03265c133c01d9d34cc65088cace39da563ff",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-ota",
+      "sha256": "31e1e6e30e7a7992a6972ccd959a934e98e028287e2b0cb10e4cf599777dfdb5",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-integration",
+      "sha256": "471234b327698ab143c192be265fd2d4d3adc7fef12504ce4833156a2604d25e",
+      "matchesSourceBuild": true
+    },
+    {
+      "module": "things-link-entitlement",
+      "sha256": "cb98bb380dd8cd9683f2b5b6f5ceb83ae16eb07b8a85875d37ac41128b740ac4",
+      "matchesSourceBuild": true
+    }
+  ],
+  "runtimeMigrationSqlCount": 548,
+  "runtimeMigrationResourceCount": 549,
+  "runtimeMigrationDomains": [
+    "alarm",
+    "assistant",
+    "dashboard",
+    "device",
+    "enduser",
+    "export",
+    "iam",
+    "integration",
+    "ota",
+    "project",
+    "rule",
+    "support",
+    "task",
+    "telemetry"
+  ],
+  "topicCount": 25,
+  "extensionPackage": "com.jagonzn.service.extension.jt808",
+  "checks": {
+    "package": "PASS",
+    "focusedTests": {
+      "run": 88,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "scope": "86 JT808 software tests and 2 migration resource checks; includes loopback TCP and actual platform normalizer/consumer with isolated dependency doubles"
+    },
+    "artifactInheritance": "PASS",
+    "databaseUpgrade": "NOTRUN",
+    "applicationStartup": "PASS, normal application with isolated external PostgreSQL/Redis/Kafka/MinIO/SMTP",
+    "jt808DeviceTest": "NOTRUN",
+    "extensionConfigurationContext": "PASS, isolated software context only",
+    "freshDatabaseMigrations": {
+      "result": "PASS",
+      "applied": 548
+    },
+    "jt808RealRuntime": "PASS, synthetic SM4 terminal, real middleware and public HTTPS APIs",
+    "realDevicePreparation": "PASS, separate credential/binding/state, 30-minute enrollment armed, normal real-device mode running",
+    "realDevicePublicIngress": "PASS, scoped Cloud TCP6808 rule created after human confirmation, public bidirectional nonce round-trip"
+  },
+  "notes": [
+    "候选仅绑定已提交上游260fa694，主工作区未提交后继不纳入",
+    "SNAPSHOT不是正式不可变发行物",
+    "新旧品牌迁移的历史校验和尚未对实际旧库验证",
+    "真实运行时与中间件联调通过，设备侧为合成国密终端；历史库升级和真实锁具验证仍NOTRUN"
+  ],
+  "candidateScope": "local dirty workspace; SM4 registration/authentication, property ingress, public TCP push and durable command correlation; fixed upstream 260fa694",
+  "evidenceReceipt": ".private/deployment-session/jt808-session-development-20261028/receipt.json (local external evidence; not distributed)",
+  "runtimeIntegrationEvidenceReceipt": ".private/deployment-session/jt808-runtime-integration-20261028/receipt.json (local external evidence; not distributed)",
+  "realDevicePreparationReceipt": ".private/deployment-session/jt808-real-device-20261028/receipt.json (local external evidence; not distributed)"
+}

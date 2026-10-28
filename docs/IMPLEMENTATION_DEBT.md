@@ -1,6 +1,6 @@
 # jagonzn 实施债务与测试阻塞
 
-更新日期：2026-09-30。记录已确认的本项目实现缺口、交付材料和验证前置；不改变平台合同，不将未验项标为通过。详细命令、候选摘要及结果见[本机专项继续验证](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_CONTINUATION_20260930.md)。
+更新日期：2026-09-30。记录已确认的本项目实现缺口、交付材料和验证前置；不改变平台合同，不将未验项标为通过。详细命令、候选摘要及结果见[本机专项继续验证](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_LOCAL_CONTINUATION_20260930.md)。
 
 ## 001：Windows 原生离线授权导入权限兼容
 

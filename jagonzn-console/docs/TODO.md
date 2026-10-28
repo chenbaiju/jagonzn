@@ -7,7 +7,7 @@
 [开发者工作台重构](#开发者工作台重构计划)覆盖TODO-018至023，已获6包7片连续实施授权；6包7片已完成并验证本地软件范围，最终矩阵49 PASS / 25条件SKIP、严格TLS组合5 PASS。菜单合同[BE-003](BACKEND_TODO.md#BE-003%20开发者工作台菜单与兼容迁移)已完成并验证本地范围；各片新UI回执与原接口补齐包分别登记。
 
 App接收号码配置随客户端TL-06-B2交付，详细裁决、失败修复与验证统一见
-[App号码功能片](../../things-link-flutter/docs/V1_PLAN.md#tl-06-b2-片前审计与冻结)，本页只保留导航。
+[App号码功能片](../../../.private/thingslink-docs/things-link-flutter/docs/V1_PLAN.md#tl-06-b2-片前审计与冻结)，本页只保留导航。
 
 ## 工程目录整理
 
@@ -43,7 +43,7 @@ macOS / Node 26.7.0 / pnpm 11.22.0 本机验证与限制：
 ## TODO-001至TODO-010复核结论
 
 2026-10-06重新扫描平台`d5e24018`的Controller/OpenAPI、Console API消费者、页面入口及测试，
-并对照[G3 Console接续](../../docs/progress/G3.md#Console%20待办接续)与[Agent开发计划](../../things-cloud-agent/docs/DEVELOPMENT_PLAN.md)。
+并对照[G3 Console接续](../../../.private/thingslink-docs/docs/progress/G3.md#Console%20待办接续)与[Agent开发计划](../../../.private/thingslink-docs/things-link-agent/docs/DEVELOPMENT_PLAN.md)。
 本轮页面交付复核纠正此前仅凭接口接线判定完成的结论：TODO-003曾缺少独立“告警设备数”卡片；003-C纳入WP-10后已实施并取得本地页面回执，父任务现按本地功能范围关闭。
 TODO-001、002、004至009保留原限定范围完成回执；静态复核未发现新增明确页面缺口，不等于本轮重新完成浏览器验收。TODO-010扩展验收仍未闭合，010-C同样归入WP-10收尾队列。
 下面的“已完成”均限定表内软件范围；历史浏览器回执只归原候选，本轮验证见[分类复核回执](#分类复核回执)。
@@ -181,7 +181,7 @@ Docker Desktop隔离依赖、Node22/pnpm11.9，邀请2项、个人中心2项、�
 
 参照本机六张截图，在原数量与环图下添加使用统计：设备消息数、活跃设备数、连接次数、告警状态、告警通知、规则调用、任务运行、自动化、场景及 MQTT/TCP/HTTP 流量，共12图47指标。保留现有 Vue/Element Plus/ECharts 生命周期，提供24小时/3天/7天/15天/30天窗口、刷新、图例显隐及单图 CSV 导出；桌面全宽、窄屏自然换行。正常状态沿用既有绿色。刷新使用同一快照窗口更新12图；同范围失败保留上次结果并提示，换范围/项目/身份先清空，旧响应不能覆盖新上下文。缺样显示断点，明确零值保留，图表空结果保留坐标轴，不编造曲线；全空图禁止导出。
 
-后端新增只读 `GET /api/v1/projects/{projectId}/overview/trends?days=1` 与独立表 `ts_project_overview_sample`，按项目成员授权及实际项目所有租户读取，附加RLS。时间以 UTC 整点结束、采用完整小时闭开窗口，五档步长1/3/6/12/24小时，分别24/24/28/30/30点。数量和字节求和，设备状态取桶末值；桶内小时不完整则返回空值。来源 `OBSERVED` / `SIMULATED` / `NONE` 在整个窗口统一选择，实测优先且不混算模拟值；页面模拟来源明确标注。CSV注明项目、来源、聚合、单位及UTC起止，字节保留原值，空值为空，标题防公式注入。小时统计为可重建派生数据，最终清理项目时随项目删除；架构与约束见[数据库设计§9](../../docs/BACKEND_ARCHITECTURE.md#9.%20数据库设计)。
+后端新增只读 `GET /api/v1/projects/{projectId}/overview/trends?days=1` 与独立表 `ts_project_overview_sample`，按项目成员授权及实际项目所有租户读取，附加RLS。时间以 UTC 整点结束、采用完整小时闭开窗口，五档步长1/3/6/12/24小时，分别24/24/28/30/30点。数量和字节求和，设备状态取桶末值；桶内小时不完整则返回空值。来源 `OBSERVED` / `SIMULATED` / `NONE` 在整个窗口统一选择，实测优先且不混算模拟值；页面模拟来源明确标注。CSV注明项目、来源、聚合、单位及UTC起止，字节保留原值，空值为空，标题防公式注入。小时统计为可重建派生数据，最终清理项目时随项目删除；架构与约束见[数据库设计§9](../../../.private/thingslink-docs/docs/BACKEND_ARCHITECTURE.md#9.%20核心数据库设计)。
 
 本机模拟写入只针对 `tc-postgres / thingscloud` 的“智慧消防”项目 `3fa46e56-aab4-4d22-96bc-90976dcf7675`，使用项目真实所有租户及8台设备上限，30天720小时、47指标，共33,840行。两次执行行数相同；源为 `SIMULATED` 的固定键幂等写入，不覆盖实测。种子前后设备8、告警实例2、消息7、用量事实7505均相同，证明种子没有改写业务或计费事实；后续浏览器请求按原机制计量，不宣称整个验证期间账本不变。脚本拒绝无设备项目生成虚假活跃数。
 
@@ -414,7 +414,7 @@ Linux独占Dind/Java21/Node22/pnpm11.9，各成功selected场退出0、无失败
 默认CI会收集并执行摘要2场；SMTP5场、私有邀请、非空关联、资源包及OTA活动缺显式前置时跳过，跳过不等于通过。
 本次保留原触发器，不扩大受控SMTP选场；公共TLS/收件配置只能由专属选场启动，失败须保留私有恢复状态。
 此前独立Console CI使用固定后端`6a1e2429`，该历史候选不能继承后来本地增量的验证资格；原配置见[迁移前固定版本](https://github.com/chenbaiju/things-cloud/blob/591d3d04f115ae0afbb868199ae600c49a8e3b6c/things-cloud-console/.github/workflows/console.yml)。
-2026-10-03工作区迁回平台单仓库，[Console工作流](../../.github/workflows/console.yml)与[E2E工作流](../../.github/workflows/e2e.yml)统一检出手动运行的同一平台提交，不再单独绑定旧后端SHA。迁移实施阶段未提交、未推送，随后获准提交并推送平台 `master`；未运行远端CI，实际资格以对应候选运行结果为准。
+2026-10-03工作区迁回平台单仓库，[Console工作流](../../../.github/workflows/console.yml)与[E2E工作流](../../../.github/workflows/e2e.yml)统一检出手动运行的同一平台提交，不再单独绑定旧后端SHA。迁移实施阶段未提交、未推送，随后获准提交并推送平台 `master`；未运行远端CI，实际资格以对应候选运行结果为准。
 恢复时先确认平台提交、源码摘要和运行时，按尚未验证的范围选场；已通过的摘要/TLS结果保留，不自动运行旧排队脚本。
 
 
@@ -423,7 +423,7 @@ Linux独占Dind/Java21/Node22/pnpm11.9，各成功selected场退出0、无失败
 - **编号**：~~CONSOLE-TODO-006~~ — 已完成并验证本地功能范围；实际候选、专项结果和限制见下文。
 - **状态**：配置界面、组件及最终同候选真实浏览器复验通过；不含模型诊断入口。
 - **范围**：在项目设置中仅为当前 OWNER/ADMIN 提供 DeepSeek Key 替换、启停、删除和元数据刷新。
-- **合同**：遵循 [Agent 项目模型配置](../../things-cloud-agent/docs/PROJECT_MODEL_CONFIGURATION.md)，
+- **合同**：遵循 [Agent 项目模型配置](../../../.private/thingslink-docs/things-link-agent/docs/PROJECT_MODEL_CONFIGURATION.md)，
   复用登录与项目选择；新 Key 提交即清空，项目/账号/权限切换清除敏感输入并丢弃旧响应。
   不回显已存 Key、不写浏览器存储；结果不明时先刷新，不自动重发。
   AG-UI01 已裁决 A：新 Key“保存并启用”由单次请求、同一后端事务完成，成功后显示“停用”；现存停用配置保持原状态。
@@ -432,7 +432,7 @@ Linux独占Dind/Java21/Node22/pnpm11.9，各成功selected场退出0、无失败
   聚焦 ESLint/Stylelint，以及隔离环境内 `E2E_SPEC=agent-model-configuration.spec.ts bash scripts/run-e2e-tests.sh`。
   标准 E2E 启动脚本给新启测试后端注入独立随机主密钥；不在文件落盘，不调用供应商。
   使用 SKIP_BACKEND 时须由测试环境提供匹配主密钥；不能将真实项目密钥交给测试栈。
-- **证据边界**：详细候选、结果和限制统一登记在 [Agent 开发计划](../../things-cloud-agent/docs/DEVELOPMENT_PLAN.md)，
+- **证据边界**：详细候选、结果和限制统一登记在 [Agent 开发计划](../../../.private/thingslink-docs/things-link-agent/docs/DEVELOPMENT_PLAN.md)，
   配置启用只验证本地解密，不证明供应商可达或模型分析已交付。
 
 
@@ -441,10 +441,10 @@ Linux独占Dind/Java21/Node22/pnpm11.9，各成功selected场退出0、无失败
 - **编号**：~~CONSOLE-TODO-007~~ — 已完成并验证本地功能范围；实际候选、专项结果和限制见下文。
 - **状态**：AG-1c-3a构建、28项聚焦及887项全量本机通过；AG-1c-3b限定Linux真实API9项/浏览器1项及自有运行器清理通过；不继承完整矩阵。本任务只读证据范围已完成；个人事实报告已由TODO-008交付，真实模型诊断仍独立待验。
 - **范围**：设备详情增加“诊断证据”页签，当前四类项目成员手动读取属性目录、选1至10项并读取受权快照。
-- **合同**：[AG-1c-3a](../../things-cloud-agent/docs/FIRST_SLICE_DESIGN.md#AG-1c-3a%20Console只读证据页签（自主裁决%20A）)，
+- **合同**：[AG-1c-3a](../../../.private/thingslink-docs/things-link-agent/docs/FIRST_SLICE_DESIGN.md#AG-1c-3a%20Console只读证据页签（自主裁决%20A）)，
   消费既有binding-metadata和AG-1a快照，不新增接口/菜单，不读取Key或发外部请求。
   缺失/来源未知/模型变化分别显示；身份/项目/设备/权限切换清空及丢弃旧响应，无业务自动重试。
-- **证据入口**：候选、命令和实际结果统一在[Agent开发计划](../../things-cloud-agent/docs/DEVELOPMENT_PLAN.md)；
+- **证据入口**：候选、命令和实际结果统一在[Agent开发计划](../../../.private/thingslink-docs/things-link-agent/docs/DEVELOPMENT_PLAN.md)；
   组件mock通过不代表真实平台浏览器、付费模型、质量、Windows/CI或正式部署通过。
 
 AG-2d增加手动单NUMBER属性/过去24小时历史与告警20条替换式分页，当前权限及身份代次围栏；
@@ -461,15 +461,15 @@ AG-6h限定Linux真实API9项/四角色浏览器1场通过；验证与运行范�
 - **状态**：AG-4a/b及AG-5a/b本机通过，手动报告/下载947项单元、类型/构建与摘要/身份反例通过；AG-6a个人记录限定Linux浏览器1项通过，AG-6c-1报告候选d793b558/0180开发实例加载通过，AG-6c-2限定Linux真实API9/报告下载/空历史告警浏览器1及回收通过；AG-5c有界历史集合后端通过，AG-5d项目设置集合选择/手动生成/重新确权下载48聚焦/1031完整单元及类型/构建通过，集合候选45843778/0180开发实例健康与路由通过，AG-6d-2限定Linux集合四角色真实API9/浏览器1及实际下载通过；AG-6e非空历史/告警四角色Linux真实API9/浏览器1及专属回收通过，存储事实非摄取/触发资格；AG-6f同候选限定Linux五场45接口/5浏览器通过，首败测试定位已修；模型/部署/完整矩阵另验。
 - **范围**：现有设备详情诊断证据页签手动保存、刷新本人记录、查看历史事实和删除；手动生成来源可复核的事实报告，下载重新向服务端确权并校验摘要；项目设置汇编本人选定最多五设备各一条历史来源。
 - **边界**：记录四角色本人且当前有权，历史数据不代表当前状态；取消不承诺撤销已提交保存，不自动重发。
-- **证据入口**：[Agent开发计划](../../things-cloud-agent/docs/DEVELOPMENT_PLAN.md)，限定旅程与实际运行环境分别登记，完整矩阵和部署独立。
+- **证据入口**：[Agent开发计划](../../../.private/thingslink-docs/things-link-agent/docs/DEVELOPMENT_PLAN.md)，限定旅程与实际运行环境分别登记，完整矩阵和部署独立。
 
 
 ## TODO-009 Agent 受控项目知识
 
 - **编号**：~~CONSOLE-TODO-009~~ — 已完成并验证本地功能范围；实际候选、专项结果和限制见下文。
 - **状态**：本机组件/身份、931项完整单元、类型/构建/静态通过；AG-6b-2限定Linux真实API9项及四角色浏览器1项/清理通过，完整矩阵和部署另验。项目设置中的手动目录/正文/本地检索面板；四角色读取，当前活跃项目管理员逐次批准发布或按版本删除。
-- **合同**：[ADR0234](../../docs/adr/0234-agent-controlled-project-knowledge.md)及[AG-3b设计](../../things-cloud-agent/docs/FIRST_SLICE_DESIGN.md#AG-3b%20Console受控知识维护与检索（自主裁决%20A）)。资料仅当前项目共用，个人记录不共享；不外发、不调用模型，字面命中不等于诊断。
-- **验证**：实际候选、角色/身份代次、原文转义、失败不重发及运行限制统一在[Agent开发计划](../../things-cloud-agent/docs/DEVELOPMENT_PLAN.md)，浏览器/部署独立。
+- **合同**：[ADR0234](../../../.private/thingslink-docs/docs/adr/0234-agent-controlled-project-knowledge.md)及[AG-3b设计](../../../.private/thingslink-docs/things-link-agent/docs/FIRST_SLICE_DESIGN.md#AG-3b%20Console受控知识维护与检索（自主裁决%20A）)。资料仅当前项目共用，个人记录不共享；不外发、不调用模型，字面命中不等于诊断。
+- **验证**：实际候选、角色/身份代次、原文转义、失败不重发及运行限制统一在[Agent开发计划](../../../.private/thingslink-docs/things-link-agent/docs/DEVELOPMENT_PLAN.md)，浏览器/部署独立。
 
 ## TODO-010 Agent 模型状态与固定问题
 
@@ -479,13 +479,13 @@ AG-6h限定Linux真实API9项/四角色浏览器1场通过；验证与运行范�
 | --- | --- |
 | ~~010-A 默认关闭状态与固定问题~~ | 已完成并验证：原AG-1c-3c/3d组件与限定关闭状态真实浏览器回执有效 |
 | ~~010-B 受审状态及单次提交页面接线~~ | 已完成并验证本机组件范围：消费AG-1c-4e-2c-1新增状态，显式费用勾选、点击重新GET、先存意图后单次POST、纯文本结果、原键核对与人工处置已实现；AG-1c-4e-2c-2历史1237项通过。该完成标记不包含正向真实浏览器 |
-| ~~010-C 当前扩展交互浏览器补证~~ | 已完成并验证本机合成受审范围：9项真实浏览器通过，覆盖三付费角色单次POST/原键恢复、VIEWER403、停用重新确权、原生storage及身份/范围切换、真实迟POST取消、401不重放和UNKNOWN；17项新增后端夹具与191次分析/架构回归、1992项Console通过。生产PENDING不变，真实模型另验；详细唯一回执见[Agent开发计划](../../things-cloud-agent/docs/DEVELOPMENT_PLAN.md#ag-1c-4e-2c-2-console显式单次提交回执) |
+| ~~010-C 当前扩展交互浏览器补证~~ | 已完成并验证本机合成受审范围：9项真实浏览器通过，覆盖三付费角色单次POST/原键恢复、VIEWER403、停用重新确权、原生storage及身份/范围切换、真实迟POST取消、401不重放和UNKNOWN；17项新增后端夹具与191次分析/架构回归、1992项Console通过。生产PENDING不变，真实模型另验；详细唯一回执见[Agent开发计划](../../../.private/thingslink-docs/things-link-agent/docs/DEVELOPMENT_PLAN.md#ag-1c-4e-2c-2-console显式单次提交回执) |
 | 010-D 真实模型结果及质量 | 待外部准入与专项验收；供应商材料、计数合同/上界及新的有效授权未齐。不是Console缺接口，不得开启真实出站、重置旧探针或用Key启用替代准入；见[跨域资格边界](BACKEND_TODO.md#跨域资格边界) |
 
 
 - **状态**：默认关闭状态和本地问题选择已实现，本机53聚焦/1056全量及类型构建通过；AG-1c-3d限定Linux四角色及个人记录两场真实复验通过，完整矩阵及正向结果另验。
 - **范围**：设备诊断证据页签复用当前身份与项目，三类付费角色手动查看模型状态；VIEWER继续查看事实。
-- **合同**：[AG-1c-3c](../../things-cloud-agent/docs/FIRST_SLICE_DESIGN.md#AG-1c-3c%20Console默认关闭模型状态（自主裁决%20A）)。
+- **合同**：[AG-1c-3c](../../../.private/thingslink-docs/things-link-agent/docs/FIRST_SLICE_DESIGN.md#AG-1c-3c%20Console默认关闭模型状态（自主裁决%20A）)。
   当前接受封闭状态配对：仅受审且项目配置启用可发起，Key启用不代表准入；问题选择不发送数据，待审仍禁用。
   身份/项目/设备/模型/属性及权限改变清除旧状态，无自动请求或重试；瞬时展示已接线，显式费用勾选及点击时重新GET状态通过才可保存原意图和单次POST。
   AG-1c-4a在公共HTTP精确禁止分析POST认证重放；401保留原意图并要求重新核对，不影响普通请求刷新。
@@ -493,7 +493,7 @@ AG-6h限定Linux真实API9项/四角色浏览器1场通过；验证与运行范�
   AG-1c-4d-3后端已定义首次受权返回的可空result；AG-1c-4e-1补封闭结果解码，验证类别/正文关联、用量/引用/字节上限并复制嵌套对象，原键GET共用元数据校验。
   AG-1c-4e-2b已接入纯文本瞬时展示和先持久后单次提交客户端，身份/输入/存储变化清除内存；页面只消费受审配对状态并再次核对，不能用项目配置布尔值绕过。独立签发及内部受审通道已本机验证，4e-2c-2受审手动交互已接线，不把元数据SUCCEEDED当旧正文恢复。
   AG-1c-4e-2c-1补后端封闭受审状态，配套生成类型已更新；2c-2已消费状态，完成后撤销勾选/可用提示，原意图不自动清除。随包PENDING使当前业务不可用。
-- **验证与边界**：组件/API、类型与构建回执统一在[Agent开发计划](../../things-cloud-agent/docs/DEVELOPMENT_PLAN.md)；
+- **验证与边界**：组件/API、类型与构建回执统一在[Agent开发计划](../../../.private/thingslink-docs/things-link-agent/docs/DEVELOPMENT_PLAN.md)；
   真实浏览器、付费意图与结果展示、模型质量及部署分别验收，不能用状态查询认领AG-1完成。
 
 
@@ -503,11 +503,11 @@ AG-6h限定Linux真实API9项/四角色浏览器1场通过；验证与运行范�
 
 2026-10-06，根据负责人要求登记已确认缺口并规划后续工作包。该规划轮仅编制计划，未实施页面、提交或推送；本轮分类复核不自动启动WP-01至WP-07。
 基线为平台 `master / d5e24018`，审查时 Console 与 `docs/openapi.json` 无未提交差异；
-[OpenAPI](../../docs/openapi.json)包含330条路径、407个操作。后续开片必须重新核对HEAD、工作区、实际Controller及合同，数量不是覆盖率或完成标准。
+[OpenAPI](../../../docs/openapi.json)包含330条路径、407个操作。后续开片必须重新核对HEAD、工作区、实际Controller及合同，数量不是覆盖率或完成标准。
 
 事实依据为路由、API封装、页面消费者及后端合同的静态对照；不能仅按URL全文匹配判缺失，须展开动态路径和共享客户端。
 `pnpm api:check`已在审查轮通过，只证明生成类型一致，不证明页面消费、后端运行或浏览器验收。
-本计划沿用[V1-R4](../../docs/PRODUCT_SCOPE_V1_R4.md)、[前端边界](../../docs/FRONTEND_ARCHITECTURE.md)与[测试方针](../../docs/TEST_VERIFICATION_POLICY.md)。
+本计划沿用[V1-R4](../../../.private/thingslink-docs/docs/PRODUCT_SCOPE_V1_R4.md)、[前端边界](../../../.private/thingslink-docs/docs/FRONTEND_ARCHITECTURE.md)与[测试方针](../../../.private/thingslink-docs/docs/TEST_VERIFICATION_POLICY.md)。
 接口已有与页面应提供是两项判断：App、匿名分享运行时、设备接入、EMQX回调、模拟器、Actuator及受控模型探针不逐一建设Console页面。
 SIM、商用服务器、域名与公开部署验收继续暂停；套餐、计量、租户隔离和TLS继续保留。真实模型、signer和硬件资格不因补页面获得放行。
 
@@ -569,7 +569,7 @@ BE-001合同评估可以在规划/开片时提前读取，但未取得执行指�
 2. 每片至少验证真实页面入口与按钮权限、正常闭环、空集/失败、跨项目与越权、账号/项目切换后清除旧结果、并发或过期响应。按接口原合同处理CAS、幂等与结果未知，不对敏感写操作盲目换键重发。
 3. Console业务切片先按测试方针记录影响与最小充分范围：相关组件/API反例、类型/构建、契约及受影响静态检查为基础；全量`pnpm test`及全量lint由传播与门禁决定，不机械每片重跑。最终Console整合执行 `pnpm build`、`pnpm test`、`pnpm api:check`、`pnpm lint`、`pnpm lint:stylelint:check`。新增客户端/组件反例须随对应验证运行。`scripts/tests/`工具测试不随`pnpm test`执行，只有涉及工具变更时按实际文件另跑并登记。
 4. 每片在隔离真实后端执行对应API反例及真实浏览器旅程；优先复用[Console运行入口](../README.md)。浏览器选场用已存在或本片新增的实际spec，登记 `E2E_SPEC=<实际文件名> bash scripts/run-e2e-tests.sh` 的展开命令；占位命令不能算回执。缺SMTP、对象存储、签名或设备前置时标NOTRUN/阻塞，不以mock替代真实资格。
-5. 后端由同一执行者按[测试方针](../../docs/TEST_VERIFICATION_POLICY.md)完成必要修改，并追加受影响模块完整测试、Bootstrap直接传播与真实依赖/隔离回归；生成合同仅通过 `python3 scripts/generate-openapi-contracts.py` 更新。新增菜单同步后端MenuCatalog、前端兜底及菜单合同测试。
+5. 后端由同一执行者按[测试方针](../../../.private/thingslink-docs/docs/TEST_VERIFICATION_POLICY.md)完成必要修改，并追加受影响模块完整测试、Bootstrap直接传播与真实依赖/隔离回归；生成合同仅通过 `python3 scripts/generate-openapi-contracts.py` 更新。新增菜单同步后端MenuCatalog、前端兜底及菜单合同测试。
 6. 数据库变更只能增加新Flyway迁移，不改历史；按实际变更验证新库/升级、迁移预检及RLS。Java生产注释和Controller JavaDoc遵循中文规范；公共合同同步Console/WebApp及直接共享消费者。局部Maven从`things-cloud/`使用`./mvnw -pl <受影响模块> -am ...`，聚焦selector配`-Dsurefire.failIfNoSpecifiedTests=false`，实际模块/类名开片填写，不能把占位命令当已验。
 7. 文档执行根目录 `pwsh scripts/docs-verify.ps1` 与 `git diff --check`。选定包整合后（含实际纳入的后端先行片），以同一固定候选执行Console完整静态/单元与默认浏览器矩阵，并补本轮专属选场；默认矩阵跳过的专项不算通过。未改动后端不机械要求全后端重跑，受影响范围按测试方针登记。
 8. 子片只有实现、规定验证和回执齐备才标完成；部分通过保留未完成状态。工作包全部子片闭合后才关闭父项；组内整合验收单独登记，不继承各旧候选结果。CI、Windows、公司服务器、外部送达和真实硬件分别取证，未执行逐项说明。
@@ -583,7 +583,7 @@ BE-001合同评估可以在规划/开片时提前读取，但未取得执行指�
 
 - **编号/工作包**：~~CONSOLE-TODO-011~~ / ~~WP-01~~ — 已完成并验证本地软件范围。
 - **状态**：011-A已完成并验证本地范围；后端合同保持，入口嵌入已有项目列表，未新增菜单。
-- **代码事实**：[项目API](../src/api/project.ts)及[项目列表](../src/views/project/list/index.vue)已有删除，无回收站与恢复消费；[后端项目Controller](../../things-cloud/things-cloud-project/src/main/java/com/things/cloud/project/api/controller/ProjectController.java)已有对应入口。
+- **代码事实**：[项目API](../src/api/project.ts)及[项目列表](../src/views/project/list/index.vue)已有删除，无回收站与恢复消费；[后端项目Controller](../../../things-link/things-link-project/src/main/java/com/things/link/project/api/controller/ProjectController.java)已有对应入口。
 - **接口**：`GET /api/v1/projects/recycle-bin`、`POST /api/v1/projects/{projectId}/restore`。
 - **011-A交付**：项目列表提供回收站，显示服务端返回的删除及恢复期限；按当前有效OWNER与服务端资格恢复，刷新项目列表和回收站。入口不能要求已选中被删除项目。删除确认解释留存/恢复边界并链接回收站；不承诺恢复旧凭据。
 - **验收**：可恢复、过期但尚未清理、已清理/不存在、非OWNER、跨租户、重复/并发恢复、结果未知后重新读取、账号切换及旧凭据不复活。时间语义按服务端合同，不在客户端自行将30天解释为本地日历月。
@@ -607,8 +607,8 @@ BE-001合同评估可以在规划/开片时提前读取，但未取得执行指�
 
 - **编号/工作包**：~~CONSOLE-TODO-012~~ / ~~WP-02~~ — 已完成并验证现行合同的本地软件范围。
 - **状态**：~~012-A~~已完成并验证；回收站申请、固定任务轮询、刷新找回及显式签发下载闭环已接入。当前套餐启用存储上限时仍按ADR0075拒绝新任务，不认领统一对象计量交付。
-- **代码事实**：[导出Controller](../../things-cloud/things-cloud-export/src/main/java/com/things/cloud/export/api/controller/ProjectExportController.java)及[留存导出面板](../src/components/ProjectRetentionExport.vue)已提供申请、状态、最新任务找回及显式下载。
-- **合同**：[ADR0075](../../docs/adr/0075-project-export-snapshot-and-private-object-delivery.md)、[ADR0162](../../docs/adr/0162-plan-history-window-and-retention-export.md)。
+- **代码事实**：[导出Controller](../../../things-link/things-link-export/src/main/java/com/things/link/export/api/controller/ProjectExportController.java)及[留存导出面板](../src/components/ProjectRetentionExport.vue)已提供申请、状态、最新任务找回及显式下载。
+- **合同**：[ADR0075](../../../.private/thingslink-docs/docs/adr/0075-project-export-snapshot-and-private-object-delivery.md)、[ADR0162](../../../.private/thingslink-docs/docs/adr/0162-plan-history-window-and-retention-export.md)。
 - **接口**：`POST /api/v1/projects/{projectId}/exports`、`GET /api/v1/projects/{projectId}/exports/latest`（本片新增）、`GET /api/v1/projects/{projectId}/exports/{exportId}`、`POST /api/v1/projects/{projectId}/exports/{exportId}/download-url`。
 - **012-A交付**：回收站内申请删除冻结项目的留存包，显示异步状态、错误与可用下载操作；仅在明确点击后重新确权获取短时地址。任务追踪按服务端已有能力实现，开片确认刷新后恢复任务的合同，不假设存在导出任务列表。
 - **边界**：仅严格删除窗口内符合资格的项目；不是日常遥测CSV导出。不能扩大白名单数据范围、绕过限流、公开存储桶，不能长存下载URL。
@@ -641,7 +641,7 @@ PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers E2E_BASE_URL=http://localhost:3017
 
 复现前先构建当前Bootstrap JAR，专用后端使用该独立DB/Flyway地址、Redis DB14及上述关闭开关，MinIO密钥仍从本地环境读取；`VITE_API_PROXY_URL=http://localhost:8088`启动3017。夹具工具新增显式`TC_CONSOLE_FIXTURE_DATABASE`/`TC_CONSOLE_FIXTURE_POSTGRES_CONTAINER`（未设置默认路径不变，`bash -n`与真实建号通过）：分别以`--plan-code PROFESSIONAL`和仅测试用`--legacy-runtime-baseline`创建两个全新隔离租户，不修改任何既有套餐/策略；legacy仅验证ADR0075未启用对象上限的历史合同，项目使用工具预置ID，不通过缺订阅的创建入口伪造正常套餐资格。默认浏览器矩阵缺这两项专用环境时分别SKIP，不能继承专项通过。
 
-**剩余限制**：当前所有PLAN_R1套餐均配置非NULL存储上限，统一对象账本未交付时新留存导出50019是现行明确拒绝边界；成功ZIP仅验证历史兼容夹具，不代表正常套餐已能导出，不切换许可或删除计量。跨域对象计量仍按[ADR0075决策6](../../docs/adr/0075-project-export-snapshot-and-private-object-delivery.md#决策6存储额度与失败边界)及既有平台债务另案，未因页面关闭而划完成线。生产工具链Node22、完整Console整合、默认浏览器矩阵、Windows、远端CI、公司服务器、MQTT/硬件、正式交付均NOTRUN；局部本地软件通过不关闭G3。
+**剩余限制**：当前所有PLAN_R1套餐均配置非NULL存储上限，统一对象账本未交付时新留存导出50019是现行明确拒绝边界；成功ZIP仅验证历史兼容夹具，不代表正常套餐已能导出，不切换许可或删除计量。跨域对象计量仍按[ADR0075决策6](../../../.private/thingslink-docs/docs/adr/0075-project-export-snapshot-and-private-object-delivery.md#决策6存储额度与失败边界)及既有平台债务另案，未因页面关闭而划完成线。生产工具链Node22、完整Console整合、默认浏览器矩阵、Windows、远端CI、公司服务器、MQTT/硬件、正式交付均NOTRUN；局部本地软件通过不关闭G3。
 
 
 ## TODO-013 项目终端用户管理
@@ -761,7 +761,7 @@ PG无外部会话及8090/3019/8092/4018无测试服务监听后，已停止并�
 | 合同 | DTO补nextAttemptAt可空声明，唯一生成OpenAPI70项PASS并双端生成。输入摘要`808851da556612a16952ed4fccc0318dad298b7dad56d9116c6c31c1066d313c`，OpenAPI摘要`a1b3e3cabde25022c2b0b51dbeedb5052b7f8c8015d717b74bd7ac09c9b3f770`。JSON语义对照仅该字段description/type变化；其他差异为生成键序，不手工编辑生成物。`logs/014-a-openapi-final.log` |
 | 模块/真实PG-HTTP | 告警模块127项及依赖reactor PASS，`logs/014-a-alarm-module.log`；`AlarmConfigurationProjectLifecycleTests`30项PASS（新增4角色读取），生产评估生成21条TEMPLATE_INVALID意图，验证20+1游标/过滤/精确字段/脱敏/可空计划/归档只读/跨项目拒绝/匿名拒绝及无外发Outbox，`logs/014-a-real-query-final.log`。首轮夹具错用App角色MAINTAINER并新增第二OWNER，按Console OWNER/ADMIN/OPERATOR/VIEWER和单OWNER约束修正，未放宽数据库规则；失败`014-a-real-query-recheck.log`保留。早启的另一次Maven查询在编译阶段主动取消以恢复串行，未认领通过 |
 | 页面/构建 | 全Console134文件1354项PASS（新增面板22项、宿主页4项、API1项），`logs/014-a-all-ui-proof.log`；最终`pnpm build`PASS，`014-a-build-receipt.log`。API一致性、当前片ESLint/stylelint和类型PASS，`014-a-api-check-final.log`、`014-a-release-lint.log`、`014-a-stylelint-final.log`、`014-a-release-type.log`。首次类型检查遇未生成可空Schema、ESLint遇退出回调条件表达式，分别按合同生成及改显式if后复验通过。verbose复核发现宿主页清除确认夹具缺少自动导入全局，原用例未经过确认逻辑；补齐全局并断言确认框确实调用后专项及全量复验PASS，旧记录不作为该确认边界证据；`014-a-test-lint.log`及`014-a-test-type.log`亦PASS |
-| 真实浏览器 | `E2E_ALARM_RUNTIME=logs/014-a-runtime.json PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers E2E_BASE_URL=http://localhost:3017 E2E_OWNER_EMAIL=e2e-012a@example.com E2E_END_USER_PROJECT_NAME=留存夹具 E2E_RUN_DIR=logs/014-a-browser-final pnpm exec playwright test alarm-notification-deliveries.spec.ts` 1项PASS/24s，`logs/014-a-browser-final.log`及该证据目录。真实Console API建立数值设备/规则/21个合成收件人/模板/绑定；[可信评估夹具](../../things-cloud/things-cloud-bootstrap/src/test/java/com/things/cloud/bootstrap/alarm/fixture/AlarmDeliveryFixtureProcess.java)只加载其测试class，普通APP角色、专用库、OWNER、唯一受控规则与合成配置检查后调用生产评估Bean，模板真实展开过长得到21个终态且无外发Outbox；页面20+1分页、刷新回首20项、脱敏/可空/无重发及关闭核对通过，不插入伪造告警或投递行 |
+| 真实浏览器 | `E2E_ALARM_RUNTIME=logs/014-a-runtime.json PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers E2E_BASE_URL=http://localhost:3017 E2E_OWNER_EMAIL=e2e-012a@example.com E2E_END_USER_PROJECT_NAME=留存夹具 E2E_RUN_DIR=logs/014-a-browser-final pnpm exec playwright test alarm-notification-deliveries.spec.ts` 1项PASS/24s，`logs/014-a-browser-final.log`及该证据目录。真实Console API建立数值设备/规则/21个合成收件人/模板/绑定；[可信评估夹具](../../../things-link/things-link-bootstrap/src/test/java/com/things/link/bootstrap/alarm/fixture/AlarmDeliveryFixtureProcess.java)只加载其测试class，普通APP角色、专用库、OWNER、唯一受控规则与合成配置检查后调用生产评估Bean，模板真实展开过长得到21个终态且无外发Outbox；页面20+1分页、刷新回首20项、脱敏/可空/无重发及关闭核对通过，不插入伪造告警或投递行 |
 | 失败/环境边界 | 浏览器首轮快速创建触发真实REST速率保护；夹具按真实速率加节奏后复验，未修改套餐或Redis计量。次轮子进程继承macOS系统代理导致本机PG UnknownHostException，按主程序现有启动规则显式清空代理参数后通过；`logs/014-a-browser.log`、`014-a-browser-recheck.log`及对应目录保留。标准SMTP旅程追加面板SUCCEEDED核对，但完整矩阵的EMQX预检前置未获资格，本轮该旅程NOTRUN，专项HTTP夹具不认领Broker摄取或SMTP送达 |
 | 文档/提交 | 完整`pwsh scripts/docs-verify.ps1`PASS（Java文档一致性），`logs/014-a-docs.log`；最终回执`pwsh scripts/docs-verify.ps1 -SkipMaven`及`git diff --check`PASS，`logs/014-a-docs-final.log`；27项最终专项亦PASS，`logs/014-a-focused-proof.log`；本片单独本地提交，不推送，提交号以Git定位 |
 
@@ -772,7 +772,7 @@ Node22、Windows、远端CI、公司服务器、Broker摄取、SMTP/供应商实
 - **编号/工作包**：~~CONSOLE-TODO-015 / WP-05~~ — 已完成并验证本地软件范围。
 - **状态**：~~015-A~~ — 已完成并验证本地软件范围；一次性产品注册秘密及受权生成/轮换。
 - **代码事实**：[设备API](../src/api/device.ts)及[产品凭据弹窗](../src/views/device/types/ProductCredentialDialog.vue)已消费单类型公开状态与产品凭据；目录按权限提供入口。
-- **接口与合同**：`GET /api/v1/projects/{projectId}/device-types/{id}`公开状态及`POST .../{id}/product-credential`一次性生成/轮换；[设备身份范围](../../docs/contracts/DEVICE_CAPABILITY_SCOPE.md)、[ADR0003](../../docs/adr/0003-device-authentication.md)。
+- **接口与合同**：`GET /api/v1/projects/{projectId}/device-types/{id}`公开状态及`POST .../{id}/product-credential`一次性生成/轮换；[设备身份范围](../../../.private/thingslink-docs/docs/contracts/DEVICE_CAPABILITY_SCOPE.md)、[ADR0003](../../../.private/thingslink-docs/docs/adr/0003-device-authentication.md)。
 - **015-A片前决策/验证选择**：候选`master / 76dab0a1`，开片清洁。后端真实角色限定OWNER/ADMIN，已发布DIRECT/GATEWAY可生成、SUB_DEVICE拒绝；产品识别码固定、秘密轮换只阻止旧产品秘密继续动态注册，既有一机一密独立。产品秘密不回查；需要按单个类型刷新公开状态，当前控制面缺GET单类型，补只读项目权限/RLS/生命周期允许读取的类型详情，避免扫描目录或把公开标识当作轮换回执。当前DeviceTypeResponse.productKey真实未生成时为null，补可空Schema并唯一生成合同。产品生成POST没有幂等键/查回能力，HTTP层限定该路径单次发送（包括401和5xx），界面在任何未知结果后只读核对并明确再次轮换影响，不自动补发。秘密仅组件内存、关闭/换作用域/身份清除；完成后运行设备模块、真实产品生成/动态注册/轮换反例与浏览器，外部设备资格仍NOTRUN。
 - **015-A交付**：已发布类型提供受权生成/轮换操作，明确产品级与设备级凭据差异和影响；明文仅首次响应展示，关闭/换身份清除，不记录或持久存储。不假设有产品秘密回查或撤销接口。
 - **验收**：未发布类型拒绝、越权/跨项目、轮换后新旧产品凭据语义、已有设备凭据语义、重复点击及响应丢失处理、秘密不进入日志/URL/持久存储；用真实隔离后端动态注册反例验证，不代替硬件资格。
@@ -805,10 +805,10 @@ Node22、Windows、远端CI、公司服务器、真正EMQX客户端连接/摄取
 - **016-B交付**：消费`POST .../ota/firmwares/{firmwareId}/release/downloads`获取固定发布物短时下载地址。验证未发布拒绝、确权、过期、实际下载内容与固定版本一致；不替代受控signer资格。
 - **016-C片前决策/验证选择**：候选`master / 4f072537`，开片清洁。既有作业详情只读GET，观察分类与当前重验分类分列，70044无观察不能伪装协议UNKNOWN；false执行权/true原子互斥要求为恒定边界，未知/坏DTO失败关闭，身份/关闭/晚响应清理。沿独占PG/Redis14/8088/Vite3017，新建本人EMQX51883/TLS58883/管理58083及Redpanda59092空数据容器，保留生产认证mountpoint/v2信封、严格TLS与关闭鉴权缓存，不改变共享Broker/Kafka；从真实HTTP设备、发布物、活动及设备MQTT报告/授权/序号缺口进入RECOVERY_REQUIRED，再接预检报告。精确受控回退扩展绑定原基线完整规范摘要，合成设备证据不代表实物槽/掉电互斥；默认WP-03矩阵保持独立。
 - **016-C交付**：作业详情消费`GET .../ota/campaigns/{campaignId}/jobs/{jobId}/rollback-preflight`展示回退准备观察与资格。验证可用/不可用/未知及陈旧观察；查询不代表执行回退，不添加不存在的回退写接口。
-- **016-D片前决策/验证选择**：候选`master / 304a9cf9`，开片清洁。遵循[ADR0118](../../docs/adr/0118-project-scoped-ota-trust-registry.md)，只载入离线公开签包，不生成/导入私钥或HTTP改根；严格原文JSON预算/重复字段/非安全数值及闭集，不先JSON.parse洗掉非法语义。冻结域、修订、正文及原幂等键，未知显式原键恢复；10014完成墓碑与当前GET快照分开，更高包覆盖不能冒称恢复原响应或新键重提。OWNER/ADMIN、ota:deploy/ACTIVE仅页面前置，服务器根签名/CAS/历史键及权限重新裁决。沿本人独占栈以新增精确临时公开根配置及离线签包验证实际页面，不改共享Broker；真实生产根/signing条件继续NOTRUN。补真实HTTP坏签名、跨域、归档/失权及墓碑零重复反例，前端反例、严格签包模型与实际浏览器同片验证。
+- **016-D片前决策/验证选择**：候选`master / 304a9cf9`，开片清洁。遵循[ADR0118](../../../.private/thingslink-docs/docs/adr/0118-project-scoped-ota-trust-registry.md)，只载入离线公开签包，不生成/导入私钥或HTTP改根；严格原文JSON预算/重复字段/非安全数值及闭集，不先JSON.parse洗掉非法语义。冻结域、修订、正文及原幂等键，未知显式原键恢复；10014完成墓碑与当前GET快照分开，更高包覆盖不能冒称恢复原响应或新键重提。OWNER/ADMIN、ota:deploy/ACTIVE仅页面前置，服务器根签名/CAS/历史键及权限重新裁决。沿本人独占栈以新增精确临时公开根配置及离线签包验证实际页面，不改共享Broker；真实生产根/signing条件继续NOTRUN。补真实HTTP坏签名、跨域、归档/失权及墓碑零重复反例，前端反例、严格签包模型与实际浏览器同片验证。
 - **016-D交付**：按`POST .../ota/trust-domains/{trustDomain}/bundles`提供受控离线根签名包导入。前置核对签名包来源、权限和幂等；不生成或导入私钥。验证合法/非法签名、跨域、重复提交与响应未知恢复。
-- **016-E片前决策/验证选择**：候选`master / c90f2f7b`，开片清洁。已读[ADR0122](../../docs/adr/0122-controlled-ota-device-type-baselines.md)：POST严格只expectedRevision，服务器选精确类型启动配置，浏览器不接收能力JSON/开关或声称能预览待登记配置；GET五字段完整持久基线，仅作当前公开快照，不证明当前配置或类型映射仍有效。类型只选PUBLISHED且真实非空productKey，fresh GET修订/首0与服务器精确预配确认；未知原键body、10014结束原意图，只读辅助核对，新意图须显式重读并确认服务器配置更新。沿本人独占栈保留全部根/B类型基线与回退扩展，选A现2版类型的精确更高受控版本；另真实PUBLISHED未配置类型验证70028。补HTTP失权/归档/类型变化/墓碑零增量及strictDTO/范围/原意图反例，真实浏览器管理写/配置升级/断响应恢复；制造与实物资格仍NOTRUN。
-- **016-E交付**：按`POST .../ota/device-types/{deviceTypeId}/baseline/registrations`接入受控基线登记；先读[ADR0122](../../docs/adr/0122-controlled-ota-device-type-baselines.md)与当前Controller，确认服务器精确类型启动配置。不能改造成浏览器任填安全基线、通配或绕过后端配置。验证缺配置拒绝、精确类型、越权及幂等。
+- **016-E片前决策/验证选择**：候选`master / c90f2f7b`，开片清洁。已读[ADR0122](../../../.private/thingslink-docs/docs/adr/0122-controlled-ota-device-type-baselines.md)：POST严格只expectedRevision，服务器选精确类型启动配置，浏览器不接收能力JSON/开关或声称能预览待登记配置；GET五字段完整持久基线，仅作当前公开快照，不证明当前配置或类型映射仍有效。类型只选PUBLISHED且真实非空productKey，fresh GET修订/首0与服务器精确预配确认；未知原键body、10014结束原意图，只读辅助核对，新意图须显式重读并确认服务器配置更新。沿本人独占栈保留全部根/B类型基线与回退扩展，选A现2版类型的精确更高受控版本；另真实PUBLISHED未配置类型验证70028。补HTTP失权/归档/类型变化/墓碑零增量及strictDTO/范围/原意图反例，真实浏览器管理写/配置升级/断响应恢复；制造与实物资格仍NOTRUN。
+- **016-E交付**：按`POST .../ota/device-types/{deviceTypeId}/baseline/registrations`接入受控基线登记；先读[ADR0122](../../../.private/thingslink-docs/docs/adr/0122-controlled-ota-device-type-baselines.md)与当前Controller，确认服务器精确类型启动配置。不能改造成浏览器任填安全基线、通配或绕过后端配置。验证缺配置拒绝、精确类型、越权及幂等。
 - **资格边界**：D/E测试用受控合成材料与独占隔离环境；缺真实根/signing条件只记对应NOTRUN，不阻塞可独立验证的只读片，也不关闭真实signer与实物门禁。
 - **016-A回执**：~~016-A~~ — 已完成并验证本地软件范围。2026-10-06，候选`master / 0b735337`加本片差异；macOS Node26.7.0/pnpm11.22.0/Chromium1234；沿独占PG5547/Redis DB14/后端8088/Vite3017。冻结JAR SHA256 `879b785bcde48dbcbfb323e87eef6b9dbfb4dd43e10277c51fb920c55b3ac7fe`；按旧PID97501/制品/端口三重核对替换为4491，第二版精确基线配置前再次核对并替换为5452，制品不变。配置摘要`69c4449ed61495310d86515d9acaa8156d41a1c9264e31e983acf7111abf95d1`，8080/3006及共享Broker配置未操作。
 
@@ -870,7 +870,7 @@ Node22、Windows、远端CI、公司服务器、生产根/signing服务、制造
 | 严格原文与公开DTO | [严格解析](../src/features/ota/strict-public-json.ts)与[导入模型](../src/features/ota/trust-import-model.ts)执行64KiB/32层/4096节点/16KiB字符串、fatal UTF8/BOM/重复解码字段/孤立代理/小数/指数/-0/非安全整数反例，避免JSON.parse洗掉原文语义。包及键闭集、严格公开SPKI DER与逐指纹SHA、标准64字节签名、1至64键唯一版本/指纹且恰1 ACTIVE；最终封套仍检预算。当前GET九字段闭集，long修订、安全整数包/策略版本与纳秒UTC先后校验 |
 | 前置与原意图 | OWNER/ADMIN、ota:deploy与ACTIVE只是前置，每次提交重读项目；显式GET当前登记才取修订，真实70013首次0须确认精确服务器预配根，读取不证明根存在。每次载材料清旧GET，冻结域/正文/修订/原键；网络/5xx未知与10010仅原意图显式恢复，401无认证重放，错误消息/trace/details不传播。50370010仍保守未知保原键且固定提示根原因，不能直接换键 |
 | 完成与生命周期 | 10014仅证明原请求完成，当前GET只辅助核对公开快照；更高/不同/缺失不能恢复原响应或判原写失败。success/10014在同身份RAM记录每域最高已完成版本，不含键/正文；即使后续70013或关闭重开也阻止旧包新键重提，身份/卸载清理，64域有界。新更高材料必须重新GET；关闭/身份/角色/项目/代次变化拒绝晚读取、文件摘要与写响应；忙时防双发 |
-| 真实后端与必要修复 | 在things-cloud执行`./mvnw -pl things-cloud-bootstrap -am '-Dtest=QuotaRestRateLimitFilterTests,OtaTrustHttpIntegrationTests,OtaTrustBundleCodecTests,OtaTrustRequestParserTests' -Dsurefire.failIfNoSpecifiedTests=false test`：真实JWT/MockMvc/PG集成13项、签包/解析12项、限流40项及依赖PASS，`logs/016-d-http-final.log`。精确42270011坏签名与有效根签名跨域、40970012陈旧CAS、原体原键10014/异体10009及GET完整摘要/零重复历史审计、归档40350017、移成员原Bearer40120020；不把MockMvc称为socket HTTP丢包。必要修复[限流前置](../../things-cloud/things-cloud-iam/src/main/java/com/things/cloud/iam/infrastructure/security/QuotaRestRateLimitFilter.java)：仅选中项目的精确POST bundles先查写许可，ACTIVE仍原engine限流/日计量，路径/method/context/跨项目及日硬限/短窗拒绝均复验；未纳入其他OTA写入口 |
+| 真实后端与必要修复 | 在things-cloud执行`./mvnw -pl things-cloud-bootstrap -am '-Dtest=QuotaRestRateLimitFilterTests,OtaTrustHttpIntegrationTests,OtaTrustBundleCodecTests,OtaTrustRequestParserTests' -Dsurefire.failIfNoSpecifiedTests=false test`：真实JWT/MockMvc/PG集成13项、签包/解析12项、限流40项及依赖PASS，`logs/016-d-http-final.log`。精确42270011坏签名与有效根签名跨域、40970012陈旧CAS、原体原键10014/异体10009及GET完整摘要/零重复历史审计、归档40350017、移成员原Bearer40120020；不把MockMvc称为socket HTTP丢包。必要修复[限流前置](../../../things-link/things-link-iam/src/main/java/com/things/link/iam/infrastructure/security/QuotaRestRateLimitFilter.java)：仅选中项目的精确POST bundles先查写许可，ACTIVE仍原engine限流/日计量，路径/method/context/跨项目及日硬限/短窗拒绝均复验；未纳入其他OTA写入口 |
 | 后端首败与复验 | 首次新增归档反例得到42910029，先按共享夹具实际HTTP节奏补125ms自然补充，仍相同失败，`016-d-http.log`、`016-d-http-qualified.log`保留。进一步定位归档被日计量ACTIVE查询掩盖，按上述精确生产生命周期预检修复后最终PASS；没有关限流、放宽quota或改预期掩盖失败 |
 | 唯一合同与前端 | `python3 scripts/generate-openapi-contracts.py`及OpenAPI71项PASS，输入摘要`26753a6ad54dd11a1422c746b42baf9069b1b59fa9db34612f7ea96643c19d5c`，HTTP与双端TS未变，`016-d-openapi.log`。全Console151文件1733项PASS，`016-d-all-ui.log`；专项6文件168项及既有入口/菜单32项PASS，`016-d-unit-qualified.log`、`016-d-host-regression.log`。双端api:check、最终pnpm build/vue-tsc、ESLint/stylelint PASS，`016-d-api-check.log`、`016-d-webapp-api-check.log`、`016-d-build-final.log`、`016-d-lint-qualified.log`、`016-d-stylelint-final.log`；完成版本记录补测后先前构建只作为修前证据。新增预检组件插值折行lint首败`016-d-lint-final.log`及副本`016-d-lint-fence-first.log`保留，格式修后PASS |
 | 真实浏览器 | `E2E_OTA_TRUST_IMPORT_RUNTIME=logs/016-d-runtime.json E2E_OTA_TRUST_IMPORT_FIXTURE=logs/016-d-fixture.json PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers E2E_BASE_URL=http://localhost:3017 E2E_OWNER_EMAIL=e2e-012a@example.com E2E_RUN_DIR=logs/016-d-browser-qualified pnpm exec playwright test ota-trust-import-journey.spec.ts`1项PASS/11.1s，`logs/016-d-browser-qualified.log`及目录，[真实旅程](../e2e/ota-trust-import-journey.spec.ts)。合法页面POST200与GET域/修订/包版本/完整摘要/根指纹匹配；坏签名实际422及同根有效签包跨URL域实际422零登记，UI不匹配也不能发送。原键原体再发40910014不推进；第二版实际HTTP200 Response阶段由CDP ConnectionClosed断响应（未fulfill/route/mock或替换JSON），页面未知只有1 POST，实际GET证明已提交，再原键原体恢复10014，键/正文摘要完全相同、GET不再推进。显式读取、关开、真实项目切换清理，签包/SPKI不进入存储，trace/video/screenshot关闭 |
@@ -902,7 +902,7 @@ Node22、Windows、远端CI、公司服务器、真实生产根/signing、制造
 - **状态**：~~017-A~~、~~017-B~~ — 已完成并验证本地软件，WP-07关闭本地软件范围。
 - **代码事实**：[看板发布API](../src/api/dashboard-publication.ts)已接入软删除；[应用发布API](../src/api/application-publication.ts)已由017-B接入软删除，既有发布、撤回及回滚保持同一管理模型。
 - **接口**：`POST /api/v1/projects/{projectId}/dashboards/{dashboardId}/soft-delete`、`POST /api/v1/projects/{projectId}/applications/{applicationId}/soft-delete`。
-- **合同**：[ADR0100](../../docs/adr/0100-dashboard-access-and-publication-metadata.md)及现有发布元数据合同；V1软删除不恢复，撤回不等于软删除。
+- **合同**：[ADR0100](../../../.private/thingslink-docs/docs/adr/0100-dashboard-access-and-publication-metadata.md)及现有发布元数据合同；V1软删除不恢复，撤回不等于软删除。
 - **~~017-A~~交付（已完成并验证）**：看板软删除及确认、CAS/权限/生命周期拒绝反馈及引用后果说明，删除后目录与编辑状态刷新。当前后端允许删除被应用引用的看板，不预设必须解绑；历史引用与grant保持可审计，运行资格按每次读取裁决。
 - **~~017-B~~交付（已完成并验证）**：应用软删除及确认、发布入口与编辑状态刷新；复用既有发布管理，不引入另一套版本状态。
 - **验收**：当前权限、ARCHIVED写拒绝、引用约束按后端实测（不预设可删或不可删）、CAS/幂等按实际合同、重复/结果未知、删除后旧入口/分享/用户授权的服务端拒绝；隔离浏览器验证，不以隐藏列表替代服务端失效。不添加恢复按钮。
@@ -1294,6 +1294,6 @@ API/状态与真实组件会话两文件25项通过（含过期、离线、切�
 ## ThingsX App 项目接入
 
 项目列表的 App 接入二维码功能随客户端 TL-02-C 交付，App 专属裁决、验证和限制统一登记在
-[App 开发计划](../../things-link-flutter/docs/V1_PLAN.md#TL-02-C%20项目二维码接入)，本页仅保留导航，不重复开发流水账。
+[App 开发计划](../../../.private/thingslink-docs/things-link-flutter/docs/V1_PLAN.md#TL-02-C%20项目二维码接入)，本页仅保留导航，不重复开发流水账。
 
-本机开发HTTP二维码及默认显示修复见[TL-02-E](../../things-link-flutter/docs/V1_PLAN.md#TL-02-E%20Console本机项目二维码)，记录继续归App知识库。
+本机开发HTTP二维码及默认显示修复见[TL-02-E](../../../.private/thingslink-docs/things-link-flutter/docs/V1_PLAN.md#TL-02-E%20Console本机项目二维码)，记录继续归App知识库。

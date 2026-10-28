@@ -8,13 +8,13 @@ import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 
-/** jagonzn 独立设备接入服务的启动入口；ThingsCloud 内核由正式运行时 JAR 自动装配。 */
+/** jagonzn 独立设备接入服务的启动入口；ThingsLink 内核由正式运行时 JAR 自动装配。 */
 @SpringBootApplication
 public class JagonznServiceApplication {
 
     /**
      * 当前 Windows/Temurin 环境的默认 NIO selector 初始化失败，故本服务改用 Tomcat NIO2。
-     * 此设置只影响 jagonzn-service，不更改 ThingsCloud 的容器配置。
+     * 此设置只影响 jagonzn-service，不更改 ThingsLink 的容器配置。
      */
     @Bean
     WebServerFactoryCustomizer<TomcatServletWebServerFactory> tomcatProtocol() {

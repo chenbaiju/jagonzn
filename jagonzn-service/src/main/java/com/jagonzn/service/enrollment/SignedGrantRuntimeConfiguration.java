@@ -1,7 +1,7 @@
 package com.jagonzn.service.enrollment;
 
-import com.things.cloud.project.application.SelfHostedGrantImportService;
-import com.things.cloud.project.application.SelfHostedGrantRepository;
+import com.things.link.project.application.SelfHostedGrantImportService;
+import com.things.link.project.application.SelfHostedGrantRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;

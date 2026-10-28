@@ -50,7 +50,7 @@ Spring Boot 与 Java 版本已对齐：ThingsCloud、jagonzn-service 和 jagonzn
 | TCP 多实例 | D-190 已按方案 A 完成开发、验证并关闭；设备线格式按对应 ADR，至少一次投递要求设备去重 | 可按已关闭合同评估多实例 TCP 下行能力；不代表任意厂家协议或自定义 codec 已支持 |
 | 设备事件 | 新协议合同排除事件上报；MQTT 标准化器目前拒绝非属性类型，其他专用路径另行处理 | 开锁记录、设备自报报警必须补充可靠事件接入与保存能力 |
 | 告警、规则与通知 | 存在对应内核模块；设备主动事件的识别需独立核验 | 不等于任意锁事件已能被识别 |
-| 公开集成与 Webhook | 已有公开 REST、应用 MQTT/WS 及七类源的公共 Webhook 本地交付证据，见[公共集成回执](../../docs/delivery/audits/S14-R8f-1-public-integration-evidence.md) | 优先核对现有 integration 能力的装配和兼容；厂家设备主动事件不在该七类源清单内，不能据此认领设备事件接入已完成 |
+| 公开集成与 Webhook | 已有公开 REST、应用 MQTT/WS 及七类源的公共 Webhook 本地交付证据，见[公共集成回执](../../.private/thingslink-docs/docs/delivery/audits/S14-R8f-1-public-integration-evidence.md) | 优先核对现有 integration 能力的装配和兼容；厂家设备主动事件不在该七类源清单内，不能据此认领设备事件接入已完成 |
 
 当前 TCP 服务端使用 JDK SSLServerSocket 和 Java 21 虚拟线程，不应在规划中误写为已采用 Netty。原生 TCP 与 EMQX MQTT 是并行接入通道；TCP 设备不必先经过 EMQX。
 
@@ -125,7 +125,7 @@ cloud 不应依赖 service 的可执行 JAR，也不应启动另一份 ThingsClo
 
 ### 5.3 公共集成能力与设备事件缺口
 
-ThingsCloud 已有独立于告警通知正文的公开集成域，包含版本化事件、持久交接、Webhook 管理和恢复等能力；范围与资格见[集成实施合同](../../docs/delivery/S14-R8-integration-contract.md)及[公共集成本地证据](../../docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)。jagonzn 应先核对这些能力的复用与装配，不能从“通知正文不适合业务同步”推导出需重新实现整套公共 Webhook。
+ThingsCloud 已有独立于告警通知正文的公开集成域，包含版本化事件、持久交接、Webhook 管理和恢复等能力；范围与资格见[集成实施合同](../../.private/thingslink-docs/docs/delivery/S14-R8-integration-contract.md)及[公共集成本地证据](../../.private/thingslink-docs/docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)。jagonzn 应先核对这些能力的复用与装配，不能从“通知正文不适合业务同步”推导出需重新实现整套公共 Webhook。
 
 当前仍需补齐的是烟感报警/恢复、开锁记录等厂家主动事件进入平台的合同与处理链路，以及它们是否需要新增公开事件来源。现有公共事件输出能力不自动提供厂家事件输入接口。下节字段只作为 jagonzn 需求草案；已有公共信封和事件名称以 ThingsCloud 合同为准，具体新增项需差异评审。
 
@@ -133,7 +133,7 @@ ThingsCloud 已有独立于告警通知正文的公开集成域，包含版本�
 
 ## 6. 事件合同与可靠交付建议
 
-以下是 jagonzn 扩展需求草案，不是已冻结的第二套公共事件合同。ThingsCloud 已有的事件信封、持久交接与 Webhook API 以[公开集成边界 ADR0168](../../docs/adr/0168-public-integration-boundaries-and-provider-evidence.md)和[集成实施合同](../../docs/delivery/S14-R8-integration-contract.md)为准；尚未实施的是 jagonzn 的内核装配、厂家主动事件接入及经评审确认的扩展差异。
+以下是 jagonzn 扩展需求草案，不是已冻结的第二套公共事件合同。ThingsCloud 已有的事件信封、持久交接与 Webhook API 以[公开集成边界 ADR0168](../../.private/thingslink-docs/docs/adr/0168-public-integration-boundaries-and-provider-evidence.md)和[集成实施合同](../../.private/thingslink-docs/docs/delivery/S14-R8-integration-contract.md)为准；尚未实施的是 jagonzn 的内核装配、厂家主动事件接入及经评审确认的扩展差异。
 
 ### 6.1 事件信封
 
@@ -240,7 +240,7 @@ jagonzn-service 是 ThingsCloud 共用接入合同的隔离验证部署，不是
 
 首台设备闭环需要逐次设备事件模型、持久保存、幂等与查询；当前不足登记为 JPF-002，交由 ThingsCloud 评审。jagonzn 不改平台代码或表结构，也不把开锁记录压成属性来认领闭环；相关项保持受阻。既有公共集成出口优先复用，厂家事件是否新增公共输出不作为单设备本地闭环的默认前置任务。
 
-现有标准 TCP 已提供 `ACCEPTED(0x13)`：属性在可靠交接后应答，命令回复在应用事务完成后应答；参见[标准协议接入合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)与[ADR0141](../../docs/adr/0141-tcp-explicit-acceptance.md)。该确认不代表设备执行成功，也不代表厂家开锁/报警事件已经受支持。厂家逐记录确认、查询及重放语义仍需按其协议冻结；不能以心跳 ACK 代替事件持久受理。
+现有标准 TCP 已提供 `ACCEPTED(0x13)`：属性在可靠交接后应答，命令回复在应用事务完成后应答；参见[标准协议接入合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)与[ADR0141](../../.private/thingslink-docs/docs/adr/0141-tcp-explicit-acceptance.md)。该确认不代表设备执行成功，也不代表厂家开锁/报警事件已经受支持。厂家逐记录确认、查询及重放语义仍需按其协议冻结；不能以心跳 ACK 代替事件持久受理。
 
 ## 9. 数据、租户与数据库边界
 
@@ -280,7 +280,7 @@ JAR 不会自动部署 EMQX、Kafka／Redpanda、PostgreSQL、Redis 或 MinIO。
 
 ### 10.3 扩容边界
 
-D-190 已按方案 A 完成并关闭，复用范围是 TCP 专用广播、会话归属/代次核验及待发恢复。设计见[ADR0143](../../docs/adr/0143-tcp-broadcast-routing-and-pending-recovery.md)，最终状态以[同候选资格回执](../../docs/delivery/audits/G3-TCP-D190-2026-09-19-qualification.md)及[ThingsCloud 进度](../../docs/PROGRESS.md)为准；ADR 内“尚未实现”是接受时的历史状态。jagonzn 仍需验证自己的装配和厂商适配器会话行为，单实例试验不能替代该部署的多实例、硬件及容量资格。
+D-190 已按方案 A 完成并关闭，复用范围是 TCP 专用广播、会话归属/代次核验及待发恢复。设计见[ADR0143](../../.private/thingslink-docs/docs/adr/0143-tcp-broadcast-routing-and-pending-recovery.md)，最终状态以[同候选资格回执](../../.private/thingslink-docs/docs/delivery/audits/G3-TCP-D190-2026-09-19-qualification.md)及[ThingsCloud 进度](../../.private/thingslink-docs/docs/PROGRESS.md)为准；ADR 内“尚未实现”是接受时的历史状态。jagonzn 仍需验证自己的装配和厂商适配器会话行为，单实例试验不能替代该部署的多实例、硬件及容量资格。
 
 ## 11. 实施顺序与完成标准
 
@@ -310,13 +310,13 @@ D-190 已按方案 A 完成并关闭，复用范围是 TCP 专用广播、会话
 ## 13. 核查入口
 
 - [jagonzn 项目开发进度总览](PROJECT_PROGRESS.md)：阶段状态与进入/完成判据；不替代 ThingsCloud 进度总览。
-- [当前标准协议合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)：能力范围、TCP 帧、确认语义与事件排除项；D-190 已关闭，关闭证据见合同关联的 ADR/验收记录。
+- [当前标准协议合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)：能力范围、TCP 帧、确认语义与事件排除项；D-190 已关闭，关闭证据见合同关联的 ADR/验收记录。
 - [多协议接入与烟感适配调研](protocol-extensibility-and-smoke-adapter-research.md)：厂商协议适配目标与待裁定设计。
 - [隔离验证部署与平台合同演进](tenant-validation-and-contract-evolution.md)：jagonzn 验证实例与 ThingsCloud 共用能力的边界。
-- [MQTT 接入指南](../../docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)：MQTT 能力边界；其中旧 AX 状态需结合最新协议合同判断。
-- [AX 阶段记录](../../docs/progress/AX.md)：阶段交付与验证记录，本轮未重新执行其中测试。
-- [标准 TCP 服务端](../../things-cloud/things-cloud-ingestion/src/main/java/com/things/cloud/ingestion/infrastructure/protocol/tcp/DeviceAccessTcpServer.java)。
-- [TCP 会话注册表](../../things-cloud/things-cloud-ingestion/src/main/java/com/things/cloud/ingestion/infrastructure/protocol/tcp/DeviceAccessTcpSessionRegistry.java)。
-- [新协议上行标准化器](../../things-cloud/things-cloud-ingestion/src/main/java/com/things/cloud/ingestion/application/access/DeviceAccessUplinkNormalizer.java)。
-- [MQTT 基础上行标准化器](../../things-cloud/things-cloud-ingestion/src/main/java/com/things/cloud/ingestion/application/RawUplinkMessageNormalizer.java)。
+- [MQTT 接入指南](../../.private/thingslink-docs/docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)：MQTT 能力边界；其中旧 AX 状态需结合最新协议合同判断。
+- [AX 阶段记录](../../.private/thingslink-docs/docs/progress/AX.md)：阶段交付与验证记录，本轮未重新执行其中测试。
+- [标准 TCP 服务端](../../things-link/things-link-ingestion/src/main/java/com/things/link/ingestion/infrastructure/protocol/tcp/DeviceAccessTcpServer.java)。
+- [TCP 会话注册表](../../things-link/things-link-ingestion/src/main/java/com/things/link/ingestion/infrastructure/protocol/tcp/DeviceAccessTcpSessionRegistry.java)。
+- [新协议上行标准化器](../../things-link/things-link-ingestion/src/main/java/com/things/link/ingestion/application/access/DeviceAccessUplinkNormalizer.java)。
+- [MQTT 基础上行标准化器](../../things-link/things-link-ingestion/src/main/java/com/things/link/ingestion/application/RawUplinkMessageNormalizer.java)。
 - [公开 JAR 自动配置机制](https://docs.spring.io/spring-boot/reference/features/developing-auto-configuration.html)：用于后续内核装配设计。

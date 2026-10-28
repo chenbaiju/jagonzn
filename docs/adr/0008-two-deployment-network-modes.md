@@ -2,7 +2,7 @@
 
 - 状态：已接受（2026-09-28，负责人将部署形态收敛为两种；仅设计，尚无目标环境验收）。
 - 取代范围：[JADR-0007](0007-unified-console-and-backend-boundary.md)中“公网设备入口＋私网后端”、专线/隧道及私网 cloud 拉取作为首版推荐部署形态的表述；JADR-0007 的三个工程职责、统一前端、授权导入及数据权威继续有效。
-- 依据：[jagonzn 主架构](../jagonzn-system-architecture.md)、[平台协议合同](../../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)、[平台授权交付决策](../../../docs/adr/0227-self-hosted-issuer-console-and-delivery-media.md)。
+- 依据：[jagonzn 主架构](../jagonzn-system-architecture.md)、[平台协议合同](../../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)、[平台授权交付决策](../../../.private/thingslink-docs/docs/adr/0227-self-hosted-issuer-console-and-delivery-media.md)。
 
 ## 四维审计
 
@@ -22,4 +22,4 @@
 
 两种形态共用同一申请身份、签名 V1 文件、批准四档修订、原子导入与运行时计量。公网模式的 HTTPS 不能替代 MQTT/TLS、原生 TCP/TLS 或 CoAP/DTLS；公开地址不能让未认证的管理操作可用。全内网模式中的“无网”指没有互联网，两个后端仍须能通过局域网交换业务事件与命令。若它们连局域网也不互通，则只具 service 独立技术运行资格，不能按本形态声称 cloud 联动或统一前端已工作。
 
-首版不安排“公网 service＋私网 cloud”、站点间隧道或 cloud 主动拉取等第三种交付组合。未来确有客户场景时再单独评审，不给当前两种形态增加前置。cloud 未部署时 service 仍可独立完成设备技术运行及授权恢复；双后端部署形态不改变这一既有职责。具体网络合同和分别验收按[SHC 工作包计划](../../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_AND_SELF_HOSTED_REVIEW.md)执行。
+首版不安排“公网 service＋私网 cloud”、站点间隧道或 cloud 主动拉取等第三种交付组合。未来确有客户场景时再单独评审，不给当前两种形态增加前置。cloud 未部署时 service 仍可独立完成设备技术运行及授权恢复；双后端部署形态不改变这一既有职责。具体网络合同和分别验收按[SHC 工作包计划](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_CLOSEOUT_AND_SELF_HOSTED_REVIEW.md)执行。

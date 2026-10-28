@@ -10,7 +10,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.util.Map;
 
 /**
- * 独立验证部署的测试资源：新建 jagonzn 数据库，避免读取或写入原 ThingsCloud 库。
+ * 独立验证部署的测试资源：新建 jagonzn 数据库，避免读取或写入原 ThingsLink 库。
  * 容器仅在测试 JVM 中复用，迁移 owner 与应用 RLS 角色保持分离。
  */
 @ActiveProfiles("test")

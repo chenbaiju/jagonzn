@@ -1,6 +1,6 @@
 package com.jagonzn.service.enrollment;
 
-import com.things.cloud.project.application.SelfHostedGrantImportService;
+import com.things.link.project.application.SelfHostedGrantImportService;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +15,7 @@ import java.util.HexFormat;
 import java.util.Map;
 
 /**
- * 客户发行物内固定的 ThingsCloud 公钥锚。不能从授权文件、数据库或可改写的部署配置取得。
+ * 客户发行物内固定的 ThingsLink 公钥锚。不能从授权文件、数据库或可改写的部署配置取得。
  * 正式公钥尚未产生时，启用签名授权模式必须拒绝启动。
  */
 public final class PackagedIssuerTrust {

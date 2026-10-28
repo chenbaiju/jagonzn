@@ -102,19 +102,19 @@
 
 | 发现及证据 | 分类与处置 |
 | --- | --- |
-| [接入指南](../../docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)说明事件上报尚无通用标准化；生产`RawUplinkMessageNormalizer`仅接受属性，相关单元和EMQX测试保留事件DLQ合同 | 已确认实现缺口，不只是查询接口缺失；WP-08改为A合同、B摄取/持久化、C查询/页面三片。HTTP/TCP/CoAP事件仍不自动扩范围 |
-| [恢复代次](../../docs/adr/0073-project-lifecycle-generation-and-recovery.md)、[锁后实际时钟](../../docs/adr/0074-project-recovery-wall-clock-deadline.md)要求无已选项目账号可恢复、旧能力永不复活；当前G3还记录跨夏令时720小时修复 | WP-01显式覆盖无当前项目、截止/锁等待/夏令时与代次；旧ADR公式不能替代当前已修复实现核验，不改写历史ADR |
-| [导出合同](../../docs/adr/0075-project-export-snapshot-and-private-object-delivery.md)及[留存例外](../../docs/adr/0162-plan-history-window-and-retention-export.md)严格限定删除冻结项目；当前API无完成任务列表，POST只吸收非终态 | WP-02增加任务找回的后端/页面决策点，不把再次申请当只读查询，不推广为任意时序导出 |
-| [终端用户身份](../../docs/adr/0035-enduser-identity-and-two-axis-rls.md)、[两层授权](../../docs/adr/0041-enduser-device-dataplane-two-layer-authorization-matrix.md)区分租户账号、项目角色和设备关系；实际列表按已分配角色查询 | WP-03必须覆盖预置成功但分配失败/刷新后恢复，必要后端补齐由同片负责，不暴露任意租户账号目录 |
-| [权限总表](../../docs/PERMISSIONS.md)区分菜单与真正授权；OTA部分原始读取入口与管理菜单的角色范围不同 | 各包同步服务端授权、菜单、按钮与反例；不能把任意成员可读某个API推成拥有全部OTA管理页面 |
-| [OTA下载](../../docs/adr/0120-ota-management-release-download.md)限定固定对象、当前资格及60秒短时地址；[类型基线](../../docs/adr/0122-controlled-ota-device-type-baselines.md)只从受控配置登记；[回退预检](../../docs/adr/0134-ota-rollback-qualification-and-readonly-preflight.md)不授予执行许可 | WP-06分别验下载、只读观察及受控写入；不让浏览器提交任意安全基线、不新增回退执行按钮、不承诺URL即时撤销 |
-| [发布与访问](../../docs/adr/0100-dashboard-access-and-publication-metadata.md)区分撤回/再发布与V1不可恢复软删 | WP-07验证旧WebApp/分享入口的实际拒绝，不仅移除Console列表 |
-| [测试方针](../../docs/TEST_VERIFICATION_POLICY.md)要求每片按传播风险选最小充分范围，局部Maven用当前reactor的`-am` | 已修正前版每片机械全前端检查的措辞；片内保证必要回归，最终候选整合与外部资格分别记录 |
-| [单人方案](../../docs/SINGLE_DEVELOPER_EXECUTION_PLAN.md)允许已授权范围内同一执行者处理跨模块缺陷及内部设计裁决 | 两文档只是依赖分类；本轮仍遵从用户“先规划、反馈后等待”指令，后续包获准实施后不再等待另一位后端开发者 |
+| [接入指南](../../../.private/thingslink-docs/docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)说明事件上报尚无通用标准化；生产`RawUplinkMessageNormalizer`仅接受属性，相关单元和EMQX测试保留事件DLQ合同 | 已确认实现缺口，不只是查询接口缺失；WP-08改为A合同、B摄取/持久化、C查询/页面三片。HTTP/TCP/CoAP事件仍不自动扩范围 |
+| [恢复代次](../../../.private/thingslink-docs/docs/adr/0073-project-lifecycle-generation-and-recovery.md)、[锁后实际时钟](../../../.private/thingslink-docs/docs/adr/0074-project-recovery-wall-clock-deadline.md)要求无已选项目账号可恢复、旧能力永不复活；当前G3还记录跨夏令时720小时修复 | WP-01显式覆盖无当前项目、截止/锁等待/夏令时与代次；旧ADR公式不能替代当前已修复实现核验，不改写历史ADR |
+| [导出合同](../../../.private/thingslink-docs/docs/adr/0075-project-export-snapshot-and-private-object-delivery.md)及[留存例外](../../../.private/thingslink-docs/docs/adr/0162-plan-history-window-and-retention-export.md)严格限定删除冻结项目；当前API无完成任务列表，POST只吸收非终态 | WP-02增加任务找回的后端/页面决策点，不把再次申请当只读查询，不推广为任意时序导出 |
+| [终端用户身份](../../../.private/thingslink-docs/docs/adr/0035-enduser-identity-and-two-axis-rls.md)、[两层授权](../../../.private/thingslink-docs/docs/adr/0041-enduser-device-dataplane-two-layer-authorization-matrix.md)区分租户账号、项目角色和设备关系；实际列表按已分配角色查询 | WP-03必须覆盖预置成功但分配失败/刷新后恢复，必要后端补齐由同片负责，不暴露任意租户账号目录 |
+| [权限总表](../../../.private/thingslink-docs/docs/PERMISSIONS.md)区分菜单与真正授权；OTA部分原始读取入口与管理菜单的角色范围不同 | 各包同步服务端授权、菜单、按钮与反例；不能把任意成员可读某个API推成拥有全部OTA管理页面 |
+| [OTA下载](../../../.private/thingslink-docs/docs/adr/0120-ota-management-release-download.md)限定固定对象、当前资格及60秒短时地址；[类型基线](../../../.private/thingslink-docs/docs/adr/0122-controlled-ota-device-type-baselines.md)只从受控配置登记；[回退预检](../../../.private/thingslink-docs/docs/adr/0134-ota-rollback-qualification-and-readonly-preflight.md)不授予执行许可 | WP-06分别验下载、只读观察及受控写入；不让浏览器提交任意安全基线、不新增回退执行按钮、不承诺URL即时撤销 |
+| [发布与访问](../../../.private/thingslink-docs/docs/adr/0100-dashboard-access-and-publication-metadata.md)区分撤回/再发布与V1不可恢复软删 | WP-07验证旧WebApp/分享入口的实际拒绝，不仅移除Console列表 |
+| [测试方针](../../../.private/thingslink-docs/docs/TEST_VERIFICATION_POLICY.md)要求每片按传播风险选最小充分范围，局部Maven用当前reactor的`-am` | 已修正前版每片机械全前端检查的措辞；片内保证必要回归，最终候选整合与外部资格分别记录 |
+| [单人方案](../../../.private/thingslink-docs/docs/SINGLE_DEVELOPER_EXECUTION_PLAN.md)允许已授权范围内同一执行者处理跨模块缺陷及内部设计裁决 | 两文档只是依赖分类；本轮仍遵从用户“先规划、反馈后等待”指令，后续包获准实施后不再等待另一位后端开发者 |
 
 ### 保持独立的未完成与暂停范围
 
-[当前进度](../../docs/PROGRESS.md)仍保留S12跨端/整合D-147与D-149、S13真实signer/硬件D-166、
+[当前进度](../../../.private/thingslink-docs/docs/PROGRESS.md)仍保留S12跨端/整合D-147与D-149、S13真实signer/硬件D-166、
 S14支付/退款扩展及功能权益、正式复用/自部署权益与LAN、设备SDK实物、公司服务器准入等独立资格。
 这些不是本次Console九包全部可消除的债务；本轮不重开已关闭项、不扩大成全平台实现。
 SIM D-185、商用云G3-P0～P3、域名/公开部署继续按R4暂停；S15编解码、DTU及设备证书档不因全文扫描自动启动。

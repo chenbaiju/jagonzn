@@ -10,6 +10,12 @@
 __pycache__/
 *.pyc
 
+# 本机外设映射、构建缓存及测试原件；不随独立源码仓库提交。
+/.private/
+/.mvn/maven.config
+/jagonzn-service/.mvn/maven.config
+**/target/
+
 # 两个后端的运行日志只保留在本机，不随源码提交。
 logs/
 

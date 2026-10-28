@@ -1,6 +1,6 @@
 package com.jagonzn.service.enrollment;
 
-import com.things.cloud.project.application.SelfHostedGrantImportService;
+import com.things.link.project.application.SelfHostedGrantImportService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 

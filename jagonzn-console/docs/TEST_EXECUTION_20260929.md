@@ -12,7 +12,7 @@ HTTP 200 不代表 LAN 资格；后续另用 HTTPS 13007 做隔离静态验证�
 
 ## 候选与环境
 
-2026-09-29 22:23 起（北京时间）执行，核心动态检查于 22:37 完成，收尾时间另见证据清单。前端执行时 HEAD 为 `5c52570aab97e85a8b84c0d7d65137a63d37ae75`，含既有未提交修改和本轮测试页/工具，未认领为不可变发行制品。后端仍复用前批 `7f8416fe95f7f922c93dd61a01cfd574b28ada92` 工作树生成的候选，源码归属见[本地专项回执](../../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)，没有在本片重新构建。Vue 3.5.22、Vite 7.1.7、Vue 插件 6.0.1；实际浏览器沿用本机已有 Playwright/Chrome for Testing 测试工具，没有复制原项目或其业务依赖。
+2026-09-29 22:23 起（北京时间）执行，核心动态检查于 22:37 完成，收尾时间另见证据清单。前端执行时 HEAD 为 `5c52570aab97e85a8b84c0d7d65137a63d37ae75`，含既有未提交修改和本轮测试页/工具，未认领为不可变发行制品。后端仍复用前批 `7f8416fe95f7f922c93dd61a01cfd574b28ada92` 工作树生成的候选，源码归属见[本地专项回执](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_LOCAL_TEST_EXECUTION_20260929.md)，没有在本片重新构建。Vue 3.5.22、Vite 7.1.7、Vue 插件 6.0.1；实际浏览器沿用本机已有 Playwright/Chrome for Testing 测试工具，没有复制原项目或其业务依赖。
 
 - 开发页：`http://127.0.0.1:13006/`，原 Vite 终端保持运行。
 - 本轮 Console HTTPS：`https://127.0.0.1:13007/`，仅用于实验；最终已停止本轮实验容器，当前查看入口仍为 HTTP 13006。

@@ -4,9 +4,9 @@
 
 ## 项目用途
 
-控制台通过后端 API 管理租户与项目、设备及物模型、遥测与告警、规则与自动化、看板应用、OTA 和套餐资源。登录会话、权限判断、设备数据与任务执行由后端提供；前端消费接口与权限，不内置一套模拟业务后端。现有接口上的页面任务见 [Console 待办](docs/TODO.md)，须先补后端的需求见 [后端依赖待办](docs/BACKEND_TODO.md)，页面存在不代表对应外部设备或生产环境已验收。
+控制台通过后端 API 管理租户与项目、设备及物模型、遥测与告警、规则与自动化、看板应用、OTA 和套餐资源。登录会话、权限判断、设备数据与任务执行由后端提供；前端消费接口与权限，不内置一套模拟业务后端。现有接口上的页面任务见 [Console 待办](../TODO.md)，须先补后端的需求见 [后端依赖待办](../BACKEND_TODO.md)，页面存在不代表对应外部设备或生产环境已验收。
 
-Console 首页是围绕项目和设备开发流程的工作台，提供物模型、设备接入、上报调试、规则、应用看板入口，以及真实项目摘要和本机最近访问。原概要保留为“项目概况”，原URL继续可用；页面组织、切片和验证边界见[开发者工作台记录](docs/TODO.md#开发者工作台重构计划)。
+Console 首页是围绕项目和设备开发流程的工作台，提供物模型、设备接入、上报调试、规则、应用看板入口，以及真实项目摘要和本机最近访问。原概要保留为“项目概况”，原URL继续可用；页面组织、切片和验证边界见[开发者工作台记录](../TODO.md#开发者工作台重构计划)。
 
 ## 仓库结构
 
@@ -67,9 +67,9 @@ Prettier与Git忽略是两套规则。本轮在 `.prettierignore` 补齐运行�
 
 ### 上游历史与退役工具
 
-- 原模板历史迁入 [英文更新日志](docs/upstream/CHANGELOG.md) 与 [中文更新日志](docs/upstream/CHANGELOG.zh-CN.md)；当前产品进度仍查 [Console待办](docs/TODO.md)。只修正迁移所需的相对链接，不删除版权或重写历史内容。原路径和原始内容可由平台提交 `a36a10181` 恢复；历史审计清单中的旧路径保持当时候选含义，不重写不可变记录。
-- 原 `scripts/clean-dev.ts` 是模板初始化工具，调用链只有 `package.json` 的 `clean:dev`。它会删除README/模板目录并重写路由、语言、快捷入口和菜单，已不适合当前业务工程。本轮移除命令入口，将原文件逐字节保留为 [非执行归档](docs/upstream/clean-dev.ts.txt)，不运行精简操作。新克隆继续使用正常开发、构建和验证命令。
-- 所有其他配置、源码、测试与工具均保留；未创建嵌套Git，不排除测试代码，未删除本机缓存或运行证据。本轮审计与验证记录见 [工程目录整理](docs/TODO.md#工程目录整理)。
+- 原模板历史迁入 [英文更新日志](CHANGELOG.md) 与 [中文更新日志](CHANGELOG.zh-CN.md)；当前产品进度仍查 [Console待办](../TODO.md)。只修正迁移所需的相对链接，不删除版权或重写历史内容。原路径和原始内容可由平台提交 `a36a10181` 恢复；历史审计清单中的旧路径保持当时候选含义，不重写不可变记录。
+- 原 `scripts/clean-dev.ts` 是模板初始化工具，调用链只有 `package.json` 的 `clean:dev`。它会删除README/模板目录并重写路由、语言、快捷入口和菜单，已不适合当前业务工程。本轮移除命令入口，将原文件逐字节保留为 [非执行归档](clean-dev.ts.txt)，不运行精简操作。新克隆继续使用正常开发、构建和验证命令。
+- 所有其他配置、源码、测试与工具均保留；未创建嵌套Git，不排除测试代码，未删除本机缓存或运行证据。本轮审计与验证记录见 [工程目录整理](../TODO.md#工程目录整理)。
 
 ## 开发准备
 
@@ -86,7 +86,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-不再克隆独立 Console、初始化嵌套 `.git` 或执行双仓库同步。Console 的代码、测试、文档及资源直接在平台根按范围暂存与提交；推送按当次授权执行到平台 `master`。原独立 Git 历史已归档，恢复边界及本次迁移记录见 [CI 执行约定](../.github/CI.md#Console%20单仓库交付与手动%20CI)。
+不再克隆独立 Console、初始化嵌套 `.git` 或执行双仓库同步。Console 的代码、测试、文档及资源直接在平台根按范围暂存与提交；推送按当次授权执行到平台 `master`。原独立 Git 历史已归档，恢复边界及本次迁移记录见 [CI 执行约定](../../../../.private/thingslink-docs/.github/CI.md#Console%20单仓库交付与手动%20CI)。
 
 开发服务器默认使用 `http://localhost:3006`，API 代理默认指向 `http://localhost:8080`。 `pnpm dev` 只启动前端；后端须另按平台运行说明准备。生产部署通过同站反向代理访问 API。本机覆盖配置放 `.env.development.local`；`VITE_` 变量会进入浏览器产物，不存放秘密。
 
@@ -112,18 +112,18 @@ PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright-browsers" pnpm exec playwright instal
 
 ## 手动 CI
 
-平台根目录的 [console.yml](../.github/workflows/console.yml) 和 [e2e.yml](../.github/workflows/e2e.yml) 只允许 `workflow_dispatch`，提交、推送和 PR 均不自动启动。两项都检出本次手动运行的同一平台 SHA，Console、后端、共享合同与 WebApp 不再分别取版本，也不需要独立仓库读取后端的 SSH Secret。
+平台根目录的 [console.yml](../../../../.github/workflows/console.yml) 和 [e2e.yml](../../../../.github/workflows/e2e.yml) 只允许 `workflow_dispatch`，提交、推送和 PR 均不自动启动。两项都检出本次手动运行的同一平台 SHA，Console、后端、共享合同与 WebApp 不再分别取版本，也不需要独立仓库读取后端的 SSH Secret。
 
 `console` 执行构建、单元与静态检查。`console-e2e` 在自身工作流内先执行相同的前置验证，通过后启动真实隔离栈和完整默认浏览器旅程，失败保留报告与日志；不通过 `workflow_call` 增加额外入口。本目录不再保存 `.github`。
 
-本地从平台根运行 `bash verify/sh/verify-console.sh` 或 `bash verify/sh/verify-console-e2e.sh`，默认九项聚合也包含它们。结果范围、日志和环境要求见 [本地验证说明](../verify/README.md)，实际 GitHub 运行统一登记到 [CI 台账](../.github/CI.md)，不代表正式设备或生产环境放行。
+本地从平台根运行 `bash verify/sh/verify-console.sh` 或 `bash verify/sh/verify-console-e2e.sh`，默认九项聚合也包含它们。结果范围、日志和环境要求见 [本地验证说明](../../../../.private/thingslink-docs/tools/verification/README.md)，实际 GitHub 运行统一登记到 [CI 台账](../../../../.private/thingslink-docs/.github/CI.md)，不代表正式设备或生产环境放行。
 
 ## 文档与许可证
 
-- [Console 文档入口](docs/README.md)
+- [Console 文档入口](../README.md)
 - [平台前端架构](https://github.com/chenbaiju/things-cloud/blob/master/docs/FRONTEND_ARCHITECTURE.md)（需私有仓库权限）
-- [上游 MIT 许可证](LICENSE)：保留原版权声明；本仓库不宣称原模板的演示站点或支持渠道由当前维护者提供。
+- [上游 MIT 许可证](../../LICENSE)：保留原版权声明；本仓库不宣称原模板的演示站点或支持渠道由当前维护者提供。
 
-暂停中的专属测试与恢复命令见[第四轮测试接续](docs/TODO.md#第四轮测试接续)；保存测试代码不等于对应业务验收通过。
+暂停中的专属测试与恢复命令见[第四轮测试接续](../TODO.md#第四轮测试接续)；保存测试代码不等于对应业务验收通过。
 
 开发调试工具：需要Vue DevTools时可在本机环境设置`VITE_DEVTOOLS=true`后启动Vite；默认关闭悬浮调试控件，避免遮挡工作区和窄屏验收。此选项不改变业务权限或接口。

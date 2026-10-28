@@ -1,7 +1,7 @@
 # Console 后端依赖待办
 
 本文件只维护**必须先新增或完善后端能力才能实施的Console需求**；后端已具备的页面任务和完成回执见[Console开发任务](TODO.md)。
-范围受[V1-R4](../../docs/PRODUCT_SCOPE_V1_R4.md)约束；设计候选不等于实施授权。供应商、运行环境和外部验收缺条件与后端缺接口分开判断。
+范围受[V1-R4](../../../.private/thingslink-docs/docs/PRODUCT_SCOPE_V1_R4.md)约束；设计候选不等于实施授权。供应商、运行环境和外部验收缺条件与后端缺接口分开判断。
 
 ## 统一负责与本轮执行边界
 
@@ -17,7 +17,7 @@
 
 ## 当前后端依赖队列
 
-2026-10-06复核平台`d5e24018`的[OpenAPI](../../docs/openapi.json)、Controller和Console消费者。
+2026-10-06复核平台`d5e24018`的[OpenAPI](../../../docs/openapi.json)、Controller和Console消费者。
 TODO-001至TODO-010原来要求的公共接口/菜单/返回字段均已提供，页面均有消费，**没有继续等待这些原接口的开发项**；
 001、002及004至009保留原限定范围完成回执；003后端聚合已具备，但独立数量卡片已由WP-10 / 003-C收尾并验证，010-C补证同归WP-10，010-D保留外部资格差额，详细结果只维护在[复核总表](TODO.md#TODO-001至TODO-010复核结论)。
 不复制这些已完成任务到本文件，不将缺少真实模型准入误记为Analysis接口未开发。
@@ -31,8 +31,8 @@ TODO-001至TODO-010原来要求的公共接口/菜单/返回字段均已提供�
 ## BE-001 设备事件发生历史
 
 - **来源**：[TODO-004单独边界](TODO.md#单独边界)。当前事件定义路径为`/api/v1/projects/{projectId}/device-types/{deviceTypeId}/events`，它表示模型定义，不是设备发生记录；现有消息日志也不能自动推导为正式事件历史合同。
-- **开片全文审查事实（摄取差额现由B关闭）**：[设备接入指南](../../docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)明确`up/event/{eventKey}`尚无通用标准化器；[RawUplinkMessageNormalizer](../../things-cloud/things-cloud-ingestion/src/main/java/com/things/cloud/ingestion/application/RawUplinkMessageNormalizer.java)仅接受`property/report`，现有`RawUplinkMessageNormalizerTests`与`EmqxCallbackTests`验证事件类型进入DLQ。架构提及`ts_device_event`是设计，不能作为已有持久化实现证据。
-- **范围裁决**：[ADR0235](../../docs/adr/0235-device-event-history-and-mqtt-ingestion.md)与[事件合同](../../docs/contracts/DEVICE_EVENT_HISTORY.md)冻结MQTT直接连接（含网关本机）、独立EventUplink/Topic/consumer、显式版本与实际直接替换10分钟窗口、四标量/空参数/脱敏、完整scope Inbox分类与EVENT独立rawBytes计量、整条额度拒绝、可信receivedAt90天物理保留及套餐交集、RLS/清理/键集查询。HTTP/TCP/CoAP、子设备代理、规则/告警/自动化/影子及旧死信自动重放不扩展；历史名称未知不猜补。
+- **开片全文审查事实（摄取差额现由B关闭）**：[设备接入指南](../../../.private/thingslink-docs/docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)明确`up/event/{eventKey}`尚无通用标准化器；[RawUplinkMessageNormalizer](../../../things-link/things-link-ingestion/src/main/java/com/things/link/ingestion/application/RawUplinkMessageNormalizer.java)仅接受`property/report`，现有`RawUplinkMessageNormalizerTests`与`EmqxCallbackTests`验证事件类型进入DLQ。架构提及`ts_device_event`是设计，不能作为已有持久化实现证据。
+- **范围裁决**：[ADR0235](../../../.private/thingslink-docs/docs/adr/0235-device-event-history-and-mqtt-ingestion.md)与[事件合同](../../../.private/thingslink-docs/docs/contracts/DEVICE_EVENT_HISTORY.md)冻结MQTT直接连接（含网关本机）、独立EventUplink/Topic/consumer、显式版本与实际直接替换10分钟窗口、四标量/空参数/脱敏、完整scope Inbox分类与EVENT独立rawBytes计量、整条额度拒绝、可信receivedAt90天物理保留及套餐交集、RLS/清理/键集查询。HTTP/TCP/CoAP、子设备代理、规则/告警/自动化/影子及旧死信自动重放不扩展；历史名称未知不猜补。
 - **拆片理由**：实际发现摄取缺失，不能把BE-001-B简化为查询。摄取到持久事实与只读管理查询具有独立完成边界，新增BE-001-C，B/C仍各自包含必要测试和记录，不按工序拆片。
 - **后端验收**：接受的接口应覆盖无事件/多页、稳定排序、事件模型变更、时间范围、删除/撤权、跨项目及敏感信息；生成类型与源码一致，并有真实数据库/HTTP证据。
 - **Console后续**：BE-001-A先输出可审查契约及数据源结论，B完成真实摄取事实，C由同一执行者完成后端查询与设备历史页签/筛选/详情及实际验证；主体回执保留本项，TODO总队列只引用，不复制流水。
@@ -81,7 +81,7 @@ TODO-001至TODO-010原来要求的公共接口/菜单/返回字段均已提供�
 
 ## BE-002 设备类型单条读取
 
-- **来源**：[设备类型API](../src/api/device.ts)、[设备详情](../src/views/device/index/index.vue)的`fetchDeviceTypePage`游标查询；[DeviceTypeController](../../things-cloud/things-cloud-device/src/main/java/com/things/cloud/device/api/controller/DeviceTypeController.java)已由[015-A](TODO.md#TODO-015%20一型一密产品凭据)提供单条GET，详细实现和验证只在该回执维护。
+- **来源**：[设备类型API](../src/api/device.ts)、[设备详情](../src/views/device/index/index.vue)的`fetchDeviceTypePage`游标查询；[DeviceTypeController](../../../things-link/things-link-device/src/main/java/com/things/link/device/api/controller/DeviceTypeController.java)已由[015-A](TODO.md#TODO-015%20一型一密产品凭据)提供单条GET，详细实现和验证只在该回执维护。
 - **当前可用路径**：单条`GET /api/v1/projects/{projectId}/device-types/{deviceTypeId}`已由015-A提供。设备详情已改为每次单条新读取；目录选择器本身保留原合同。
 - **验收**：复用015-A现有成员读取/11字段DTO及404/30001，不新增后端接口。每次详情独立GET当前类型，核范围与身份代次；不存在/撤权清能力并明确不可用，可手动重试。目录缺失的N页查询降为一次，已有缓存时0次变一次是防旧协议/类型状态的正确性取舍；不宣称所有路径请求减少。
 - **回执**：~~BE-002-A~~已完成并验证本地软件范围。候选`master / 7a7b7e8e`开片清洁，C提交后`pwsh scripts/docs-verify.ps1 -SkipMaven -BaseRef 8897e433`已通过821文档/23链接语法及实际提交范围策略。源码确认详情缓存未命中时循环50项目录，可能多页；缓存命中则不复核当前设备类型。选择每次详情单条新读取，不用旧缓存作能力依据，不重复认领015-A后端交付。Console已迁移fresh单GET、项目/type匹配、detail/type请求与身份代次、独立不可用/手动重试，不清其他设备事实；专项3文件22单元与源/测试ESLint首轮通过，日志`logs/be-002-a-unit-first.log`。后端生产代码/DTO不改，在既有DeviceTypeApiTests补真实DELETE后单读404/30001、撤员后原JWT401/20020与真实项目删除恢复后旧代次拒绝、新正常登录恢复读取；真实PG/HTTP及Service46.723s通过，22接口+12服务+退出fixture2，共36次执行零失败/零跳过，日志`logs/be-002-a-backend.log`；最终Console专项3文件24项/1.35s通过、5文件ESLint通过（`logs/be-002-a-unit-final.log`/`logs/be-002-a-scoped-lint-final.log`）。类型读取还从整卡Promise等待移为独立读取，实际迟响应不应挡返回或其他已完成事实；真实gatewayId保留，不把它误说成类型缓存能力。共用事件运行guard抽取后，同候选C真实浏览器重新通过7.608s（总8.203s），20+9/26告警20+6、精确数字、原模型/脱敏、空页/400/重置及真实200迟响应关闭保持，日志`logs/be-002-a-event-regression.log`及该目录Playwright报告。BE002首轮25.104s因测试误监听搜索POST（实际GET）失败；第二轮4.405s因测试误要求设备DTO携带projectId失败（实际设备合同不含该字段），修为设备ID/key和类型DTO项目范围，保留两轮首败，不扩大生产DTO。最终真实浏览器6.808s（总7.319s）通过，日志`logs/be-002-a-browser-dto-final.log`及该目录报告：正常UI登录/实际设备，三次进入均类型GET1/search0；缓存再进时CDP暂停真实200类型正文，其他详情完成且返回可点，关闭后实际释放不恢复摘要/协议能力，再进单GET取当前事实；浏览器业务写入0，关闭trace/video/screenshot。后端生产代码不变，明确复用C冻结JAR`22213fe96f17f1a332837d4b401257421a1906573b43a7b749f206ecf933a91a`，本人8088/PID53202与3017/独占PG/Redis14/Broker/Kafka身份及新C精确seed全部实核；公开`logs/be-002-a-runtime.json`不含凭据。Console全量160文件1992项/20.59s通过，build含vue-tsc通过（Vite14.24s），双端api:check、完整Stylelint及专项ESLint/E2E独立类型检查通过，日志均`logs/be-002-a-*`。唯一OpenAPI生成48.692s/72项通过，输入`6541b48bdf3e9824af56fea74ae4c8af893b65b0ba38ddfb8762eb795bff1ce6`，OpenAPI及双端TS摘要与C完全相同，未新增契约。文档最终门禁见下文；Node22/Windows/远端CI/公司服务器/硬件/真实模型NOTRUN，不继承WP-03默认矩阵或正式资格。
@@ -118,8 +118,8 @@ BE-001涉及未接受范围时先记录设计结论。后续获得包的实施�
 
 此节仅导航，不属于“必须补后端接口”的开发队列。
 
-- TODO-010的分析状态、单次POST、原键GET与可空结果合同已提供；受审交互的本地浏览器差额归[Console TODO-010](TODO.md#TODO-010%20Agent%20模型状态与固定问题)。真实模型调用仍依赖[Agent开发计划](../../things-cloud-agent/docs/DEVELOPMENT_PLAN.md)中的供应商处理材料、计数合同或上界、有效授权和质量证据；不因本次复核开启出站。
-- WP-02当前套餐配置存储上限时新导出50019是[ADR0075](../../docs/adr/0075-project-export-snapshot-and-private-object-delivery.md)既有统一对象账本缺席的失败关闭边界，正常套餐导出资格未交付；不以历史兼容夹具的ZIP成功或新增latest GET关闭此债务，也不修改套餐来放行。跨域对象账本/计量仍归既有平台专项，非本片有界页面补齐。
+- TODO-010的分析状态、单次POST、原键GET与可空结果合同已提供；受审交互的本地浏览器差额归[Console TODO-010](TODO.md#TODO-010%20Agent%20模型状态与固定问题)。真实模型调用仍依赖[Agent开发计划](../../../.private/thingslink-docs/things-link-agent/docs/DEVELOPMENT_PLAN.md)中的供应商处理材料、计数合同或上界、有效授权和质量证据；不因本次复核开启出站。
+- WP-02当前套餐配置存储上限时新导出50019是[ADR0075](../../../.private/thingslink-docs/docs/adr/0075-project-export-snapshot-and-private-object-delivery.md)既有统一对象账本缺席的失败关闭边界，正常套餐导出资格未交付；不以历史兼容夹具的ZIP成功或新增latest GET关闭此债务，也不修改套餐来放行。跨域对象账本/计量仍归既有平台专项，非本片有界页面补齐。
 - TODO-001实际外部邮件送达、WP-02私有对象存储环境、WP-06受控签名材料/精确类型配置属于对应功能验证前置。接口已存在，不能因此把全部页面开发移入后端缺口队列。
 - 公司服务器、Windows、远端CI、真实signer/硬件及公开部署分别取证；暂停与NOTRUN不划完成线。
 

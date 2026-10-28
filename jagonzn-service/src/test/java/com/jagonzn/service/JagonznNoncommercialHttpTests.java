@@ -1,7 +1,7 @@
 package com.jagonzn.service;
 
-import com.things.cloud.iam.application.AuthRateLimiter;
-import com.things.cloud.project.application.DeploymentEntitlementPolicy;
+import com.things.link.iam.application.AuthRateLimiter;
+import com.things.link.project.application.DeploymentEntitlementPolicy;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,22 +34,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @ActiveProfiles("test")
 @Testcontainers
 @TestPropertySource(properties = {
-        "things-cloud.deployment.entitlement-mode=NONCOMMERCIAL",
-        "things-cloud.deployment.noncommercial-capacity.projects=2",
-        "things-cloud.deployment.noncommercial-capacity.devices=2",
-        "things-cloud.deployment.noncommercial-capacity.end-users=2",
-        "things-cloud.deployment.noncommercial-capacity.dashboards=2",
-        "things-cloud.deployment.noncommercial-capacity.external-seats=2",
-        "things-cloud.deployment.noncommercial-capacity.history-days=30",
-        "things-cloud.deployment.noncommercial-capacity.daily.uplink-message=100",
-        "things-cloud.deployment.noncommercial-capacity.daily.downlink-message=100",
-        "things-cloud.deployment.noncommercial-capacity.daily.uplink-bytes=100000",
-        "things-cloud.deployment.noncommercial-capacity.daily.time-series-point=100",
-        "things-cloud.deployment.noncommercial-capacity.daily.rest-api-call=100",
-        "things-cloud.deployment.noncommercial-capacity.daily.notification-delivery=100",
-        "things-cloud.deployment.noncommercial-capacity.daily.script-execution=100",
-        "things-cloud.deployment.noncommercial-capacity.daily.automation-execution=100",
-        "things-cloud.deployment.noncommercial-capacity.daily.script-cpu-millis=100000"
+        "things-link.deployment.entitlement-mode=NONCOMMERCIAL",
+        "things-link.deployment.noncommercial-capacity.projects=2",
+        "things-link.deployment.noncommercial-capacity.devices=2",
+        "things-link.deployment.noncommercial-capacity.end-users=2",
+        "things-link.deployment.noncommercial-capacity.dashboards=2",
+        "things-link.deployment.noncommercial-capacity.external-seats=2",
+        "things-link.deployment.noncommercial-capacity.history-days=30",
+        "things-link.deployment.noncommercial-capacity.daily.uplink-message=100",
+        "things-link.deployment.noncommercial-capacity.daily.downlink-message=100",
+        "things-link.deployment.noncommercial-capacity.daily.uplink-bytes=100000",
+        "things-link.deployment.noncommercial-capacity.daily.time-series-point=100",
+        "things-link.deployment.noncommercial-capacity.daily.rest-api-call=100",
+        "things-link.deployment.noncommercial-capacity.daily.notification-delivery=100",
+        "things-link.deployment.noncommercial-capacity.daily.script-execution=100",
+        "things-link.deployment.noncommercial-capacity.daily.automation-execution=100",
+        "things-link.deployment.noncommercial-capacity.daily.script-cpu-millis=100000"
 })
 class JagonznNoncommercialHttpTests {
     // NONCOMMERCIAL 的部署自动化额度与默认商业库不同，不能复用别的上下文已迁移的库。
@@ -85,7 +85,7 @@ class JagonznNoncommercialHttpTests {
 
     @Test
     void freePlanDoesNotBlockSecondProjectButTechnicalLimitBlocksThird() throws Exception {
-        assertEquals("NONCOMMERCIAL", environment.getProperty("things-cloud.deployment.entitlement-mode"));
+        assertEquals("NONCOMMERCIAL", environment.getProperty("things-link.deployment.entitlement-mode"));
         assertTrue(entitlementPolicy.nonCommercial());
         String email = "reuse-noncommercial-" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
         String password = "correct-horse-battery-staple";

@@ -2,7 +2,7 @@
 
 - 状态：已接受（2026-09-28；补充 JADR-0009 的来源部署请求头，只覆盖单项目发送适配，完整双端交接仍未验收）。
 - 后续多项目、轮换与处置合同见 [JADR-0011](0011-private-cloud-delivery-scope-rotation-and-recovery.md)；本 ADR 的单项目限制保留为当时实现事实。
-- 依据：[平台内部源](../../../docs/adr/0228-internal-event-source-independent-from-public-webhook.md)、[cloud Inbox](0009-cloud-private-event-inbox.md)、[双后端模式](0008-two-deployment-network-modes.md)。
+- 依据：[平台内部源](../../../.private/thingslink-docs/docs/adr/0228-internal-event-source-independent-from-public-webhook.md)、[cloud Inbox](0009-cloud-private-event-inbox.md)、[双后端模式](0008-two-deployment-network-modes.md)。
 
 ## 四维审计
 

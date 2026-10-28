@@ -1,6 +1,6 @@
 # cloud 无互联网接收端实验栈
 
-本目录只验证 `jagonzn-cloud` 的独立 PostgreSQL、容器内无默认互联网路由、回环受信 HTTPS 与私有事件 Inbox。它不连接或改动现有 `jagonzn-service` 栈；也不声称完成 service→cloud 投递、统一前端、设备协议或正式客户授权。全内网正式放行条件见[专项合同](../../../docs/reuse-entry/THINGS_CLOUD_JAGONZN_LAN_LOCAL_READINESS.md)。
+本目录只验证 `jagonzn-cloud` 的独立 PostgreSQL、容器内无默认互联网路由、回环受信 HTTPS 与私有事件 Inbox。它不连接或改动现有 `jagonzn-service` 栈；也不声称完成 service→cloud 投递、统一前端、设备协议或正式客户授权。全内网正式放行条件见[专项合同](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_JAGONZN_LAN_LOCAL_READINESS.md)。
 
 先在 `jagonzn/jagonzn-cloud` 执行 `./mvnw verify` 构建 JAR。然后在本目录执行：
 

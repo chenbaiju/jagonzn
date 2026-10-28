@@ -20,6 +20,8 @@ service 使用独立的 `jagonzn` 数据库，cloud 使用独立的 `jagonzn_clo
 
 ## 当前进度
 
+2026-10-28已将service依赖、Java引用和配置前缀同步至改名后的ThingsLink固定提交`260fa694`，并把JT808迁入service的`com.jagonzn.service.extension.jt808`扩展包。后继已在外置独立Lima/Docker、数据库及Kafka上启动正常service，用SM4模拟终端验证注册鉴权、属性历史/影子、查询命令、控制超时不重发、重启去重及真实凭据撤销。测试应用已停止，中间件及原件保留外置；历史库升级和真机未验，未部署、提交或推送。详见[JT808计划](docs/jt808-development-plan.md)、[同步记录](docs/console-reuse-and-evolution.md#2026-10-28%20ThingsLink运行时同步与JT808扩展迁入)及[固定清单](docs/service-upstream.json)。下方旧接收记录保留其历史范围；Console和cloud未在本轮升级。
+
 已有内核本地装配、标准协议属性链路、双后端事件交付及部分 TEST 权益的限定验证记录。
 **阶段 1 正式接收仍未通过**：正式运行时制品、完整授权与管理界面、完整 LAN 矩阵和真实设备闭环仍有前置缺口。
 本机测试结果不代表正式签发、全部设备兼容或生产环境放行。
@@ -33,7 +35,7 @@ cd jagonzn
 ```
 
 这是独立 Git 仓库。后端基线为 Java 21、Spring Boot 4.1.0；两个 Java 应用各自带 Maven Wrapper，根目录没有聚合 POM。
-`jagonzn-service` 依赖 `com.things.cloud:things-cloud-runtime`，构建前须取得与 POM 一致的运行时依赖及迁移资源。
+`jagonzn-service` 依赖 `com.things.link:things-link-runtime`，构建前须取得与 POM 一致的运行时依赖及迁移资源。
 这些依赖当前来自受控的平台制品或本地 Maven 仓库，公开克隆本项目不等于已具备完整后端运行环境。
 
 ## 运行 Console
@@ -84,5 +86,5 @@ service HTTP 默认端口为 `18080`；cloud 内部 HTTP 默认端口为 `18081`
 - [平台能力反馈](docs/PLATFORM_CAPABILITY_FEEDBACK.md)：受支持接口不足、证据与改进建议。
 - [工作约定](AGENTS.md)：文档维护、验证边界和仓库规则。
 
-本项目通过受支持的接口与配置复用 ThingsCloud，不直接修改平台源码、原数据库或历史迁移。
+本项目通过受支持的接口与配置复用 ThingsLink，不直接修改平台源码、原数据库或历史迁移。
 文档中指向配套平台的跨仓库资料需要相应访问权限；本仓库的功能状态以已有代码和可追溯验证为准。

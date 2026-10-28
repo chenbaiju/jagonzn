@@ -7,7 +7,7 @@
 ## 1. 权限与记录规则
 
 - jagonzn **不得修改 ThingsCloud 的任何代码或数据库表**，包括其独立部署使用的公共模块、JAR、表、函数和迁移；只通过已有受支持接口与配置复用能力，在自身项目开发厂商适配。
-- 发现不足先记录证据和影响，可继续开展不依赖缺失能力的适配/验证；依赖项保持受阻，不改表、不修改内核、不把日志或属性快照冒充事件闭环。
+- 发现或怀疑ThingsLink业务代码问题、功能缺陷时，必须先向负责人汇报，登记固定版本、复现步骤、预期/实际、脱敏证据和影响，并区分已确认与待核实。由负责人评审，再交ThingsLink开发者修复；jagonzn不自行补丁平台源码、JAR、表、函数或迁移，也不绕过问题制造通过。依赖项保持受阻，可继续不依赖该问题的适配/验证，平台修复交付后复验。
 - ThingsCloud 自行决定是否采纳、设计、排期、实现和交付。本文不改变 ThingsCloud 的合同、版本、进度或门禁，不代表已向其他人发送消息或已获平台受理。
 - 状态分别记录“证据状态”“平台评审状态”“平台交付状态”“jagonzn 复验状态”。登记、采纳、实现和复验通过是不同阶段；没有结果文档不得推定下一状态。
 - 验证证据应包含平台版本及制品/commit、设备型号/固件、环境、脱敏报文、步骤、预期与实际结果；文档/静态代码分析不能写成真机复现。
@@ -29,23 +29,23 @@
 
 ## 3. JPF-001：外部应用复用与交付边界
 
-**发现依据：**[service 架构 §5](jagonzn-service-backend-architecture.md#5.%20JAR%20交付与模块边界)提出正式自动装配目标。平台已按[ADR0214](../../docs/adr/0214-official-runtime-reuse-entry.md)采纳并建立普通运行时 JAR；[service POM](../jagonzn-service/pom.xml)现引用该本地候选。多模块普通 JAR 的存在仍不能证明完整运行与正式交付合同。
+**发现依据：**[service 架构 §5](jagonzn-service-backend-architecture.md#5.%20JAR%20交付与模块边界)提出正式自动装配目标。平台已按[ADR0214](../../.private/thingslink-docs/docs/adr/0214-official-runtime-reuse-entry.md)采纳并建立普通运行时 JAR；[service POM](../jagonzn-service/pom.xml)现引用该本地候选。多模块普通 JAR 的存在仍不能证明完整运行与正式交付合同。
 
 **不足与影响：**需要明确已有制品坐标、模块依赖、受支持启动入口、运行角色、配置、迁移资源与外部服务。没有这些证据，无法认领“jagonzn 已继承全部能力并独立运行”。本项不是断言现有 JAR 必然不能使用。
 
 **jagonzn 可执行验证：**在获启动授权后，核对已交付制品和支持接口、原样迁移与 service 侧配置；如果必须修改 ThingsCloud 源码或打包方式才可运行，记录失败点并停止依赖该改造的工作。
 
-**负责人决策与交付需求：**已选方案 A，并授权 ThingsCloud 自行建设装配层。平台已采纳普通运行时 JAR 形式，正在按[实施计划](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_PLAN.md)验证；运行配置见[候选指南](../../docs/reuse-entry/THINGS_CLOUD_REUSE_RUNTIME_GUIDE.md)。完整接收判据仍以[正式复用入口交付需求](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_REQUEST.md)为准，不能将本地候选记作正式交付。
+**负责人决策与交付需求：**已选方案 A，并授权 ThingsCloud 自行建设装配层。平台已采纳普通运行时 JAR 形式，正在按[实施计划](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ENTRY_PLAN.md)验证；运行配置见[候选指南](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_RUNTIME_GUIDE.md)。完整接收判据仍以[正式复用入口交付需求](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ENTRY_REQUEST.md)为准，不能将本地候选记作正式交付。
 
-**已补本地证据：**历史版本增量升级和独立实栈的标准 HTTP 属性上报已通过，见[实栈记录](../../docs/reuse-entry/audits/G3-REUSE-3-local-stack-2026-09-24.md)；四协议标准属性链路、含样例业务数据的数据库恢复及资源身份见[本机候选核对](../../docs/reuse-entry/audits/G3-REUSE-3-5-local-candidate-2026-09-25.md)。**待补：**不可变制品发布仓库、生产级跨资源恢复、外部集成与完整故障矩阵；本地候选不等于正式交付。
+**已补本地证据：**历史版本增量升级和独立实栈的标准 HTTP 属性上报已通过，见[实栈记录](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-REUSE-3-local-stack-2026-09-24.md)；四协议标准属性链路、含样例业务数据的数据库恢复及资源身份见[本机候选核对](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-REUSE-3-5-local-candidate-2026-09-25.md)。**待补：**不可变制品发布仓库、生产级跨资源恢复、外部集成与完整故障矩阵；本地候选不等于正式交付。
 
 ## 4. JPF-002：设备自报事件入口与持久处理
 
-**发现依据：**[标准协议合同 §1](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)排除设备事件上报；[MQTT 指南](../../docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)登记 Topic 不等于已有事件标准化处理。`RawUplinkMessageNormalizer` 的通用标准化路径目前只处理属性消息，其他不支持类型进入拒绝/DLQ 流程。设备需求见[烟感及智能锁调研](protocol-extensibility-and-smoke-adapter-research.md)。
+**发现依据：**[标准协议合同 §1](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)排除设备事件上报；[MQTT 指南](../../.private/thingslink-docs/docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)登记 Topic 不等于已有事件标准化处理。`RawUplinkMessageNormalizer` 的通用标准化路径目前只处理属性消息，其他不支持类型进入拒绝/DLQ 流程。设备需求见[烟感及智能锁调研](protocol-extensibility-and-smoke-adapter-research.md)。
 
 **不足与影响：**烟感报警/恢复、智能锁开锁/异常记录需要保留逐次事实。只有二进制解码或转换属性，不能证明事件身份、幂等、持久确认、查询及命令结果关联完整。阶段 2/3 的相关必要项保持受阻，不能自行新建平台事件表。
 
-**已有能力边界：**TCP 已有 `ACCEPTED(0x13)`，但不意味着任意厂家事件受支持；[公共集成 S14-R8f-1](../../docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)已有七类平台源及 Webhook 投递，属于平台对外输出，不是任意设备事件输入。
+**已有能力边界：**TCP 已有 `ACCEPTED(0x13)`，但不意味着任意厂家事件受支持；[公共集成 S14-R8f-1](../../.private/thingslink-docs/docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)已有七类平台源及 Webhook 投递，属于平台对外输出，不是任意设备事件输入。
 
 **改进建议（供 ThingsCloud 评审）：**评审统一设备事件受理与处理合同，明确设备/项目归属、事件类型、设备与平台时间、原始记录标识、去重/补传范围、持久受理点、查询及结果关联；存储和接口由平台确定。是否新增公共输出来源另行评审。
 
@@ -55,23 +55,25 @@
 
 **发现依据：**[service 架构 §6～7](jagonzn-service-backend-architecture.md#6.%20%E7%AD%BE%E5%90%8D%E6%9D%83%E7%9B%8A%E3%80%81%E8%AE%A1%E9%87%8F%E4%B8%8E%E7%B3%BB%E7%BB%9F%E4%BF%9D%E6%8A%A4)记录非商业运行目标及 `TenantSubscriptionProvisioning`、`SubscriptionExpansionGuard`、配额服务、生命周期 Worker 和数据库函数耦合。`standalone-unlimited` 是方案名称，不是已存在的配置项。
 
-**不足与影响：**旧“商业整合 4 项、浏览器未验”是早期候选状态；rc4 [V6b 同源码回执](../../docs/reuse-entry/audits/G3-REUSE-V6b-commercial-regression-2026-09-27.md)已有完整后端、Console 与 Chromium 5/5，六资源及九项日计量的限定证据见[统一接收清单](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ACCEPTANCE_CHECKLIST.md)。[rc4 Windows V5g](../../docs/reuse-entry/audits/G3-REUSE-V5g-rc4-windows-midnight-2026-09-30.md)已限定本机通过，Mac 旧失败保留；正式发布/接收仍开放，当前合流源码不能继承 rc4 资格，完整阶段门不关闭。正式签名四档运行时及全部能力入口另按 SHC 验收；本次状态校准不改写旧审计。
+**不足与影响：**旧“商业整合 4 项、浏览器未验”是早期候选状态；rc4 [V6b 同源码回执](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-REUSE-V6b-commercial-regression-2026-09-27.md)已有完整后端、Console 与 Chromium 5/5，六资源及九项日计量的限定证据见[统一接收清单](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ACCEPTANCE_CHECKLIST.md)。[rc4 Windows V5g](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-REUSE-V5g-rc4-windows-midnight-2026-09-30.md)已限定本机通过，Mac 旧失败保留；正式发布/接收仍开放，当前合流源码不能继承 rc4 资格，完整阶段门不关闭。正式签名四档运行时及全部能力入口另按 SHC 验收；本次状态校准不改写旧审计。
 
 **改进建议（供 ThingsCloud 评审）：**先明确现有独立运行模式能支持哪些能力；如不足，评审商业准入与安全/容量保护的公开策略边界。jagonzn 不自行覆写公共内部类、设置特殊魔法额度或改数据库函数。
 
-此项是方案 A 正式复用入口的关联验收需求，详见[交付需求 §3](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_REQUEST.md#3.%20请求%20ThingsCloud%20明确的正式交付合同)及平台[非商业候选合同](../../docs/reuse-entry/THINGS_CLOUD_REUSE_NONCOMMERCIAL_CONTRACT.md)；剩余路径必须复验，不能因已有单条项目路径将本项关闭。
+此项是方案 A 正式复用入口的关联验收需求，详见[交付需求 §3](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ENTRY_REQUEST.md#3.%20请求%20ThingsLink%20明确的正式交付合同)及平台[非商业候选合同](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_NONCOMMERCIAL_CONTRACT.md)；剩余路径必须复验，不能因已有单条项目路径将本项关闭。
 
 **待补证据：**受支持配置清单、每个商业拒绝点与系统保护点的区别、数据库侧策略口径、授权后可复现的运行记录。
 
 ## 6. JPF-004：厂商协议适配与公共扩展边界
 
-**发现依据：**[标准协议合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)要求既定安全、认证和 TC 帧范围，排除任意私有 TCP 帧及自定义 codec；[设备调研](protocol-extensibility-and-smoke-adapter-research.md)分别记录烟感 CAT1 私有二进制帧、智能锁 JT808 风格注册鉴权与业务消息。
+**发现依据：**[标准协议合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)要求既定安全、认证和 TC 帧范围，排除任意私有 TCP 帧及自定义 codec；[设备调研](protocol-extensibility-and-smoke-adapter-research.md)分别记录烟感 CAT1 私有二进制帧、智能锁 JT808 风格注册鉴权与业务消息。
 
 **不足与影响：**两种设备能建立 TCP 连接并不代表能直接进入原生 TC 解码器。jagonzn 自身可开发帧解析与交互，但稳定的身份、数据、会话、命令及结果接口覆盖仍需核对；原生入口未支持的语义不能通过修改内核或直接写表绕过。
 
 **改进建议（供 ThingsCloud 评审）：**依据两类协议证据评审受支持的适配接入边界、能力矩阵与兼容约束，再决定是否扩展配置式数据流、codec 或插件。先明确业务语义和安全边界，不因 TCP/HEX 名称相同承诺任意厂商兼容。
 
 **待补证据：**首台设备型号与固件、现有接口覆盖清单、可信凭据/网关边界、分帧与 ACK 样例、短连接命令恢复和结果关联。IMEI 仅能证明标识映射，不能单独证明可信认证。
+
+2026-10-28固定上游`260fa694`核对补充：jagonzn已在自身扩展中组合现有认证、预算、属性受理、可信回复、公开`DeviceAccessPushPort`及`DownlinkPreprocessor`；不需要为当前软件路径新增平台表或接口。原TCP推送语义保留，不能改用HTTP/CoAP领取；完整信封中的直连目标在预处理时核对，避免Push投影缺少目标字段而误控网关子设备。原消费者及本机TCP组合先有软件测试，后继已用同一固定JAR在外置独立数据库/Kafka等真实中间件上验证正常启动、国密模拟终端注册鉴权、属性历史/影子、查询SUCCEEDED、控制仅一次派发后TIMED_OUT、重启去重与正常API撤销凭据。跨租户读取404、应用角色无范围0行/正确范围1行仅覆盖实际读取路径；平台在线事实、跨实例装配、全部越权写矩阵与实物结果未验，详情统一见[JT808计划](jt808-development-plan.md#外置独立环境与真实运行时联调回执)。本地会话不伪造标准TC心跳事实；控制ACK不能证明物理动作，独立逐次事件问题仍按JPF-002保留。此补充不等于正式扩展合同或平台评审已关闭。
 
 ## 7. JPF-005：Console 读取权限误用菜单按钮清单
 

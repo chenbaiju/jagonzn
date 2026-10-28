@@ -2,7 +2,7 @@
 
 - 状态：已接受（2026-09-28，负责人明确 ThingsCloud 登记/签发、jagonzn 装配平台验签/计量内核并限制套餐）。
 - 取代范围：[service 后端旧方案](../jagonzn-service-backend-architecture.md)和[双项目旧方案](../jagonzn-system-architecture.md)中“默认无限商业额度”“超过档位不拒绝”的产品目标；不取代 [JADR-0002](0002-tenant-isolated-deployment.md) 的隔离库、[JADR-0003](0003-platform-change-authority.md) 的代码归属或 [JADR-0004](0004-official-reuse-entry.md) 的正式接收边界。
-- 平台依据：[ADR0216](../../../docs/adr/0216-self-hosted-entitlement-issuance-identity-and-term.md)、[ADR0218](../../../docs/adr/0218-self-hosted-capability-enforcement-boundary.md)、[ADR0219](../../../docs/adr/0219-self-hosted-product-revision-approval-before-signing.md)、[专项进度](../../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md)。
+- 平台依据：[ADR0216](../../../.private/thingslink-docs/docs/adr/0216-self-hosted-entitlement-issuance-identity-and-term.md)、[ADR0218](../../../.private/thingslink-docs/docs/adr/0218-self-hosted-capability-enforcement-boundary.md)、[ADR0219](../../../.private/thingslink-docs/docs/adr/0219-self-hosted-product-revision-approval-before-signing.md)、[专项进度](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_CLOSEOUT_PROGRESS.md)。
 
 ## 四维核对
 
@@ -10,7 +10,7 @@
 
 **逻辑连贯性**：独立数据库及不连接原 ThingsCloud 应用，只说明设备数据与运行资源独立，不推出免套餐。若 jagonzn 自行返回无限额度或把缺失授权降为 FREE，会绕过签名权益；若在 jagonzn 复制平台判定内核，会使 MQTT/TCP/CoAP、规则和实际发送等平台内部入口无法统一强制。
 
-**信息缺口**：完整四档修订仍是[待审稿](../../../docs/reuse-entry/THINGS_CLOUD_SELF_HOSTED_REVISION_REVIEW_DRAFT.md)，正式密钥与审核、联网续期、离线导入、端到端计量和 jagonzn 界面均未完成。旧本机非商业候选不能充作客户发行物。
+**信息缺口**：完整四档修订仍是[待审稿](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_SELF_HOSTED_REVISION_REVIEW_DRAFT.md)，正式密钥与审核、联网续期、离线导入、端到端计量和 jagonzn 界面均未完成。旧本机非商业候选不能充作客户发行物。
 
 **观点区分**：单部署单租户、签名权益和平台内核归属来自已接受平台 ADR 与负责人最新裁决；把旧“无限”表述归为历史目标、将 jagonzn 当前职责限定为装配/导入/UI，是本次文档校准。功能和额度草案尚不是获批产品。
 
@@ -24,6 +24,6 @@
 
 ## 实施与验收边界
 
-平台当前 [G3-SHC-REG-1](../../../docs/reuse-entry/audits/G3-SHC-REG-1-enrollment-registration-2026-09-28.md)只产生发行方 `PENDING` 申请事实，不是客户授权；[四档待审稿](../../../docs/reuse-entry/THINGS_CLOUD_SELF_HOSTED_REVISION_REVIEW_DRAFT.md)不是批准清单。jagonzn 阶段 1 的正式复用接收与 SHC 固定商业发行分别验收：先确认同版本制品/迁移/运行时来源，再验证有效/无效授权、额度边界、四协议、规则/任务、下行、断网、跨日、导入恢复和原 SaaS 兼容。未取得这些结果前，本 ADR 不称授权码验证或套餐限制已开发完成。
+平台当前 [G3-SHC-REG-1](../../../.private/thingslink-docs/docs/reuse-entry/audits/G3-SHC-REG-1-enrollment-registration-2026-09-28.md)只产生发行方 `PENDING` 申请事实，不是客户授权；[四档待审稿](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_SELF_HOSTED_REVISION_REVIEW_DRAFT.md)不是批准清单。jagonzn 阶段 1 的正式复用接收与 SHC 固定商业发行分别验收：先确认同版本制品/迁移/运行时来源，再验证有效/无效授权、额度边界、四协议、规则/任务、下行、断网、跨日、导入恢复和原 SaaS 兼容。未取得这些结果前，本 ADR 不称授权码验证或套餐限制已开发完成。
 
 返回 [ADR 索引](README.md)。

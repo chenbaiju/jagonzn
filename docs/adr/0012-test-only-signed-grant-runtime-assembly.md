@@ -1,7 +1,7 @@
 # JADR-0012：本机 TEST 授权只通过测试类路径装配到 service 运行时
 
 - 状态：已接受（2026-09-28）；动态双后端验收仍以专项回执为准。
-- 依据：[JADR-0005](0005-signed-self-hosted-entitlement.md)、[平台 ADR0224](../../../docs/adr/0224-self-hosted-local-test-issuer-isolation.md)、[本机内网合同](../../../docs/reuse-entry/THINGS_CLOUD_JAGONZN_LAN_LOCAL_READINESS.md)。
+- 依据：[JADR-0005](0005-signed-self-hosted-entitlement.md)、[平台 ADR0224](../../../.private/thingslink-docs/docs/adr/0224-self-hosted-local-test-issuer-isolation.md)、[本机内网合同](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_JAGONZN_LAN_LOCAL_READINESS.md)。
 
 ## 四维审计
 

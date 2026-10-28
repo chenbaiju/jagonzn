@@ -1,7 +1,7 @@
 # JADR-0009：cloud 私有设备事件 Inbox 与公开 Webhook 边界
 
 - 状态：已接受（2026-09-28，按负责人持续推进及推荐裁决授权，限 cloud 接收端）。
-- 依据：[双后端职责](0007-unified-console-and-backend-boundary.md)、[两种部署方式](0008-two-deployment-network-modes.md)、[平台公共 Webhook 安全](../../../docs/adr/0182-public-webhook-revisions-delivery-and-signing.md)。
+- 依据：[双后端职责](0007-unified-console-and-backend-boundary.md)、[两种部署方式](0008-two-deployment-network-modes.md)、[平台公共 Webhook 安全](../../../.private/thingslink-docs/docs/adr/0182-public-webhook-revisions-delivery-and-signing.md)。
 
 ## 四维审计
 
@@ -18,7 +18,7 @@
 
 单独的 cloud 库在一个事务里持久化 nonce 和事件 Inbox，键为 `(sourceDeploymentId,eventId)`；相同事件同字节重投只返回既有成功，改正文冲突返回 409，不产生第二条业务事实。Inbox 只说明已持久接收，不表示人员权限已处理或设备动作成功。当前不提供业务投影、开锁命令或对外查询，避免把测试接收端冒充 cloud SaaS 完成。
 
-TLS 由受控内网代理终止，应用容器/进程端口不得直接暴露给设备网；代理必须只把此路径转发至 cloud。该路径不调用也不放宽 `PinnedWebhookTransport`。未来 service 若复用同一签名格式，仍须增加**独立私网目标审批、服务身份和可靠发送端口**，而非给公开订阅配置私网例外。正式双后端和离线授权验收继续受[专项计划](../../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_AND_SELF_HOSTED_REVIEW.md)约束。
+TLS 由受控内网代理终止，应用容器/进程端口不得直接暴露给设备网；代理必须只把此路径转发至 cloud。该路径不调用也不放宽 `PinnedWebhookTransport`。未来 service 若复用同一签名格式，仍须增加**独立私网目标审批、服务身份和可靠发送端口**，而非给公开订阅配置私网例外。正式双后端和离线授权验收继续受[专项计划](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_CLOSEOUT_AND_SELF_HOSTED_REVIEW.md)约束。
 
 ## 备选与取舍
 

@@ -31,6 +31,8 @@ import java.util.UUID;
 @ConditionalOnProperty(name = "jagonzn.cloud.service-events.enabled", havingValue = "true")
 public class CloudServiceEventInboxController {
     private static final int MAX_BODY = 262_144;
+    /** 服务间签名头统一使用当前工程名称，不设置旧工程名别名。 */
+    private static final String HEADER_PREFIX = "X-ThingsLink-";
     private final CloudServiceEventInboxStore store;
     private final ObjectMapper json;
     private final UUID sourceDeploymentId;
@@ -76,15 +78,21 @@ public class CloudServiceEventInboxController {
                 secretBase64, "", "");
     }
 
+    /**
+     * 验签并核对部署、租户和项目后持久受理来源事件。
+     * @param request 带ThingsLink签名头的原始HTTP请求；每个必需头必须恰好一份
+     * @return 已受理或重复为200，非法/验签失败/越界/冲突分别返回对应状态
+     * @throws IOException 请求正文无法读取时交由HTTP层处理，不伪造受理成功
+     */
     @PostMapping(path = "/api/v1/internal/service-events", consumes = "application/json")
     public ResponseEntity<Void> receive(HttpServletRequest request) throws IOException {
         if (request.getContentLengthLong() > MAX_BODY) return ResponseEntity.status(413).build();
-        String deliveryText = oneHeader(request, "X-ThingsCloud-Delivery-Id");
-        String timestampText = oneHeader(request, "X-ThingsCloud-Timestamp");
-        String nonceText = oneHeader(request, "X-ThingsCloud-Nonce");
-        String signature = oneHeader(request, "X-ThingsCloud-Signature");
-        String receivedKeyId = oneHeader(request, "X-ThingsCloud-Key-Id");
-        String receivedDeploymentId = oneHeader(request, "X-ThingsCloud-Source-Deployment-Id");
+        String deliveryText = oneHeader(request, "Delivery-Id");
+        String timestampText = oneHeader(request, "Timestamp");
+        String nonceText = oneHeader(request, "Nonce");
+        String signature = oneHeader(request, "Signature");
+        String receivedKeyId = oneHeader(request, "Key-Id");
+        String receivedDeploymentId = oneHeader(request, "Source-Deployment-Id");
         if (deliveryText == null || timestampText == null || nonceText == null
                 || signature == null || receivedKeyId == null || receivedDeploymentId == null)
             return ResponseEntity.badRequest().build();
@@ -137,9 +145,9 @@ public class CloudServiceEventInboxController {
         }
     }
 
-    /** 重复请求头不能由 servlet 合并后偷偷通过验签。 */
-    private static String oneHeader(HttpServletRequest request, String name) {
-        var values = Collections.list(request.getHeaders(name));
+    /** 每个必需头只接收一个值，相同值重复发送也拒绝。 */
+    private static String oneHeader(HttpServletRequest request, String suffix) {
+        var values = Collections.list(request.getHeaders(HEADER_PREFIX + suffix));
         return values.size() == 1 ? values.getFirst() : null;
     }
 

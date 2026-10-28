@@ -2,12 +2,12 @@ package com.jagonzn.service;
 
 import com.jagonzn.service.enrollment.EnrollmentRequestCommand;
 import com.jagonzn.service.enrollment.LocalTestIssuerTrustConfiguration;
-import com.things.cloud.entitlement.application.ApprovedSelfHostedRevision;
-import com.things.cloud.project.application.SelfHostedGrantImportService;
-import com.things.cloud.project.application.SelfHostedGrantRepository;
-import com.things.cloud.project.application.SelfHostedQuotaSnapshotService;
-import com.things.cloud.project.application.SelfHostedDeviceUsageReader;
-import com.things.cloud.project.application.SelfHostedMessageUsageReader;
+import com.things.link.entitlement.application.ApprovedSelfHostedRevision;
+import com.things.link.project.application.SelfHostedGrantImportService;
+import com.things.link.project.application.SelfHostedGrantRepository;
+import com.things.link.project.application.SelfHostedQuotaSnapshotService;
+import com.things.link.project.application.SelfHostedDeviceUsageReader;
+import com.things.link.project.application.SelfHostedMessageUsageReader;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

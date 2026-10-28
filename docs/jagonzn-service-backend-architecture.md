@@ -36,7 +36,7 @@ service 应在 ThingsCloud 应用和 jagonzn-cloud 均未部署时独立完成�
 | 设备接入 | MQTT／EMQX、标准 HTTP／TCP／CoAP、设备凭据、连接与心跳、消息接收、命令下发；厂家私有协议单独适配 |
 | 消息系统 | Kafka 协议集成，部署选择 Kafka 或 Redpanda，并验证兼容性 |
 | 后台处理 | Worker、任务调度、重试、幂等、故障恢复 |
-| 一致性与集成 | ThingsCloud 已有公共集成及 Webhook 本地交付证据；jagonzn 待完成装配、厂家事件输入及必要的新增输出来源。见[公共集成回执](../../docs/delivery/audits/S14-R8f-1-public-integration-evidence.md) |
+| 一致性与集成 | ThingsCloud 已有公共集成及 Webhook 本地交付证据；jagonzn 待完成装配、厂家事件输入及必要的新增输出来源。见[公共集成回执](../../.private/thingslink-docs/docs/delivery/audits/S14-R8f-1-public-integration-evidence.md) |
 | 数据存储 | PostgreSQL、TimescaleDB、Redis，沿用 ThingsCloud 数据模型 |
 | 对象存储 | MinIO 集成及已有对象存储能力 |
 | 安全与归属 | 租户、项目、身份认证、权限、数据隔离与 RLS |
@@ -104,7 +104,7 @@ flowchart TB
     S -. "授权后的命令" .-> C
 ```
 
-图中的 Starter 和 BOM 是最初的交付建议。平台当前按[ADR0214](../../docs/adr/0214-official-runtime-reuse-entry.md)采用等效的普通运行时 JAR 本地候选；正式发布与完整接收仍按[实施计划](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_PLAN.md)验证。具体消息处理顺序应复用已验证的现有链路，不因打包方式变化而重新定义消息接受、事务提交或确认语义。
+图中的 Starter 和 BOM 是最初的交付建议。平台当前按[ADR0214](../../.private/thingslink-docs/docs/adr/0214-official-runtime-reuse-entry.md)采用等效的普通运行时 JAR 本地候选；正式发布与完整接收仍按[实施计划](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ENTRY_PLAN.md)验证。具体消息处理顺序应复用已验证的现有链路，不因打包方式变化而重新定义消息接受、事务提交或确认语义。
 
 JAR 包含业务代码和中间件集成代码，不包含可替代外部服务的 EMQX、Kafka、数据库或 MinIO 服务端。
 
@@ -182,7 +182,7 @@ ThingsCloud 原 SaaS 继续从其订阅与目录解析权益；正式 jagonzn �
 - PlanQuotaTemplate 的多个维度使用正数 long，不能直接套用 null 或负数。
 - planQuota 为 null 表示没有绑定可售套餐模板，不能解释为全功能无限制。
 
-这些是旧实现的不同数据形状，不能被 jagonzn 解释为正式自部署权益。已批准修订必须完整给出代码、单位和额度；FREE 外部席位 0 是明确拒绝，其他必填维度缺失/未知不表示无限。自部署目标要求平台在 Java、SQL、缓存、协议准入、后台任务及实际物理发送前强制同一签名来源；完整运行时尚待验收。[四档修订 V1](../../docs/reuse-entry/THINGS_CLOUD_SELF_HOSTED_APPROVED_REVISION_V1.md)已于 2026-09-28 获批，包含十九项额度和十六项能力；批准不代表正式签发、原子导入或全部入口强制已经完成。2026-09-29 按负责人授权校准此处旧“未批准”描述，见[Windows 接管记录](../../docs/reuse-entry/THINGS_CLOUD_WINDOWS_TAKEOVER_20260929.md)。
+这些是旧实现的不同数据形状，不能被 jagonzn 解释为正式自部署权益。已批准修订必须完整给出代码、单位和额度；FREE 外部席位 0 是明确拒绝，其他必填维度缺失/未知不表示无限。自部署目标要求平台在 Java、SQL、缓存、协议准入、后台任务及实际物理发送前强制同一签名来源；完整运行时尚待验收。[四档修订 V1](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_SELF_HOSTED_APPROVED_REVISION_V1.md)已于 2026-09-28 获批，包含十九项额度和十六项能力；批准不代表正式签发、原子导入或全部入口强制已经完成。2026-09-29 按负责人授权校准此处旧“未批准”描述，见[Windows 接管记录](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_WINDOWS_TAKEOVER_20260929.md)。
 
 ### 6.4 保留系统保护
 
@@ -225,7 +225,7 @@ ThingsCloud 原 SaaS 继续从其订阅与目录解析权益；正式 jagonzn �
 
 数据库名称和隔离方向已明确：单独创建 `jagonzn` 数据库，与 ThingsCloud 原库分开；是否共享物理 PostgreSQL 集群仍取决于部署条件，数据权限及资源边界必须明确。
 
-cloud 后续的 SaaS 业务数据库另属其自身业务范围，当前不实施。service 的厂家事件或交付事实若无法由现有支持入口承载，应登记平台不足；jagonzn 不新增或修改 ThingsCloud 表、索引、函数、权限模型及迁移，也不通过扩展 schema 绕过同构约束。ThingsCloud 已按负责人最新命名要求，自行从同版本 SQL 生成仅映射数据库角色标识的 jagonzn 迁移资源；表结构保持同构，生成物有独立 checksum，详见[ADR0214](../../docs/adr/0214-official-runtime-reuse-entry.md)。
+cloud 后续的 SaaS 业务数据库另属其自身业务范围，当前不实施。service 的厂家事件或交付事实若无法由现有支持入口承载，应登记平台不足；jagonzn 不新增或修改 ThingsCloud 表、索引、函数、权限模型及迁移，也不通过扩展 schema 绕过同构约束。ThingsCloud 已按负责人最新命名要求，自行从同版本 SQL 生成仅映射数据库角色标识的 jagonzn 迁移资源；表结构保持同构，生成物有独立 checksum，详见[ADR0214](../../.private/thingslink-docs/docs/adr/0214-official-runtime-reuse-entry.md)。
 
 ### 8.2 商业表与商业流程分开处理
 

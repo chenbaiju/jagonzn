@@ -2,9 +2,9 @@ package com.jagonzn.service.integration;
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
-import com.things.cloud.shared.message.PublicWebhookEvent;
-import com.things.cloud.shared.message.PublicWebhookSource;
-import com.things.cloud.support.webhook.PublicWebhookCodec;
+import com.things.link.shared.message.PublicWebhookEvent;
+import com.things.link.shared.message.PublicWebhookSource;
+import com.things.link.support.webhook.PublicWebhookCodec;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,6 +21,9 @@ import java.security.KeyStore;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
+import java.util.Set;
+import java.util.Locale;
+import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,9 +56,13 @@ class PrivateCloudEventHttpsTests {
         var status = new AtomicInteger(200);
         var received = new AtomicReference<byte[]>();
         var deploymentHeader = new AtomicReference<String>();
+        var signatureHeaders = new AtomicReference<Set<String>>();
         server.createContext("/api/v1/internal/service-events", exchange -> {
             received.set(exchange.getRequestBody().readAllBytes());
-            deploymentHeader.set(exchange.getRequestHeaders().getFirst("X-ThingsCloud-Source-Deployment-Id"));
+            deploymentHeader.set(exchange.getRequestHeaders().getFirst("X-ThingsLink-Source-Deployment-Id"));
+            signatureHeaders.set(exchange.getRequestHeaders().keySet().stream()
+                    .map(name -> name.toLowerCase(Locale.ROOT)).filter(name -> name.startsWith("x-things"))
+                    .collect(Collectors.toSet()));
             exchange.sendResponseHeaders(status.get(), -1);
             exchange.close();
         });
@@ -79,6 +86,9 @@ class PrivateCloudEventHttpsTests {
                     json.writeValueAsBytes(source));
             forwarder.consume(record);
             assertThat(deploymentHeader.get()).isEqualTo(SOURCE.toString());
+            assertThat(signatureHeaders.get()).containsExactlyInAnyOrder(
+                    "x-thingslink-source-deployment-id", "x-thingslink-key-id", "x-thingslink-timestamp",
+                    "x-thingslink-nonce", "x-thingslink-delivery-id", "x-thingslink-signature");
             assertThat(json.readTree(received.get()).path("event").path("eventId").asText())
                     .isEqualTo(eventId.toString());
 

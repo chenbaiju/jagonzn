@@ -1,7 +1,7 @@
 # JADR-0007：jagonzn-console 统一前端与双后端职责
 
 - 状态：已接受（2026-09-28，负责人明确 `jagonzn-console` 集成两个项目的 Web 操作；设计已确定，应用及界面尚未交付）。
-- 依据：[JADR-0001](0001-service-cloud-responsibilities.md)、[JADR-0005](0005-signed-self-hosted-entitlement.md)、[平台 ADR0227](../../../docs/adr/0227-self-hosted-issuer-console-and-delivery-media.md)。
+- 依据：[JADR-0001](0001-service-cloud-responsibilities.md)、[JADR-0005](0005-signed-self-hosted-entitlement.md)、[平台 ADR0227](../../../.private/thingslink-docs/docs/adr/0227-self-hosted-issuer-console-and-delivery-media.md)。
 
 ## 四维审计
 
@@ -34,4 +34,4 @@ cloud 可以在没有公网入站的私有网络中运行。优先通过受控�
 
 若“两个都没有网络”还包括 **service 与 cloud 相互隔绝**，两后端不能即时交换事件或命令，console 也不能直接同时调用它们；此时只有 service 自身的设备技术闭环可独立运行。要完成业务联动须补通受控内网，或另立离线批量交接、冲突及结果回执合同；不能把单纯文件授权导入误认为业务链路已连通。内网形态的实际协议端口、局域网路由、内网证书、备份/恢复、授权文件交付及双后端断线回放须单独验收。
 
-备选方案：把网页嵌入 service 会把前端构建绑到设备运行制品；让 cloud 成为唯一激活网关会使尚未部署的业务服务成为设备服务的启动前置；让 cloud 直接查询 service 数据库破坏双后端的数据权威。这三种方案均不采用。实施顺序及验收见[平台 SHC 计划](../../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_AND_SELF_HOSTED_REVIEW.md#4.%20自部署商用切片（SHC）)。
+备选方案：把网页嵌入 service 会把前端构建绑到设备运行制品；让 cloud 成为唯一激活网关会使尚未部署的业务服务成为设备服务的启动前置；让 cloud 直接查询 service 数据库破坏双后端的数据权威。这三种方案均不采用。实施顺序及验收见[平台 SHC 计划](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_CLOSEOUT_AND_SELF_HOSTED_REVIEW.md#4.%20自部署商用切片（SHC）)。

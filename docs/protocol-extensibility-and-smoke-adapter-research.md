@@ -24,7 +24,7 @@ ThingsCloud 项目应面向持续增加的厂商设备协议，逐步具备可�
 
 ### 2.2 ThingsCloud 当前接入边界
 
-依据仓库内的[标准协议接入合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)和[设备接入指南](../../docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)：
+依据仓库内的[标准协议接入合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)和[设备接入指南](../../.private/thingslink-docs/docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)：
 
 - 标准 HTTP、TCP、CoAP 路径围绕统一设备身份、属性上报、命令领取/推送和命令回复实现。
 - 标准 TCP 使用 TLS、固定 10 字节 TC 帧头、约定帧类型和 JSON 业务载荷；它不是任意 TCP 字节流或厂商私有报文接收器。
@@ -32,7 +32,7 @@ ThingsCloud 项目应面向持续增加的厂商设备协议，逐步具备可�
 - MQTT 指南中虽登记 `up/event/{eventKey}` Topic，但当前通用事件标准化器尚未实现，发送会进入 DLQ；不能把该 Topic 视为已可用的事件接入接口。
 - Modbus 点位映射和轮询已在 S10 交付，但这不等于已经交付通用厂商协议插件或所有 Modbus/DTU 部署路径。
 - TCP 多实例下行 D-190 已按方案 A 完成开发、验证并关闭；该状态不代表上述自定义 codec 或事件缺口也已关闭。
-- TCP 已有 `ACCEPTED(0x13)` 受理确认；公共 Webhook 等平台对外集成也已有[本地交付证据](../../docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)。设备自报事件接入与平台对外事件投递是不同方向，不能互相替代。
+- TCP 已有 `ACCEPTED(0x13)` 受理确认；公共 Webhook 等平台对外集成也已有[本地交付证据](../../.private/thingslink-docs/docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)。设备自报事件接入与平台对外事件投递是不同方向，不能互相替代。
 
 ### 2.3 ThingsCloud 官网 TCP 资料的参考边界
 
@@ -100,7 +100,7 @@ IMEI 登记属于标识绑定证据，不独自构成抗冒用的凭据认证。
 
 ## 7. 烟感来源
 
-- ThingsCloud 仓库：[标准协议接入合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)、[MQTT 接入指南](../../docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)、[进度总览](../../docs/PROGRESS.md)。
+- ThingsCloud 仓库：[标准协议接入合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)、[MQTT 接入指南](../../.private/thingslink-docs/docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)、[进度总览](../../.private/thingslink-docs/docs/PROGRESS.md)。
 - jagonzn 知识库：[双项目主架构](jagonzn-system-architecture.md)、[service 后端架构](jagonzn-service-backend-architecture.md)。
 - 烟感设备资料：`D:\Obsidian\azyv3\03_4G烟感\通信协议相关.md` 及 `docs/广合霖/NB-IoT CAT1数据格式 V3.17客户.xlsx`。
 - ThingsCloud 官网：[设备 TCP 接入](https://www.thingscloud.xyz/docs/guide/connect-device/tcp.html)、[自定义数据流](https://www.thingscloud.xyz/docs/guide/device-type/custom-data.html)。
@@ -144,5 +144,5 @@ IMEI 登记属于标识绑定证据，不独自构成抗冒用的凭据认证。
 ## 9. 智能锁来源
 
 - 智能锁协议文件：`D:\Obsidian\azyv3\01_安智云dev\2025-简工智能锁产品协议（JT808）.docx`。其实际锁型、硬件/固件版本、加密模式和真机报文需逐型号核验；文件内对称密钥值未复制至本知识库。
-- ThingsCloud 仓库：[标准协议接入合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)、[MQTT 接入指南](../../docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)。
+- ThingsCloud 仓库：[标准协议接入合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)、[MQTT 接入指南](../../.private/thingslink-docs/docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)。
 - 官方标准背景：[JT/T 808-2019 标准查询](https://jtst.mot.gov.cn/hb/search/stdHBDetailed?id=09b11ea9b3da0a9158124082fca512ce)、[JT/T 808-2019 修改单公告](https://xxgk.mot.gov.cn/jigou/kjs/202111/t20211111_3625608.html)。

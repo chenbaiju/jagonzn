@@ -90,12 +90,12 @@ class CloudServiceEventInboxTests extends CloudDatabaseTests {
         request(delivery, nonce, now, body, "local-v1").andExpect(status().isConflict());
         var signed = post("/api/v1/internal/service-events").contentType("application/json")
                 .content(body(delivery, UUID.randomUUID(), TENANT, PROJECT, "tampered"))
-                .header("X-ThingsCloud-Delivery-Id", delivery.toString())
-                .header("X-ThingsCloud-Timestamp", Long.toString(now))
-                .header("X-ThingsCloud-Nonce", UUID.randomUUID().toString())
-                .header("X-ThingsCloud-Key-Id", "local-v1")
-                .header("X-ThingsCloud-Source-Deployment-Id", SOURCE.toString())
-                .header("X-ThingsCloud-Signature", signature(now, nonce, delivery, body));
+                .header("X-ThingsLink-Delivery-Id", delivery.toString())
+                .header("X-ThingsLink-Timestamp", Long.toString(now))
+                .header("X-ThingsLink-Nonce", UUID.randomUUID().toString())
+                .header("X-ThingsLink-Key-Id", "local-v1")
+                .header("X-ThingsLink-Source-Deployment-Id", SOURCE.toString())
+                .header("X-ThingsLink-Signature", signature(now, nonce, delivery, body));
         mvc.perform(signed).andExpect(status().isUnauthorized());
         UUID wrongDelivery = UUID.randomUUID();
         request(wrongDelivery, UUID.randomUUID(), now,
@@ -106,12 +106,12 @@ class CloudServiceEventInboxTests extends CloudDatabaseTests {
         byte[] wrongSourceBody = body(wrongSourceDelivery, UUID.randomUUID(), TENANT, PROJECT, "source");
         mvc.perform(post("/api/v1/internal/service-events").contentType("application/json")
                 .content(wrongSourceBody)
-                .header("X-ThingsCloud-Delivery-Id", wrongSourceDelivery.toString())
-                .header("X-ThingsCloud-Timestamp", Long.toString(now))
-                .header("X-ThingsCloud-Nonce", wrongSourceNonce.toString())
-                .header("X-ThingsCloud-Key-Id", "local-v1")
-                .header("X-ThingsCloud-Source-Deployment-Id", UUID.randomUUID().toString())
-                .header("X-ThingsCloud-Signature", signature(now, wrongSourceNonce,
+                .header("X-ThingsLink-Delivery-Id", wrongSourceDelivery.toString())
+                .header("X-ThingsLink-Timestamp", Long.toString(now))
+                .header("X-ThingsLink-Nonce", wrongSourceNonce.toString())
+                .header("X-ThingsLink-Key-Id", "local-v1")
+                .header("X-ThingsLink-Source-Deployment-Id", UUID.randomUUID().toString())
+                .header("X-ThingsLink-Signature", signature(now, wrongSourceNonce,
                         wrongSourceDelivery, wrongSourceBody)))
                 .andExpect(status().isForbidden());
         UUID staleDelivery = UUID.randomUUID();
@@ -183,12 +183,12 @@ class CloudServiceEventInboxTests extends CloudDatabaseTests {
         connection.setReadTimeout(5000);
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("X-ThingsCloud-Delivery-Id", delivery.toString());
-        connection.setRequestProperty("X-ThingsCloud-Timestamp", Long.toString(at));
-        connection.setRequestProperty("X-ThingsCloud-Nonce", nonce.toString());
-        connection.setRequestProperty("X-ThingsCloud-Signature", signature(at, nonce, delivery, body));
-        connection.setRequestProperty("X-ThingsCloud-Key-Id", "local-v1");
-        connection.setRequestProperty("X-ThingsCloud-Source-Deployment-Id", SOURCE.toString());
+        connection.setRequestProperty("X-ThingsLink-Delivery-Id", delivery.toString());
+        connection.setRequestProperty("X-ThingsLink-Timestamp", Long.toString(at));
+        connection.setRequestProperty("X-ThingsLink-Nonce", nonce.toString());
+        connection.setRequestProperty("X-ThingsLink-Signature", signature(at, nonce, delivery, body));
+        connection.setRequestProperty("X-ThingsLink-Key-Id", "local-v1");
+        connection.setRequestProperty("X-ThingsLink-Source-Deployment-Id", SOURCE.toString());
         connection.setDoOutput(true);
         try {
             connection.getOutputStream().write(body);
@@ -209,12 +209,12 @@ class CloudServiceEventInboxTests extends CloudDatabaseTests {
             long at, byte[] body, String keyId, byte[] signingSecret) throws Exception {
         return mvc.perform(post("/api/v1/internal/service-events").contentType("application/json")
                 .content(body)
-                .header("X-ThingsCloud-Delivery-Id", delivery.toString())
-                .header("X-ThingsCloud-Timestamp", Long.toString(at))
-                .header("X-ThingsCloud-Nonce", nonce.toString())
-                .header("X-ThingsCloud-Signature", signature(at, nonce, delivery, body, signingSecret))
-                .header("X-ThingsCloud-Key-Id", keyId)
-                .header("X-ThingsCloud-Source-Deployment-Id", SOURCE.toString()));
+                .header("X-ThingsLink-Delivery-Id", delivery.toString())
+                .header("X-ThingsLink-Timestamp", Long.toString(at))
+                .header("X-ThingsLink-Nonce", nonce.toString())
+                .header("X-ThingsLink-Signature", signature(at, nonce, delivery, body, signingSecret))
+                .header("X-ThingsLink-Key-Id", keyId)
+                .header("X-ThingsLink-Source-Deployment-Id", SOURCE.toString()));
     }
 
     private static byte[] body(UUID delivery, UUID event, UUID tenant, UUID project, String marker) {

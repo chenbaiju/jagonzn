@@ -6,7 +6,7 @@ param(
     [switch]$ConsoleSmoke
 )
 
-# 独立本机候选：生成本机秘密并装配中间件；不修改 ThingsCloud 部署或数据库。
+# 独立本机候选：生成本机秘密并装配中间件；不修改 ThingsLink 部署或数据库。
 $ErrorActionPreference = 'Stop'
 $deployDir = $PSScriptRoot
 $serviceDir = [IO.Path]::GetFullPath((Join-Path $deployDir '..\jagonzn-service'))
@@ -219,38 +219,38 @@ $appProperties = @(
     'spring.data.redis.port=16379',
     "spring.data.redis.password=$($values['JAGONZN_REDIS_PASSWORD'])",
     'spring.kafka.bootstrap-servers=127.0.0.1:29092',
-    'things-cloud.storage.internal-endpoint=http://127.0.0.1:19000',
-    'things-cloud.storage.external-endpoint=http://127.0.0.1:19000',
-    'things-cloud.storage.access-key=jagonzn_app',
-    "things-cloud.storage.secret-key=$($values['JAGONZN_MINIO_APP_SECRET_KEY'])",
-    "things-cloud.security.jwt.secret=$($values['JAGONZN_SECURITY_JWT_SECRET'])",
-    "things-cloud.security.app-jwt.secret=$($values['JAGONZN_SECURITY_APP_JWT_SECRET'])",
-    "things-cloud.security.broker-callback.secret=$($values['JAGONZN_SECURITY_BROKER_CALLBACK_SECRET'])",
-    "things-cloud.notification.webhook.signing-secret=$($values['JAGONZN_NOTIFICATION_WEBHOOK_SIGNING_SECRET'])",
-    "things-cloud.integration.api-key.enabled=$($values['JAGONZN_PUBLIC_API_KEY_ENABLED'])",
-    "things-cloud.integration.webhook.enabled=$($values['JAGONZN_PUBLIC_WEBHOOK_ENABLED'])",
-    "things-cloud.integration.webhook.signing-keys-json={`"local-v1`":`"$($values['JAGONZN_PUBLIC_WEBHOOK_SIGNING_KEY'])`"}",
-    'things-cloud.integration.webhook.current-signing-key-id=local-v1',
-    "things-cloud.integration.realtime.enabled=$($values['JAGONZN_PUBLIC_REALTIME_ENABLED'])",
-    "things-cloud.integration.realtime.ws.allowed-origins=$($values['JAGONZN_REALTIME_WS_ALLOWED_ORIGINS'])",
-    'things-cloud.integration.realtime.mqtt-api.base-url=http://127.0.0.1:38083',
-    "things-cloud.integration.realtime.mqtt-api.api-key=$($values['JAGONZN_REALTIME_MQTT_API_KEY'])",
-    "things-cloud.integration.realtime.mqtt-api.api-secret=$($values['JAGONZN_REALTIME_MQTT_API_SECRET'])",
-    "things-cloud.integration.realtime.mqtt-api.session-api-key=$($values['JAGONZN_REALTIME_MQTT_SESSION_API_KEY'])",
-    "things-cloud.integration.realtime.mqtt-api.session-api-secret=$($values['JAGONZN_REALTIME_MQTT_SESSION_API_SECRET'])",
-    'things-cloud.ingestion.emqx-api.base-url=http://127.0.0.1:28083',
-    'things-cloud.device.emqx-session-api.base-url=http://127.0.0.1:28083',
-    'things-cloud.ingress.handoff.broker-uri=tcp://127.0.0.1:21883'
+    'things-link.storage.internal-endpoint=http://127.0.0.1:19000',
+    'things-link.storage.external-endpoint=http://127.0.0.1:19000',
+    'things-link.storage.access-key=jagonzn_app',
+    "things-link.storage.secret-key=$($values['JAGONZN_MINIO_APP_SECRET_KEY'])",
+    "things-link.security.jwt.secret=$($values['JAGONZN_SECURITY_JWT_SECRET'])",
+    "things-link.security.app-jwt.secret=$($values['JAGONZN_SECURITY_APP_JWT_SECRET'])",
+    "things-link.security.broker-callback.secret=$($values['JAGONZN_SECURITY_BROKER_CALLBACK_SECRET'])",
+    "things-link.notification.webhook.signing-secret=$($values['JAGONZN_NOTIFICATION_WEBHOOK_SIGNING_SECRET'])",
+    "things-link.integration.api-key.enabled=$($values['JAGONZN_PUBLIC_API_KEY_ENABLED'])",
+    "things-link.integration.webhook.enabled=$($values['JAGONZN_PUBLIC_WEBHOOK_ENABLED'])",
+    "things-link.integration.webhook.signing-keys-json={`"local-v1`":`"$($values['JAGONZN_PUBLIC_WEBHOOK_SIGNING_KEY'])`"}",
+    'things-link.integration.webhook.current-signing-key-id=local-v1',
+    "things-link.integration.realtime.enabled=$($values['JAGONZN_PUBLIC_REALTIME_ENABLED'])",
+    "things-link.integration.realtime.ws.allowed-origins=$($values['JAGONZN_REALTIME_WS_ALLOWED_ORIGINS'])",
+    'things-link.integration.realtime.mqtt-api.base-url=http://127.0.0.1:38083',
+    "things-link.integration.realtime.mqtt-api.api-key=$($values['JAGONZN_REALTIME_MQTT_API_KEY'])",
+    "things-link.integration.realtime.mqtt-api.api-secret=$($values['JAGONZN_REALTIME_MQTT_API_SECRET'])",
+    "things-link.integration.realtime.mqtt-api.session-api-key=$($values['JAGONZN_REALTIME_MQTT_SESSION_API_KEY'])",
+    "things-link.integration.realtime.mqtt-api.session-api-secret=$($values['JAGONZN_REALTIME_MQTT_SESSION_API_SECRET'])",
+    'things-link.ingestion.emqx-api.base-url=http://127.0.0.1:28083',
+    'things-link.device.emqx-session-api.base-url=http://127.0.0.1:28083',
+    'things-link.ingress.handoff.broker-uri=tcp://127.0.0.1:21883'
 )
 $appProperties += @(
-    'things-cloud.ingress.handoff.enabled=true',
-    "things-cloud.ingress.handoff.password=$($values['JAGONZN_INGRESS_HANDOFF_PASSWORD'])",
-    "things-cloud.ingestion.emqx-api.api-key=$($values['JAGONZN_EMQX_API_KEY'])",
-    "things-cloud.ingestion.emqx-api.api-secret=$($values['JAGONZN_EMQX_API_SECRET'])",
-    "things-cloud.device.emqx-session-api.api-key=$($values['JAGONZN_EMQX_SESSION_API_KEY'])",
-    "things-cloud.device.emqx-session-api.api-secret=$($values['JAGONZN_EMQX_SESSION_API_SECRET'])"
+    'things-link.ingress.handoff.enabled=true',
+    "things-link.ingress.handoff.password=$($values['JAGONZN_INGRESS_HANDOFF_PASSWORD'])",
+    "things-link.ingestion.emqx-api.api-key=$($values['JAGONZN_EMQX_API_KEY'])",
+    "things-link.ingestion.emqx-api.api-secret=$($values['JAGONZN_EMQX_API_SECRET'])",
+    "things-link.device.emqx-session-api.api-key=$($values['JAGONZN_EMQX_SESSION_API_KEY'])",
+    "things-link.device.emqx-session-api.api-secret=$($values['JAGONZN_EMQX_SESSION_API_SECRET'])"
 )
-$appProperties += "things-cloud.deployment.entitlement-mode=$($values['JAGONZN_ENTITLEMENT_MODE'])"
+$appProperties += "things-link.deployment.entitlement-mode=$($values['JAGONZN_ENTITLEMENT_MODE'])"
 $capacityProperties = [ordered]@{
     'projects' = 'JAGONZN_TECHNICAL_PROJECTS'
     'devices' = 'JAGONZN_TECHNICAL_DEVICES'
@@ -269,7 +269,7 @@ $capacityProperties = [ordered]@{
     'daily.script-cpu-millis' = 'JAGONZN_TECHNICAL_DAILY_SCRIPT_CPU_MILLIS'
 }
 foreach ($item in $capacityProperties.GetEnumerator()) {
-    $appProperties += "things-cloud.deployment.noncommercial-capacity.$($item.Key)=$($values[$item.Value])"
+    $appProperties += "things-link.deployment.noncommercial-capacity.$($item.Key)=$($values[$item.Value])"
 }
 [IO.File]::WriteAllText($appFile, ($appProperties -join "`n") + "`n", $utf8)
 
@@ -402,7 +402,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'jagonzn-service 打包失败。' }
 } finally { Pop-Location }
 # 运行容器挂载摘要命名的固定副本，避免 Maven 重打包 target 时破坏运行中的类加载。
-$builtJar = Join-Path $serviceDir 'target/jagonzn-service-0.0.1-SNAPSHOT.jar'
+$builtJar = Join-Path $serviceDir '../.private/workspaces/service-build/jagonzn-service-0.0.1-SNAPSHOT.jar'
 $jarHash = (Get-FileHash -LiteralPath $builtJar -Algorithm SHA256).Hash.ToLowerInvariant()
 $artifactDir = Join-Path $deployDir 'artifacts.local'
 [void][IO.Directory]::CreateDirectory($artifactDir)

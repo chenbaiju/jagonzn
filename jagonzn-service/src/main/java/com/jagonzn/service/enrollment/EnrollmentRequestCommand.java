@@ -1,7 +1,7 @@
 package com.jagonzn.service.enrollment;
 
-import com.things.cloud.entitlement.application.EnrollmentRequestV1;
-import com.things.cloud.shared.id.Uuid7;
+import com.things.link.entitlement.application.EnrollmentRequestV1;
+import com.things.link.shared.id.Uuid7;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

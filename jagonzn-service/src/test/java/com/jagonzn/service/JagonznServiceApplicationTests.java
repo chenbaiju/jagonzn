@@ -3,9 +3,9 @@ package com.jagonzn.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.things.cloud.device.application.DeviceService;
-import com.things.cloud.ingestion.infrastructure.protocol.tcp.DeviceAccessTcpRuntime;
-import com.things.cloud.project.application.ProjectService;
+import com.things.link.device.application.DeviceService;
+import com.things.link.ingestion.infrastructure.protocol.tcp.DeviceAccessTcpRuntime;
+import com.things.link.project.application.ProjectService;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -40,7 +40,8 @@ class JagonznServiceApplicationTests extends JagonznServiceIntegrationTest {
     void contextLoads() {
         context.getBean(ProjectService.class);
         context.getBean(DeviceService.class);
-        assertTrue(context.containsBean("controlledOutOfOrderMigrationStrategy"));
+        // 现行内核已退役乱序兼容策略，装配应使用正常顺序迁移策略。
+        assertTrue(context.containsBean("orderedMigrationStrategy"));
         assertTrue(flyway.info().applied().length >= 300);
         // 独立部署的全部生产消费组应使用 jagonzn 身份，包括实例广播组。
         assertTrue(kafkaListeners.getListenerContainers().size() >= 15);
@@ -49,17 +50,17 @@ class JagonznServiceApplicationTests extends JagonznServiceIntegrationTest {
                 .allMatch(groupId -> groupId != null && groupId.startsWith("jagonzn-")));
         assertTrue(context.getBean(DeviceAccessTcpRuntime.class).groupId()
                 .startsWith("jagonzn-ingestion-tcp-downlink."));
-        assertEquals("jagonzn", environment.getRequiredProperty("things-cloud.security.jwt.issuer"));
-        assertEquals("jagonzn-app", environment.getRequiredProperty("things-cloud.security.app-jwt.issuer"));
+        assertEquals("jagonzn", environment.getRequiredProperty("things-link.security.jwt.issuer"));
+        assertEquals("jagonzn-app", environment.getRequiredProperty("things-link.security.app-jwt.issuer"));
         assertEquals("jagonzn-uplink-ingress-v1",
-                environment.getRequiredProperty("things-cloud.ingress.handoff.client-id"));
-        assertEquals("18883", environment.getRequiredProperty("things-cloud.access.tcp.port"));
-        assertEquals("15684", environment.getRequiredProperty("things-cloud.access.coap.port"));
-        assertEquals("false", environment.getRequiredProperty("things-cloud.access.http.enabled"));
-        assertEquals("false", environment.getRequiredProperty("things-cloud.access.tcp.enabled"));
-        assertEquals("false", environment.getRequiredProperty("things-cloud.access.coap.enabled"));
+                environment.getRequiredProperty("things-link.ingress.handoff.client-id"));
+        assertEquals("18883", environment.getRequiredProperty("things-link.access.tcp.port"));
+        assertEquals("15684", environment.getRequiredProperty("things-link.access.coap.port"));
+        assertEquals("false", environment.getRequiredProperty("things-link.access.http.enabled"));
+        assertEquals("false", environment.getRequiredProperty("things-link.access.tcp.enabled"));
+        assertEquals("false", environment.getRequiredProperty("things-link.access.coap.enabled"));
         assertEquals("http://localhost:18083",
-                environment.getRequiredProperty("things-cloud.ingestion.emqx-api.base-url"));
+                environment.getRequiredProperty("things-link.ingestion.emqx-api.base-url"));
     }
 
     /** 独立库的 owner 与运行角色必须分离，缺少项目上下文及错误项目均不可读取。 */

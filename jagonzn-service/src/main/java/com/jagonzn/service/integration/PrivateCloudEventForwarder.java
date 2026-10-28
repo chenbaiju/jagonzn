@@ -1,8 +1,8 @@
 package com.jagonzn.service.integration;
 
-import com.things.cloud.shared.message.PublicWebhookSource;
-import com.things.cloud.support.notification.delivery.WebhookSignatures;
-import com.things.cloud.support.webhook.PublicWebhookCodec;
+import com.things.link.shared.message.PublicWebhookSource;
+import com.things.link.support.notification.delivery.WebhookSignatures;
+import com.things.link.support.webhook.PublicWebhookCodec;
 import jakarta.annotation.PreDestroy;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +48,7 @@ public final class PrivateCloudEventForwarder {
             @Value("${jagonzn.cloud.private-delivery.project-ids:}") String projects,
             @Value("${jagonzn.cloud.private-delivery.key-id:}") String keyId,
             @Value("${jagonzn.cloud.private-delivery.secret-base64:}") String encodedSecret,
-            @Value("${things-cloud.integration.internal-event-source.enabled:false}") boolean sourceEnabled) {
+            @Value("${things-link.integration.internal-event-source.enabled:false}") boolean sourceEnabled) {
         this(json, url, source, tenant, projects.isBlank() ? project : projects, keyId, encodedSecret, sourceEnabled,
                 new HttpsTransport());
     }
@@ -78,7 +78,7 @@ public final class PrivateCloudEventForwarder {
     }
 
     @KafkaListener(id = "jagonzn-private-cloud-source", topics = PublicWebhookSource.TOPIC,
-            groupId = "${things-cloud.kafka.group-prefix:jagonzn}-private-cloud-source",
+            groupId = "${things-link.kafka.group-prefix:jagonzn}-private-cloud-source",
             containerFactory = "webhookSourceKafkaListenerContainerFactory",
             concurrency = "1")
     public void consume(ConsumerRecord<byte[], byte[]> record) {
@@ -166,12 +166,12 @@ public final class PrivateCloudEventForwarder {
                         UUID deliveryId, String signature, byte[] body) {
             var request = HttpRequest.newBuilder(target).timeout(Duration.ofSeconds(10))
                     .header("Content-Type", "application/json")
-                    .header("X-ThingsCloud-Source-Deployment-Id", source.toString())
-                    .header("X-ThingsCloud-Key-Id", keyId)
-                    .header("X-ThingsCloud-Timestamp", Long.toString(timestamp))
-                    .header("X-ThingsCloud-Nonce", nonce)
-                    .header("X-ThingsCloud-Delivery-Id", deliveryId.toString())
-                    .header("X-ThingsCloud-Signature", signature)
+                    .header("X-ThingsLink-Source-Deployment-Id", source.toString())
+                    .header("X-ThingsLink-Key-Id", keyId)
+                    .header("X-ThingsLink-Timestamp", Long.toString(timestamp))
+                    .header("X-ThingsLink-Nonce", nonce)
+                    .header("X-ThingsLink-Delivery-Id", deliveryId.toString())
+                    .header("X-ThingsLink-Signature", signature)
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
             try {
                 return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();

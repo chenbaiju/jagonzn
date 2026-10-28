@@ -1,10 +1,10 @@
 package com.jagonzn.service;
 
 import com.jagonzn.service.enrollment.EnrollmentRequestCommand;
-import com.things.cloud.entitlement.GrantV1;
-import com.things.cloud.entitlement.application.ApprovedSelfHostedRevision;
-import com.things.cloud.project.application.SelfHostedGrantImportService;
-import com.things.cloud.project.application.SelfHostedGrantRepository;
+import com.things.link.entitlement.GrantV1;
+import com.things.link.entitlement.application.ApprovedSelfHostedRevision;
+import com.things.link.project.application.SelfHostedGrantImportService;
+import com.things.link.project.application.SelfHostedGrantRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;

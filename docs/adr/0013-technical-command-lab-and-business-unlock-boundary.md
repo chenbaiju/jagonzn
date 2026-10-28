@@ -1,7 +1,7 @@
 # JADR-0013：本机技术命令验证与未来业务开锁入口分离
 
 - 状态：已接受（2026-09-28）；仅冻结边界，未实现 cloud 业务命令。
-- 依据：[主架构 §7](../jagonzn-system-architecture.md)、[JADR-0007](0007-unified-console-and-backend-boundary.md)、[JADR-0011](0011-private-cloud-delivery-scope-rotation-and-recovery.md)、[平台公开命令合同](../../../things-cloud/things-cloud-integration/src/main/java/com/things/cloud/integration/api/OpenCommandController.java)。
+- 依据：[主架构 §7](../jagonzn-system-architecture.md)、[JADR-0007](0007-unified-console-and-backend-boundary.md)、[JADR-0011](0011-private-cloud-delivery-scope-rotation-and-recovery.md)、[平台公开命令合同](../../../things-link/things-link-integration/src/main/java/com/things/link/integration/api/OpenCommandController.java)。
 
 ## 四维审计
 
@@ -28,4 +28,4 @@
 
 `G3-SHC-JAG-TECH-COMMAND-LAB-1` 的回执应包含同固定候选、service API 受理、模拟设备 ACK/最终回复、cloud Inbox、断线重投和不匹配事件拒绝。它只能关闭技术实验。人员开锁端到端验收仍需独立业务模型、服务端有效期、身份、真实设备协议和结果语义回执。
 
-2026-09-28 后续状态：上述技术实验已在本机固定候选完成，见[动态回执](../../../docs/reuse-entry/audits/G3-SHC-JAG-TECH-COMMAND-LAB-1-2026-09-28.md)。回执使用模拟 MQTT 设备与临时低磁盘阈值，不能推出物理锁、正常容量或正式客户放行。
+2026-09-28 后续状态：上述技术实验已在本机固定候选完成，见[动态回执](../../../.private/thingslink-docs/docs/reuse-entry/audits/G3-SHC-JAG-TECH-COMMAND-LAB-1-2026-09-28.md)。回执使用模拟 MQTT 设备与临时低磁盘阈值，不能推出物理锁、正常容量或正式客户放行。

@@ -28,24 +28,34 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <!-- 允许本机验证将全部生成物放到受控外置目录。 -->
+        <jagonzn.build.directory>${project.basedir}/../.private/workspaces/service-build</jagonzn.build.directory>
+        <!-- Windows可用-Djagonzn.python=python选择本机解释器。 -->
+        <jagonzn.python>python3</jagonzn.python>
     </properties>
     <dependencies>
+        <!-- 沿用当前运行时经MinIO引入的1.84组件，不升级平台依赖或全局注册提供者。 -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.84</version>
+        </dependency>
         <!-- 平台正式普通运行时 JAR：同一版本引入全部后端业务模块与生产保护。 -->
         <dependency>
-            <groupId>com.things.cloud</groupId>
-            <artifactId>things-cloud-runtime</artifactId>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-runtime</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <!-- 本地申请封套只使用平台公开的无发行私钥协议模块。 -->
         <dependency>
-            <groupId>com.things.cloud</groupId>
-            <artifactId>things-cloud-entitlement</artifactId>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-entitlement</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <!-- 本地授权联调仅在测试源码中签造封套；正式运行时不依赖发行方模块。 -->
         <dependency>
-            <groupId>com.things.cloud</groupId>
-            <artifactId>things-cloud-issuer</artifactId>
+            <groupId>com.things.link</groupId>
+            <artifactId>things-link-issuer</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
@@ -76,7 +86,7 @@
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- 独立空库与 Redis 真实装配，不借用 ThingsCloud 测试进程或数据库。 -->
+        <!-- 独立空库与 Redis 真实装配，不借用 ThingsLink 测试进程或数据库。 -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
@@ -96,6 +106,7 @@
     </dependencies>
 
     <build>
+        <directory>${jagonzn.build.directory}</directory>
         <plugins>
             <!-- 从平台二进制提取不可变 SQL，仅将数据库角色标识改为本部署命名空间。 -->
             <plugin>
@@ -108,7 +119,7 @@
                         <phase>generate-resources</phase>
                         <goals><goal>unpack-dependencies</goal></goals>
                         <configuration>
-                            <includeGroupIds>com.things.cloud</includeGroupIds>
+                            <includeGroupIds>com.things.link</includeGroupIds>
                             <includes>db/migration/**/*</includes>
                             <outputDirectory>${project.build.directory}/generated-resources/jagonzn</outputDirectory>
                             <overWriteSnapshots>true</overWriteSnapshots>
@@ -122,23 +133,40 @@
                 <version>3.1.0</version>
                 <executions>
                     <execution>
+                        <id>verify-external-storage</id>
+                        <phase>validate</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <exec executable="${jagonzn.python}" failonerror="true">
+                                    <arg value="${project.basedir}/../scripts/check-storage.py"/>
+                                    <arg value="--build-directory"/>
+                                    <arg value="${project.build.directory}"/>
+                                    <arg value="--maven-repository"/>
+                                    <arg value="${settings.localRepository}"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>namespace-database-roles</id>
                         <phase>generate-resources</phase>
                         <goals><goal>run</goal></goals>
                         <configuration>
                             <target>
+                                <mkdir dir="${project.build.directory}/tmp"/>
                                 <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
-                                         includes="**/*.sql" token="thingscloud_app" value="jagonzn_app"/>
+                                         includes="**/*.sql" token="thingslink_app" value="jagonzn_app"/>
                                 <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
-                                         includes="**/*.sql" token="thingscloud_quota_operator" value="jagonzn_quota_operator"/>
+                                         includes="**/*.sql" token="thingslink_quota_operator" value="jagonzn_quota_operator"/>
                                 <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
-                                         includes="**/*.sql" token="thingscloud_commercial_admin" value="jagonzn_commercial_admin"/>
+                                         includes="**/*.sql" token="thingslink_commercial_admin" value="jagonzn_commercial_admin"/>
                                 <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
-                                         includes="**/*.sql" token="thingscloud_topology_guard" value="jagonzn_topology_guard"/>
+                                         includes="**/*.sql" token="thingslink_topology_guard" value="jagonzn_topology_guard"/>
                                 <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
-                                         includes="**/*.sql" token="thingscloud_constraint" value="jagonzn_constraint"/>
+                                         includes="**/*.sql" token="thingslink_constraint" value="jagonzn_constraint"/>
                                 <replace dir="${project.build.directory}/generated-resources/jagonzn/db/migration"
-                                         includes="**/*.sql" token="thingscloud_automation_cleanup" value="jagonzn_automation_cleanup"/>
+                                         includes="**/*.sql" token="thingslink_automation_cleanup" value="jagonzn_automation_cleanup"/>
                             </target>
                         </configuration>
                     </execution>
@@ -165,8 +193,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- 临时目录必须在fork JVM启动前设置；运行后设置会遗漏JDK提前缓存的默认目录。 -->
+                    <argLine>-Djava.io.tmpdir=${project.build.directory}/tmp</argLine>
                     <!-- 与平台测试一致：宿主启用系统代理时容器回环地址仍须直连。 -->
                     <systemPropertyVariables>
+                        <!-- 测试日志和临时文件随构建目录落入已核验外设映射。 -->
+                        <JAGONZN_SERVICE_LOG_PATH>${project.build.directory}/logs</JAGONZN_SERVICE_LOG_PATH>
+                        <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                         <socksNonProxyHosts>localhost|127.0.0.1</socksNonProxyHosts>
                         <http.nonProxyHosts>localhost|127.0.0.1</http.nonProxyHosts>
                     </systemPropertyVariables>

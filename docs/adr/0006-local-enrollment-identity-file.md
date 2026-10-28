@@ -1,7 +1,7 @@
 # JADR-0006：现场申请使用单租户持久部署身份
 
 - 状态：已接受（2026-09-28，G3-SHC-ENROLL-LOCAL-1）。
-- 依据：[平台 ADR0216](../../../docs/adr/0216-self-hosted-entitlement-issuance-identity-and-term.md)、[申请 V1 合同](../../../docs/reuse-entry/THINGS_CLOUD_SELF_HOSTED_ENROLLMENT_REQUEST_V1.md)、[JADR-0005](0005-signed-self-hosted-entitlement.md)。
+- 依据：[平台 ADR0216](../../../.private/thingslink-docs/docs/adr/0216-self-hosted-entitlement-issuance-identity-and-term.md)、[申请 V1 合同](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_SELF_HOSTED_ENROLLMENT_REQUEST_V1.md)、[JADR-0005](0005-signed-self-hosted-entitlement.md)。
 
 ## 四维核查
 

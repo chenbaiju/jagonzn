@@ -2,26 +2,32 @@
 
 > 平台当前阶段暂停商用服务器、域名及公开部署验收；本仓库继续本机/隔离 LAN、订阅额度与用量回归。此调整不改变已确认客户身份、许可模式或正式签发/接收未完成状态；不以平台内部使用决策自动放行 jagonzn。
 
-更新日期：2026-10-10。阶段 1 正式接收未通过；本页不改变 ThingsCloud 的执行轴或门禁。
+更新日期：2026-10-28。阶段 1 正式接收未通过；本页不改变 ThingsCloud 的执行轴或门禁。
 历史任务中的“本轮/等待/授权”仅适用于其原日期，当前执行以负责人最新请求为准。
+
+2026-10-28真机准备已推进：真实锁具独立设备、有效凭据、TCP配置及外置绑定/状态已建立，正常service真机模式启动通过。首轮公网受阻后，负责人在Chrome打开正确Cloud账号并确认仅为本实例放行TCP6808，规则创建及公网双向回传PASS。当前入口34.80.56.185:6808，临时SSH转发至本机外置环境，首绑窗口至北京时间21:09，负责人已确认蓝牙配置，最新抓包仅有本机探针握手、无JT808载荷，待现场回读联网状态并重新联网；专用抓包有界外置。未修改ThingsLink业务代码或部署线上JAR，真实固件互通和物理动作仍NOTRUN，详见[真机准备与现场联调](jt808-development-plan.md#真机接入准备与现场联调)。
+
+2026-10-28后继已完成[JT808外置环境及真实运行时联调](jt808-development-plan.md#外置独立环境与真实运行时联调回执)：独立Lima/VZ磁盘、五个中间件和全部原件位于Samsung外设；正常service在独立空库应用548迁移，25主题/分区/保留期一致。SM4模拟终端的注册鉴权、属性历史/影子、重复与重启去重、查询SUCCEEDED、控制仅一次发送后TIMED_OUT、跨租户读取和真实凭据撤销通过。测试应用已停止，容器及数据保留；测试凭据已撤销、UNKNOWN原件保留。首台实物型号ZN-DM08-Ⅴ(A)已确认SM4，固件互通、4G/物理动作、独立逐次事件及历史库升级仍NOTRUN；未开放6808、提交、推送或部署。此前88项软件回执独立保留，不相加为正式接收。
+
+2026-10-28按当前授权恢复本机service维护：上游现行名称为ThingsLink，旧ThingsCloud工程标识属于改名前历史，与thingscloud.xyz参考产品区分。service已按固定提交`260fa694`更新依赖、Java/配置及本机装配，18模块/549迁移资源/25主题一致，打包和16项聚焦测试通过；JT808骨架已迁入service专属扩展包且默认关闭。旧目录独立适配器已移除。该同步回执当时未启动或操作数据库；后继空库启动结果见上条，历史库兼容和真机闭环仍未验。详情见[本轮记录](console-reuse-and-evolution.md#2026-10-28%20ThingsLink运行时同步与JT808扩展迁入)和[候选清单](service-upstream.json)。下方旧快照不覆盖本条。
 
 | 功能 | 当前状态与恢复入口 |
 | --- | --- |
-| 正式复用 | rc4 Windows V5g 限定本机真实 UTC 跨日已通过，Mac 旧失败保留；V1c/V8 未完成，[平台统一清单](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ACCEPTANCE_CHECKLIST.md)为接收依据 |
-| Windows 身份与导入 | 身份边界 9 项通过；实际 JAR 导入仍受 POSIX API 限制。候选和复现见 [专项结果](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_CONTINUATION_20260930.md)，缺口见 [实施债务](IMPLEMENTATION_DEBT.md) |
-| 固定制品与双后端 | 原 shc1 双 JAR 未找到；新 SNAPSHOT 正常容量、私有交付和模拟命令不补原件资格，[本地专项](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)保留各自候选 |
+| 正式复用 | rc4 Windows V5g 限定本机真实 UTC 跨日已通过，Mac 旧失败保留；V1c/V8 未完成，[平台统一清单](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ACCEPTANCE_CHECKLIST.md)为接收依据 |
+| Windows 身份与导入 | 身份边界 9 项通过；实际 JAR 导入仍受 POSIX API 限制。候选和复现见 [专项结果](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_LOCAL_CONTINUATION_20260930.md)，缺口见 [实施债务](IMPLEMENTATION_DEBT.md) |
+| 固定制品与双后端 | 原 shc1 双 JAR 未找到；新 SNAPSHOT 正常容量、私有交付和模拟命令不补原件资格，[本地专项](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_LOCAL_TEST_EXECUTION_20260929.md)保留各自候选 |
 | Console | 已复核900个上游文件全部保留，877个内容一致，23个为品牌/连接/权限等适配；独立 Docker service/数据库启动，真实注册、邮箱验证、登录及 16 个主要页面读取通过；2390 项前端单测通过，运行时18模块与当前上游构建一致。版本、限定范围与同步方法见[复用方案](console-reuse-and-evolution.md)。[历史静态验证](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)保留，不代替新界面联调与完整 LAN 验收 |
-| 签名权益及业务 | TEST 导入与三项额度有本地回执；其余 16 项数值、16 项能力及业务/API 映射、正式信任设施仍待完成；参见 [专项台账](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_PROGRESS.md) |
+| 签名权益及业务 | TEST 导入与三项额度有本地回执；其余 16 项数值、16 项能力及业务/API 映射、正式信任设施仍待完成；参见 [专项台账](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_CLOSEOUT_PROGRESS.md) |
 | 设备接入 | 厂商型号/固件、事件语义、真实闭环仍按 [平台反馈](PLATFORM_CAPABILITY_FEEDBACK.md)登记，不把技术模拟作为真机验收 |
 
 ## 1. 目标与状态摘要
 
-jagonzn 是当前 ThingsCloud 项目中的一个租户。jagonzn-service 作为该租户的独立运行验证部署，另行创建与 ThingsCloud 原数据库完全隔离的 `jagonzn` 数据库，使用与所复用 ThingsCloud 版本一致的表结构。数据库迁移 owner 为 `jagonzn`，应用账号为 `jagonzn_app`；迁移从同版本平台 JAR 生成，仅对固定数据库角色标识作确定性映射，详见[ADR0214](../../docs/adr/0214-official-runtime-reuse-entry.md)。先复用已交付且可装配的能力，再在 jagonzn 自身项目开发厂商适配，最后用真实设备验证身份、属性、事件、命令和设备结果。**jagonzn 不得修改 ThingsCloud 的任何代码或数据库表；发现不足只登记证据与改进建议，由 ThingsCloud 自行评审。**已有能力无法完成的闭环项如实标记受阻，设备事实不回写 ThingsCloud 原数据库。独立反馈台账见[平台能力不足与改进建议](PLATFORM_CAPABILITY_FEEDBACK.md)。
+jagonzn 是当前 ThingsCloud 项目中的一个租户。jagonzn-service 作为该租户的独立运行验证部署，另行创建与 ThingsCloud 原数据库完全隔离的 `jagonzn` 数据库，使用与所复用 ThingsCloud 版本一致的表结构。数据库迁移 owner 为 `jagonzn`，应用账号为 `jagonzn_app`；迁移从同版本平台 JAR 生成，仅对固定数据库角色标识作确定性映射，详见[ADR0214](../../.private/thingslink-docs/docs/adr/0214-official-runtime-reuse-entry.md)。先复用已交付且可装配的能力，再在 jagonzn 自身项目开发厂商适配，最后用真实设备验证身份、属性、事件、命令和设备结果。**jagonzn 不得修改 ThingsCloud 的任何代码或数据库表；发现不足只登记证据与改进建议，由 ThingsCloud 自行评审。**已有能力无法完成的闭环项如实标记受阻，设备事实不回写 ThingsCloud 原数据库。独立反馈台账见[平台能力不足与改进建议](PLATFORM_CAPABILITY_FEEDBACK.md)。
 
 | 项目 | 当前状态 |
 | --- | --- |
 | 总体阶段 | **阶段 0：基线核对与最小合同冻结**；双应用基线构建与上下文已通过 |
-| 当前/下一工作 | J0-1 已通过；ThingsCloud 已按方案 A 建立[ADR0214](../../docs/adr/0214-official-runtime-reuse-entry.md)并实施运行时 JAR 本地候选。四协议和非商业本机路径有候选回执，正式制品和完整接收仍待完成；并行的自部署商用已有[平台待审申请登记](../../docs/reuse-entry/audits/G3-SHC-REG-1-enrollment-registration-2026-09-28.md)、[运营端待审接收](../../docs/reuse-entry/audits/G3-SHC-INTAKE-1-operator-pending-http-2026-09-28.md)、[已批准四档修订](../../docs/reuse-entry/THINGS_CLOUD_SELF_HOSTED_APPROVED_REVISION_V1.md)和[可复用公钥验签组件](../../docs/reuse-entry/audits/G3-SHC-VERIFIER-1-runtime-public-key-kernel-2026-09-28.md)。jagonzn 本机 TEST 导入与设备、上下行三项额度已有局部回执；正式签发、固定候选完整强制、统一界面及全内网接收尚未完成 |
+| 当前/下一工作 | J0-1 已通过；ThingsCloud 已按方案 A 建立[ADR0214](../../.private/thingslink-docs/docs/adr/0214-official-runtime-reuse-entry.md)并实施运行时 JAR 本地候选。四协议和非商业本机路径有候选回执，正式制品和完整接收仍待完成；并行的自部署商用已有[平台待审申请登记](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-SHC-REG-1-enrollment-registration-2026-09-28.md)、[运营端待审接收](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-SHC-INTAKE-1-operator-pending-http-2026-09-28.md)、[已批准四档修订](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_SELF_HOSTED_APPROVED_REVISION_V1.md)和[可复用公钥验签组件](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-SHC-VERIFIER-1-runtime-public-key-kernel-2026-09-28.md)。jagonzn 本机 TEST 导入与设备、上下行三项额度已有局部回执；正式签发、固定候选完整强制、统一界面及全内网接收尚未完成 |
 | 下一道阶段门 | ThingsCloud 正式复用入口、同源同构且 jagonzn 角色命名的迁移、隔离部署合同交付并核实；设备合同在阶段 2 前另行裁定 |
 | jagonzn-service 代码基线 | Spring Boot 4.1.0；已接入 ThingsCloud 全量运行时本地候选并通过独立空库上下文测试；尚无正式不可变制品、实际设备协议适配和闭环实现 |
 | 当前文档基线 | 双项目架构、service 复用方案、协议调研、接入合同演进和优先级建议已记录 |
@@ -45,7 +51,7 @@ jagonzn 是当前 ThingsCloud 项目中的一个租户。jagonzn-service 作为�
 
 ### 2.1 功能切片编号与候选清单
 
-切片采用 `J<阶段>-<序号>` 编号，编号一经登记不复用。编号仅绑定一个可独立演示、验证和回滚的功能或缺陷闭环；构建、取证、设计、文档与测试属于片内步骤。单片上限遵守[实施手册 §2.1](../../docs/DEVELOPMENT_ROADMAP.md#2.1%20单人纵向切片)原有 **4 小时** 规则。下表“候选”只有范围建议，动工前仍须核对前置合同和 4 小时规模；超过上限时按独立功能边界重新编号拆分，不将技术步骤改称切片。
+切片采用 `J<阶段>-<序号>` 编号，编号一经登记不复用。编号仅绑定一个可独立演示、验证和回滚的功能或缺陷闭环；构建、取证、设计、文档与测试属于片内步骤。单片上限遵守[实施手册 §2.1](../../.private/thingslink-docs/docs/DEVELOPMENT_ROADMAP.md#2.1%20单人纵向切片)原有 **4 小时** 规则。下表“候选”只有范围建议，动工前仍须核对前置合同和 4 小时规模；超过上限时按独立功能边界重新编号拆分，不将技术步骤改称切片。
 
 | 编号 | 独立功能及验收入口 | 前置条件 | 状态 |
 | --- | --- | --- | --- |
@@ -68,13 +74,13 @@ jagonzn 是当前 ThingsCloud 项目中的一个租户。jagonzn-service 作为�
 - `jagonzn-service` 当前具备 Spring Boot 启动类、基础配置、应用健康 HTTP 入口，并通过平台运行时 JAR 装配后端模块；独立空库测试不等于设备接入实现或正式交付。
 - 当前 ThingsCloud、jagonzn-service、jagonzn-cloud 的 Maven 项目版本均为 `0.0.1-SNAPSHOT`，Java 均为 21；Spring Boot 均为 `4.1.0`。ThingsCloud 版本是版本源头；两个 jagonzn 项目向 ThingsCloud 对齐，不通过升级或修改 ThingsCloud 来迁就应用。
 - 本次已把 jagonzn-service 的 Spring Boot parent 从 `4.1.1` 改为 `4.1.0`；jagonzn-cloud 与 ThingsCloud 已是 `4.1.0`，无需改动。2026-09-24 两个 jagonzn 骨架已各自通过 Maven verify 与启动上下文检查（各 1 项），但这不代表 ThingsCloud 内核装配兼容已验证。
-- ThingsCloud 标准 TCP 已支持固定 TC 帧及 `ACCEPTED(0x13)` 逐条受理确认，但不自动支持烟感或智能锁的私有帧；设备自报事件尚未形成通用接入闭环。TCP 多实例 D-190 已开发、验证并关闭，不是本项目未完成项。依据：[标准协议合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)、[D-190 资格记录](../../docs/delivery/audits/G3-TCP-D190-2026-09-19-qualification.md)。
-- ThingsCloud 已有公共 REST、应用侧 MQTT/WS、公共 Webhook 及既定平台事件交付能力；其本地交付证据见 [S14-R8f-1](../../docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)。这不等于 jagonzn 已完成装配，也不等于设备自报事件已有受支持入口。
+- ThingsCloud 标准 TCP 已支持固定 TC 帧及 `ACCEPTED(0x13)` 逐条受理确认，但不自动支持烟感或智能锁的私有帧；设备自报事件尚未形成通用接入闭环。TCP 多实例 D-190 已开发、验证并关闭，不是本项目未完成项。依据：[标准协议合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)、[D-190 资格记录](../../.private/thingslink-docs/docs/delivery/audits/G3-TCP-D190-2026-09-19-qualification.md)。
+- ThingsCloud 已有公共 REST、应用侧 MQTT/WS、公共 Webhook 及既定平台事件交付能力；其本地交付证据见 [S14-R8f-1](../../.private/thingslink-docs/docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)。这不等于 jagonzn 已完成装配，也不等于设备自报事件已有受支持入口。
 - jagonzn-service 的目标是独立运行，并另行创建独立的 `jagonzn` 数据库；jagonzn 是当前 ThingsCloud 项目中的一个租户，设备按其项目和设备归属管理。
 
 ### 按阶段裁定的前置事项
 
-1. **阶段 1 前——内核交付细节：**负责人已选方案 A 并授权 ThingsCloud 自行建设装配层，平台已建立 ADR0214 及普通运行时 JAR 本地候选；jagonzn 角色命名映射已纳入候选。正式不可变制品、既有库升级/回滚与全功能证据仍待交付。具体接收要求见[正式入口交付需求](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_REQUEST.md)。以 ThingsCloud 版本为源头，jagonzn 不实施公共内核改造。JPF-001/003 尚未关闭。
+1. **阶段 1 前——内核交付细节：**负责人已选方案 A 并授权 ThingsCloud 自行建设装配层，平台已建立 ADR0214 及普通运行时 JAR 本地候选；jagonzn 角色命名映射已纳入候选。正式不可变制品、既有库升级/回滚与全功能证据仍待交付。具体接收要求见[正式入口交付需求](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ENTRY_REQUEST.md)。以 ThingsCloud 版本为源头，jagonzn 不实施公共内核改造。JPF-001/003 尚未关闭。
 2. **阶段 1 前——隔离部署约束：**`jagonzn` 数据库、凭据和中间件边界，数据库迁移来源、备份恢复和测试数据脱敏要求；另库不自动保证共享中间件的资源与故障隔离。
 3. **阶段 2 前——首个试点设备：**烟感或简工智能锁，及准确型号、固件、协议版本、真机可用性和厂商测试支持。现有优先级文档没有替负责人做此选择。
 4. **阶段 2 前——最小业务接入合同：**核对已有接口如何覆盖身份、属性、逐次事件、状态、命令、设备 ACK/最终结果及可靠性语义。缺失部分形成需求建议，不在 jagonzn 中新增平台接口或存储；事件缺口见反馈 JPF-002，边界裁定见[本轮审计](DOCS_AUDIT_2026-09-24.md)。
@@ -173,7 +179,7 @@ jagonzn 是当前 ThingsCloud 项目中的一个租户。jagonzn-service 作为�
 
 ### 2026-09-29 后续开发交接
 
-当前代理已接手后续开发。最近可推进的入口为 `G3-SHC-JAG-BOOTSTRAP-API-1` 的现场管理员身份/初始化及申请、授权状态合同，后续是离线导入 API 和统一 Console；现有命令行与 TEST 回执不等于这些 API 已实现。具体切片和前置继续引用[专项评审计划](../../docs/reuse-entry/THINGS_CLOUD_REUSE_CLOSEOUT_AND_SELF_HOSTED_REVIEW.md)，不另建重复功能编号。
+当前代理已接手后续开发。最近可推进的入口为 `G3-SHC-JAG-BOOTSTRAP-API-1` 的现场管理员身份/初始化及申请、授权状态合同，后续是离线导入 API 和统一 Console；现有命令行与 TEST 回执不等于这些 API 已实现。具体切片和前置继续引用[专项评审计划](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_CLOSEOUT_AND_SELF_HOSTED_REVIEW.md)，不另建重复功能编号。
 
 本轮确认一项 **jagonzn 自身实施债务**：`SignedGrantImportCommand` 只支持 POSIX 私有文件权限，Windows NTFS 原生导入不能认领可用；申请 CLI 已有 Windows ACL 分支也不能推导导入 CLI 已支持。后续先明确等价 ACL、文件所有者和拒绝边界，再按合同补实现/负例；不直接跳过权限检查。这是 service 自身的跨平台支持缺口，未作为平台 JPF 伪报。首台设备、cloud 业务权限及未定义关键接口仍在各阶段开始前冻结。
 
@@ -190,10 +196,10 @@ jagonzn 是当前 ThingsCloud 项目中的一个租户。jagonzn-service 作为�
 | JCH-005 | 2026-09-24 | 两个 jagonzn 应用分别通过 Maven verify 与 Spring 上下文测试（各 1 项），确认骨架基线可构建；该核验是阶段 0 事实，不单独占切片。负责人将切片上限恢复为实施手册的 4 小时，仅完整功能或缺陷闭环登记切片和提交。 |
 | JCH-006 | 2026-09-24 | J0-1 service 独立部署健康 HTTP 入口已通过真实请求验收，`/actuator/health` 返回最小 200/UP，`env` 与 `metrics` 不公开；2 项测试通过。详见 [J0-1 回执](progress/J0.md)。 |
 | JCH-007 | 2026-09-24 | 为已完成与候选功能片建立 `J<阶段>-<序号>` 稳定编号、验收入口、前置条件和状态；继续用 `JCH-NNN` 单独标识知识库变更记录，构建与文档步骤不占功能片编号。 |
-| JCH-008 | 2026-09-24 | 负责人选择方案 A：由 ThingsCloud 评审并提供正式复用入口；形成[交付需求与验收清单](../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_REQUEST.md)。此决策不代表平台已受理、排期或交付，也不占功能切片编号。 |
+| JCH-008 | 2026-09-24 | 负责人选择方案 A：由 ThingsCloud 评审并提供正式复用入口；形成[交付需求与验收清单](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ENTRY_REQUEST.md)。此决策不代表平台已受理、排期或交付，也不占功能切片编号。 |
 | JCH-009 | 2026-09-24 | 为已获裁决的双项目职责、租户隔离与版本、平台变更权限、正式入口方案 A 建立[独立 ADR 与索引](adr/README.md)；未决设备合同和平台交付仍保持原状态。本次文档归档不是功能切片。 |
 | JCH-010 | 2026-09-24 | 两个应用显式避开 ThingsCloud 已配置端口：service HTTP 默认 `18080`，cloud 未来 HTTP 预留 `18081`（当前无 Web 依赖）；在[知识库入口](README.md)明确新增/修改代码与设置项须有中文注释、Git 提交正文用一句话概述改动/验证/结论，并在方案 A 交接状态处直引 [JADR-0004](adr/0004-official-reuse-entry.md)。 |
 | JCH-011 | 2026-09-24 | 为现有两个应用的启动入口、上下文/健康验证代码及 service 新增依赖补齐中文注释，说明职责、NIO2 原因和健康检查边界；不改变运行逻辑或阶段状态。 |
 | JCH-012 | 2026-09-24 | ThingsCloud 普通运行时 JAR 已接入 service 本地候选；独立 `jagonzn` 库的空库/历史升级、角色命名与 RLS、健康/敏感端点及注册登录后的项目/设备授权共 6 项测试通过。MQTT 身份、Kafka 消费组、签名密钥变量及标准 TCP/CoAP 端口使用 jagonzn 配置；真实外部业务路径、非商业策略、制品发布与恢复未验，阶段 1 门禁仍开放。 |
-| JCH-013 | 2026-09-29 | 负责人交接后续开发并授权执行本地专项；原生/POSIX、TEST 授权、商业浏览器与正常容量双后端实验逐项留证，记录 Windows 导入权限债务。完整 LAN、正式签发及设备阶段仍开放，全量由负责人手动执行，未提交或推送。见[专项回执](../../docs/reuse-entry/THINGS_CLOUD_LOCAL_TEST_EXECUTION_20260929.md)。 |
+| JCH-013 | 2026-09-29 | 负责人交接后续开发并授权执行本地专项；原生/POSIX、TEST 授权、商业浏览器与正常容量双后端实验逐项留证，记录 Windows 导入权限债务。完整 LAN、正式签发及设备阶段仍开放，全量由负责人手动执行，未提交或推送。见[专项回执](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_LOCAL_TEST_EXECUTION_20260929.md)。 |
 | JCH-014 | 2026-09-29 | 负责人暂停 Console 全量复制，改为创建独立 Vue + Vite 免登录、无操作的本机静态测试页；原 Console 和共享包均未复制。只新增前端访问实验，不关闭正式界面、初始化/授权 API 或完整 LAN 门禁，见[记录](../jagonzn-console/docs/TEST_EXECUTION_20260929.md)。 |

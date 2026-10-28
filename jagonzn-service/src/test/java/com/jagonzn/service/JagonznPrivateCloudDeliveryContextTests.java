@@ -1,7 +1,7 @@
 package com.jagonzn.service;
 
 import com.jagonzn.service.integration.PrivateCloudEventForwarder;
-import com.things.cloud.support.webhook.PublicWebhookSourceWriter;
+import com.things.link.support.webhook.PublicWebhookSourceWriter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** 外部 service 真实装配中，私有消费组与内部来源须同时存在且不启动测试 Broker。 */
 @SpringBootTest(properties = {
         "jagonzn.cloud.private-delivery.enabled=true",
-        "things-cloud.integration.internal-event-source.enabled=true",
+        "things-link.integration.internal-event-source.enabled=true",
         "jagonzn.cloud.private-delivery.url=https://cloud.internal/api/v1/internal/service-events",
         "jagonzn.cloud.private-delivery.source-deployment-id=00000000-0000-0000-0000-000000000111",
         "jagonzn.cloud.private-delivery.tenant-id=00000000-0000-0000-0000-000000000222",

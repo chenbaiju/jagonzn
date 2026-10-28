@@ -1,8 +1,8 @@
 package com.jagonzn.service.integration;
 
-import com.things.cloud.shared.message.PublicWebhookEvent;
-import com.things.cloud.shared.message.PublicWebhookSource;
-import com.things.cloud.support.webhook.PublicWebhookCodec;
+import com.things.link.shared.message.PublicWebhookEvent;
+import com.things.link.shared.message.PublicWebhookSource;
+import com.things.link.support.webhook.PublicWebhookCodec;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;

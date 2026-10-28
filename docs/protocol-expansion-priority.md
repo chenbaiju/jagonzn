@@ -24,7 +24,7 @@
 
 当前 ThingsCloud 标准接入合同明确排除设备事件、自定义编解码、DTU 型号适配和任意厂商私有 TCP 帧；MQTT 事件 Topic 目前也没有通用事件标准化处理路径。烟感报警/恢复和智能锁开锁/异常记录均需要表达为逐次事件。
 
-这里的缺口是设备自报事件的入口与业务处理路径。ThingsCloud 已有公共 Webhook 等平台对外集成能力，见 [S14-R8f-1 交付证据](../../docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)；不能因此另起一套同用途公共投递机制，也不能把它当作设备事件上报入口。
+这里的缺口是设备自报事件的入口与业务处理路径。ThingsCloud 已有公共 Webhook 等平台对外集成能力，见 [S14-R8f-1 交付证据](../../.private/thingslink-docs/docs/delivery/audits/S14-R8f-1-public-integration-evidence.md)；不能因此另起一套同用途公共投递机制，也不能把它当作设备事件上报入口。
 
 如果先写完整设备适配器而没有稳定的事件与设备身份合同，可能只能把事件压成普通属性、暂时丢弃事件，或依赖平台内部实现。前两者会损失设备事实语义，后一种会增加平台能力扩展后的返工风险。
 
@@ -74,8 +74,8 @@
 
 ## 5. 当前轨迹边界
 
-- 当前 ThingsCloud 执行阶段及门禁继续以[开发进度总览](../../docs/PROGRESS.md)为准。
-- 当前标准协议的实际支持范围以[标准协议接入合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)为准。
+- 当前 ThingsCloud 执行阶段及门禁继续以[开发进度总览](../../.private/thingslink-docs/docs/PROGRESS.md)为准。
+- 当前标准协议的实际支持范围以[标准协议接入合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)为准。
 - `DTU`、用户自定义编解码及私有厂家协议适配在当前文档中仍是阶段外/未交付能力；本建议不将其改写为当前在建任务。
 - 对设备和协议的已知事实及平台差距参见[多协议接入、4G 烟感与 JT808 智能锁适配调研记录](protocol-extensibility-and-smoke-adapter-research.md)。
 

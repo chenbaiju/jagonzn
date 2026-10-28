@@ -1,6 +1,6 @@
 package com.jagonzn.service.enrollment;
 
-import com.things.cloud.entitlement.application.EnrollmentRequestV1;
+import com.things.link.entitlement.application.EnrollmentRequestV1;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Assumptions;

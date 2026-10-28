@@ -160,3 +160,25 @@ node jagonzn-console/scripts/jagonzn-live-smoke.mjs
 两份图片按原字节复制入仓，浏览器复验桌面/手机登录、真实登录后的菜单和个人资料头像；构建及类型检查通过。截图保留于本机 `deploy/logs/console-live/brand-*.png`，品牌变更及本节验证记录一起纳入本次提交。前述900文件差异清单绑定品牌更新前的提交候选，不作为本轮新增图片和样式的零差异证明。
 
 登录图片铺满版本：桌面横向标识宽320px，菜单展开188px，手机头部220px；菜单收起和头像保留完整双行图以适配窄位。铺满时照片按区域比例裁切，顶部浅色遮罩保证蓝色标识可见，底部深色遮罩承托白色公司名与备案号。其余页面与业务逻辑不变。
+
+## 2026-10-28 ThingsLink运行时同步与JT808扩展迁入
+
+负责人重新下载独立`chenbaiju/jagonzn`仓库，基线`59a006124632e63a2f857cab6c0442afed1b7001`且片前干净；本次授权恢复service维护，核对其上游同步并迁入JT808扩展。现行平台名称为ThingsLink；ThingsCloud是本工程改名前标识，历史Git、签名或私有合同名称不代表连接thingscloud.xyz参考产品。
+
+核对确认需要更新：旧POM仍依赖`com.things.cloud:things-cloud-runtime`，配置、Java导入、生成SQL角色映射、启动脚本及继承审计也绑定旧命名；旧文档只记录10月10日355条迁移的运行结果。同一个`0.0.1-SNAPSHOT`版本号不会自动接收当前内核。当前以ThingsLink已提交`260fa694876fce1b728ba87a4b91466765942aac`为唯一上游候选，使用既有固定提交检出的后端源码（该后端范围无dirty差额）和本轮独占Maven仓库安装依赖；主工作区其他未提交后继不纳入。
+
+实际变更：service切换到`com.things.link:things-link-runtime`及同源entitlement/仅测试issuer，Java导入与配置前缀改为`com.things.link`、`things-link.*`；生成SQL仍只做既有六种角色的`thingslink_*→jagonzn_*`确定性映射。本机启动脚本和继承审计同步新前缀/路径。首轮完整测试编译发现旧`FlywayCompatibilityConfiguration`已退役，改接`FlywayMigrationConfiguration`，保留顺序迁移与乱序拒绝，不新增repair或历史白名单。角色断言同时检查旧/新平台前缀残留。Kafka现有25主题与当前上游完全相同，不改主题配置。
+
+已有签名封套的`issuerId=thingscloud`、`thingscloud.v1.*`密钥标识，以及service/cloud配对私有合同的`X-ThingsCloud-Source-Deployment-Id`头名暂保留。它们是已存在的信任/线格式，不是产品展示名称；本次不单方更改签名身份或cloud接收合同。正式信任锚本来仍未交付，不以这些兼容标识宣称正式授权通过。
+
+JT808原独立工程的4个文件及全部空目录已从ThingsLink的`things-link-device-sdk/jt808/adapter/`移除，SDK索引恢复；上级厂家文档与两张图片保持。Java骨架迁入`jagonzn-service/src/main/java/com/jagonzn/service/extension/jt808/`，包名为`com.jagonzn.service.extension.jt808`，使用service现有POM，不保留独立适配器JAR或MQTT桥接进程。迁入时`jagonzn.jt808.enabled=false`仅预留缺省关闭开关，没有监听或协议实现；后继帧/国密实现和实际测试结果见[JT808计划](jt808-development-plan.md)。后继在该包内通过运行时受支持应用端口扩展，不修改ThingsLink源码、表或既有标准TCP实现。
+
+验证：service主源码与完整测试源码编译、可执行JAR打包通过；迁移集合/域、申请/信任锚及私有转发相关7类16项全部通过，0失败/错误/跳过。新JAR中18个ThingsLink模块逐一匹配当前固定上游构建，14域/548条SQL加1份附属配置逐字节符合角色映射，25个主题/分区/保留期一致；旧things-cloud模块JAR未混入。实际模块与service摘要见[service当前清单](service-upstream.json)，不是正式不可变发行物。未改动ThingsLink后端源码；上游构建、service生成物和首败保留在已核外盘`/Volumes/Samsung/ThingsLink/testing/jagonzn-sync-20261028/`，构建通过`jagonzn.build.directory`显式外置。
+
+复现时，先从固定ThingsLink检出使用其Wrapper安装`things-link-runtime,things-link-issuer -am`到专用Maven仓库，再在本仓执行：
+
+```bash
+./jagonzn-service/mvnw -f jagonzn-service/pom.xml   -Dmaven.repo.local=/Volumes/Samsung/ThingsLink/testing/jagonzn-sync-20261028/maven-repository   -Djagonzn.build.directory=/Volumes/Samsung/ThingsLink/testing/jagonzn-sync-20261028/service-build   -Dtest=JagonznMigrationNamespaceTests,EnrollmentRequestCommandTests,PackagedIssuerTrustTests,SignedGrantImportCommandTests,SignedGrantRuntimeConfigurationTests,PrivateCloudEventForwarderTests,PrivateCloudEventHttpsTests test
+```
+
+本次没有运行独立PG/Redis上下文、历史数据库升级、全service回归、Console/cloud更新、JT808真机或公网部署。静态复查将上下文测试的旧bean名称断言同步为现行`orderedMigrationStrategy`；这项上下文测试仍未运行。改名后的同版本SQL可能影响旧库Flyway校验和，必须取得实际旧库备份并做隔离兼容验证后才允许启动升级；不能仅把355与548的差值当成可直接追加的迁移。未连接、修复或修改旧库，未关闭许可/配额/安全守卫。两仓改动分别保留本地，未提交、推送或更改独立仓库关系。

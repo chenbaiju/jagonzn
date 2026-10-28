@@ -1,8 +1,8 @@
 package com.jagonzn.service.enrollment;
 
-import com.things.cloud.entitlement.GrantV1;
-import com.things.cloud.entitlement.application.ApprovedSelfHostedRevision;
-import com.things.cloud.entitlement.application.GrantV1Verification;
+import com.things.link.entitlement.GrantV1;
+import com.things.link.entitlement.application.ApprovedSelfHostedRevision;
+import com.things.link.entitlement.application.GrantV1Verification;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;

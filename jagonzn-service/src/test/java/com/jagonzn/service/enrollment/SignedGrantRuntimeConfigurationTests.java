@@ -1,7 +1,7 @@
 package com.jagonzn.service.enrollment;
 
-import com.things.cloud.project.application.SelfHostedGrantImportService;
-import com.things.cloud.project.application.SelfHostedGrantRepository;
+import com.things.link.project.application.SelfHostedGrantImportService;
+import com.things.link.project.application.SelfHostedGrantRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;

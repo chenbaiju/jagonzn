@@ -14,7 +14,7 @@
 
 | 维度 | 判断 | 依据与处理 |
 | --- | --- | --- |
-| 事实依据 | 原主架构关于缺少 TCP 逐条受理、跨实例路由待补及只有通知 Webhook 的描述已过期 | [标准接入合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md) §4 已有 ACCEPTED；[缺口清单](../../docs/ARCHITECTURE_GAPS.md) 和 [D-190 资格记录](../../docs/delivery/audits/G3-TCP-D190-2026-09-19-qualification.md) 已关闭多实例项；[S14-R8f-1](../../docs/delivery/audits/S14-R8f-1-public-integration-evidence.md) 已有公共集成本地交付证据 |
+| 事实依据 | 原主架构关于缺少 TCP 逐条受理、跨实例路由待补及只有通知 Webhook 的描述已过期 | [标准接入合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md) §4 已有 ACCEPTED；[缺口清单](../../.private/thingslink-docs/docs/ARCHITECTURE_GAPS.md) 和 [D-190 资格记录](../../.private/thingslink-docs/docs/delivery/audits/G3-TCP-D190-2026-09-19-qualification.md) 已关闭多实例项；[S14-R8f-1](../../.private/thingslink-docs/docs/delivery/audits/S14-R8f-1-public-integration-evidence.md) 已有公共集成本地交付证据 |
 | 逻辑连贯性 | 设备事件输入、平台事件输出、适配器合同是三个边界；存在从“写适配器”直接跳到“保存事件”、从“另建数据库”跳到“运行故障隔离”的推导 | 已在[验证模型 §5](tenant-validation-and-contract-evolution.md#5.%20最小合同的验证范围)区分合同；进度阶段 2 增加获批后的最小事件处理交付；独立数据库只直接界定数据/凭据边界，资源隔离另需部署证据 |
 | 信息缺口 | 尚缺可装配制品/迁移交付证据、设备事件支持路径、首台型号固件、身份可信依据和真机验收条件 | 依赖具体阶段核对，见[进度 §3](PROJECT_PROGRESS.md#3.%20当前阶段：基线核对与最小合同冻结)；平台缺口登记独立反馈，不臆造 API、表或凭据能力 |
 | 观点区分 | 用户决策、已交付事实、工程常识与开发建议必须分开 | 已确认：租户定位、独立同构数据库、版本向 ThingsCloud 对齐、jagonzn 禁止修改平台代码/表、独立记录反馈。工程常识：标识不等于凭据、另库不自动隔离共享资源、版本号一致不证明行为兼容。建议：阶段门细分、制品指纹；公共事件/存储/插件建议由 ThingsCloud 自行评审 |
@@ -45,7 +45,7 @@
 
 - 负责人已明确：独立建立 `jagonzn` 数据库，数据库表与所复用 ThingsCloud 版本完全一致；版本向 ThingsCloud 对齐，暂不改变 ThingsCloud 实施轨迹。已写入[service 架构 §8.1](jagonzn-service-backend-architecture.md#8.1%20保持数据库结构)与[进度 §4](PROJECT_PROGRESS.md#4.%20阶段%201：复用%20ThingsCloud%20能力)。
 - 旧 service 架构 §8.1 曾允许新增业务通过独立新增表扩展；这不能与严格同构要求同时作为无条件实施授权。本轮已删除该默认许可。
-- [标准接入合同 §1](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)排除设备事件上报；[主架构 §8.4](jagonzn-system-architecture.md#8.4%20首期必须补齐的事件与确认能力)及进度阶段 2/3 又要求逐次设备事件可靠保存。现有公共 Webhook 仅能证明既定平台事件的输出能力，不能填补这个输入与存储决策。
+- [标准接入合同 §1](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)排除设备事件上报；[主架构 §8.4](jagonzn-system-architecture.md#8.4%20首期必须补齐的事件与确认能力)及进度阶段 2/3 又要求逐次设备事件可靠保存。现有公共 Webhook 仅能证明既定平台事件的输出能力，不能填补这个输入与存储决策。
 - 另有同类前提：正式库化、自动装配及非商业策略仍为候选建设内容。若获取可用制品必须改动共用内核，则需另行批准范围；不能把 jagonzn 阶段计划当作对 ThingsCloud 源码/迁移的隐含授权。
 
 ### 风险预估
@@ -75,6 +75,6 @@
 - 本轮静态核对 10 份知识库文档及 service README，共 125 个本地链接、10 个标题锚点，文件与标题均可解析；`git diff --check` 通过。三个 POM 的版本字段一致。未在 Obsidian UI 逐项点击，也未运行 Java 构建、数据库迁移或真机测试，不认领新增实现交付。
 - 设备协议细节沿用已有调研，本轮未重新逐页提取原始 XLSX/DOCX，也未验证型号、固件或账号/项目的线上状态。IMEI、睡眠窗口、加密变体等仍须型号级证据。
 - 复核公开产品的 [TCP 接入说明](https://www.thingscloud.xyz/docs/guide/connect-device/tcp.html)与[自定义数据流说明](https://www.thingscloud.xyz/docs/guide/device-type/custom-data.html)，仅用于校准外部产品文档事实，不将其当成本地代码能力证明。
-- [ADR0143](../../docs/adr/0143-tcp-broadcast-routing-and-pending-recovery.md)中的设计时状态属于历史上下文；当前 D-190 结论取自最终资格记录和当前进度，不回写已接受 ADR 的历史正文。
+- [ADR0143](../../.private/thingslink-docs/docs/adr/0143-tcp-broadcast-routing-and-pending-recovery.md)中的设计时状态属于历史上下文；当前 D-190 结论取自最终资格记录和当前进度，不回写已接受 ADR 的历史正文。
 
-维护依据：[仓库文档维护指南](../../docs/DOCUMENTATION_GUIDE.md)。本报告记录问题、依据和裁定边界，当前执行状态仍以[项目进度](PROJECT_PROGRESS.md)为唯一台账。
+维护依据：[仓库文档维护指南](../../.private/thingslink-docs/docs/DOCUMENTATION_GUIDE.md)。本报告记录问题、依据和裁定边界，当前执行状态仍以[项目进度](PROJECT_PROGRESS.md)为唯一台账。

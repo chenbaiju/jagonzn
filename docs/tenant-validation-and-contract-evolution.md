@@ -75,9 +75,9 @@ flowchart LR
 
 | 合同 | 当前状态与用途 |
 | --- | --- |
-| ThingsCloud 原生设备线协议 | 已有[标准协议合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)，约束 TC 帧、认证及属性/命令等；厂商适配不自动修改该合同 |
+| ThingsCloud 原生设备线协议 | 已有[标准协议合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)，约束 TC 帧、认证及属性/命令等；厂商适配不自动修改该合同 |
 | 厂商适配器 → 平台业务接入合同 | 本文待冻结的最小合同，定义如何可靠交付设备事实；具体 API/DTO 和设备事件存储尚未交付 |
-| 平台 → 外部应用公共集成合同 | 已有 [S14-R8 集成合同](../../docs/delivery/S14-R8-integration-contract.md)，公共 Webhook 投递既定平台事件；不能据此推断任意设备事件可以上报 |
+| 平台 → 外部应用公共集成合同 | 已有 [S14-R8 集成合同](../../.private/thingslink-docs/docs/delivery/S14-R8-integration-contract.md)，公共 Webhook 投递既定平台事件；不能据此推断任意设备事件可以上报 |
 
 | 合同对象 | 需定义并验证的关键语义 |
 | --- | --- |
@@ -119,4 +119,4 @@ IMEI 预登记能建立设备标识映射，但不能单独证明连接方持有
 
 ## 8. 与现有计划的关系
 
-本文件细化 jagonzn 作为隔离验证部署的职责与合同反馈路径，不改变 ThingsCloud 当前实施阶段、门禁、切片或优先级。ThingsCloud 的当前状态以[开发进度总览](../../docs/PROGRESS.md)为准；当前标准接入能力以[标准协议接入合同](../../docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)为准。多协议候选排序见[多协议接入能力建设优先级](protocol-expansion-priority.md)。
+本文件细化 jagonzn 作为隔离验证部署的职责与合同反馈路径，不改变 ThingsCloud 当前实施阶段、门禁、切片或优先级。ThingsCloud 的当前状态以[开发进度总览](../../.private/thingslink-docs/docs/PROGRESS.md)为准；当前标准接入能力以[标准协议接入合同](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)为准。多协议候选排序见[多协议接入能力建设优先级](protocol-expansion-priority.md)。

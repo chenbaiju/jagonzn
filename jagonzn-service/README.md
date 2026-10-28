@@ -1,14 +1,18 @@
 # jagonzn-service
 
-jagonzn-service 是 jagonzn 的设备接入与运行服务，当前通过平台普通运行时 JAR 复用 ThingsCloud 后端内核，目标是独立承担多协议接入、设备管理、遥测、规则、技术告警、任务、命令和可靠信息转发。
+jagonzn-service 是 jagonzn 的设备接入与运行服务，当前通过平台普通运行时 JAR 复用 ThingsLink 后端内核，目标是独立承担多协议接入、设备管理、遥测、规则、技术告警、任务、命令和可靠信息转发。
 
 service 不内嵌独立的浏览器管理页面，但必须保留受控设备及授权管理 API 和无前端时可用的运维/恢复入口；后续由 `jagonzn-console` 统一呈现技术操作，并集成 `jagonzn-cloud` 的业务操作。当前已完整复用 Console，真实联调与运行时同步见[专题记录](../docs/console-reuse-and-evolution.md)，旧静态页回执不代替新候选验证，见 [JADR-0007](../docs/adr/0007-unified-console-and-backend-boundary.md)。
 
-jagonzn 是 ThingsCloud 租户，禁止修改 ThingsCloud 的任何代码或数据库表；仅通过已有受支持能力开发自身设备适配并验证。平台不足及建议登记到[独立反馈文档](../docs/PLATFORM_CAPABILITY_FEEDBACK.md)，由 ThingsCloud 自行评审。
+jagonzn 是 ThingsLink 租户，禁止修改 ThingsLink 的任何代码或数据库表；仅通过已有受支持能力开发自身设备适配并验证。平台不足及建议登记到[独立反馈文档](../docs/PLATFORM_CAPABILITY_FEEDBACK.md)，由 ThingsLink 自行评审。
 
 TCP 智能锁是既有业务场景，首台验证设备以项目进度文档中的裁定为准；范围不限于 TCP，也不只是透传报文。MQTT／EMQX、HTTP、TCP、CoAP、Kafka／Redpanda、Worker、Webhook、Outbox、PostgreSQL／TimescaleDB、Redis、MinIO 等按已交付能力和装配需要复用。
 
 ## 当前状态
+
+2026-10-28已更新至`com.things.link:things-link-runtime:0.0.1-SNAPSHOT`固定上游提交`260fa694876fce1b728ba87a4b91466765942aac`，`entitlement`和仅测试使用的`issuer`依赖同源；Java引用、`things-link.*`配置、构建角色映射和本机启动脚本已对应更新。18个内核JAR逐字节匹配该提交构建，14域/548条SQL及1份附属迁移配置、25个主题一致；service打包及16项聚焦测试通过。[固定清单](../docs/service-upstream.json)绑定实际模块与service JAR摘要，不能仅凭SNAPSHOT坐标认定同步。
+
+JT808扩展集中在[专属包](src/main/java/com/jagonzn/service/extension/jt808/README.md)，复用本service构建与运行进程，开关`jagonzn.jt808.enabled`缺省关闭。[开发测试计划](../docs/jt808-development-plan.md)已补国密注册鉴权、会话接管、状态上报及命令关联；查询结果与开锁ACK/未知严格区分。文档参数已核对并私有外置，真实固件匹配待验。软件回环后已在外置独立数据库、Kafka等中间件上完成正常service联调；模拟国密终端的注册鉴权、属性历史/影子、查询、控制超时不重发、重启去重与凭据撤销通过。测试应用已停止，数据及中间件保留；历史库兼容和真机仍未验，未部署6808、提交或推送。[详细同步与边界](../docs/console-reuse-and-evolution.md#2026-10-28%20ThingsLink运行时同步与JT808扩展迁入)保留上轮结果，下方2026-10-10及更早的制品/运行结果是历史。
 
 2026-10-10 已按上游 `fb349e1f8` 重建当前本机运行时，使用独立 Docker 数据库启动；14 个迁移域、355 条数据库迁移及25个 Kafka主题已核对。具体模块/制品摘要和 Console 验证见[专题记录](../docs/console-reuse-and-evolution.md)。后续平台源码变化不会自动更新本服务，须重新构建依赖、打包、核对迁移并重建容器。以下早期接收材料保留原限定范围。
 
@@ -24,7 +28,7 @@ TCP 智能锁是既有业务场景，首台验证设备以项目进度文档中�
 | Java | `21` |
 | HTTP 默认端口 | `18080`，避开 ThingsCloud bootstrap 的 `8080` |
 
-ThingsCloud 是版本基准。2026-09-24 已按负责人要求将本项目 Spring Boot parent 从 4.1.1 对齐到 4.1.0；jagonzn-cloud 已是 4.1.0。平台候选装配及可重复验证见[运行指南](../../docs/reuse-entry/THINGS_CLOUD_REUSE_RUNTIME_GUIDE.md)。
+ThingsLink 是当前版本基准。以下2026-09-24为改名前历史： 已按负责人要求将本项目 Spring Boot parent 从 4.1.1 对齐到 4.1.0；jagonzn-cloud 已是 4.1.0。当前平台候选装配及可重复验证见[运行时同步记录](../docs/console-reuse-and-evolution.md#2026-10-28%20ThingsLink运行时同步与JT808扩展迁入)。
 
 ## 自部署待审申请
 
@@ -67,7 +71,7 @@ ThingsCloud 已有标准 TCP/TLS 和逐条受理确认，但不自动支持厂�
 .\mvnw.cmd spring-boot:run
 ```
 
-Linux／macOS 对应使用 `./mvnw`。构建前须从同版本 ThingsCloud 源码或正式制品仓库安装运行时依赖；启动前须提供[运行指南](../../docs/reuse-entry/THINGS_CLOUD_REUSE_RUNTIME_GUIDE.md)列明的 jagonzn 独立库、密钥及中间件配置。测试成功不代表真实设备链路已完成。
+Linux／macOS 对应使用 `./mvnw`。构建前须从同版本 ThingsCloud 源码或正式制品仓库安装运行时依赖；启动前须提供[运行指南](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_RUNTIME_GUIDE.md)列明的 jagonzn 独立库、密钥及中间件配置。测试成功不代表真实设备链路已完成。
 
 从本项目根目录执行启动命令时，Logback 默认写入本目录的 `logs/error`、`logs/warn`、`logs/info`、`logs/debug`，不与 cloud 共用日志目录。若由 IDE、服务管理器或 JAR 从其他工作目录启动，显式设置 `JAGONZN_SERVICE_LOG_PATH` 为本项目 `logs` 的绝对路径；旧的通用 `LOG_PATH` 不再控制本服务。
 

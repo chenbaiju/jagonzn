@@ -1,7 +1,7 @@
 package com.jagonzn.service.enrollment;
 
-import com.things.cloud.project.application.SelfHostedGrantImportService;
-import com.things.cloud.project.infrastructure.persistence.JdbcSelfHostedGrantRepository;
+import com.things.link.project.application.SelfHostedGrantImportService;
+import com.things.link.project.infrastructure.persistence.JdbcSelfHostedGrantRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;

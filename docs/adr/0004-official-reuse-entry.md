@@ -2,7 +2,7 @@
 
 - 状态：已接受（jagonzn 项目范围）；ThingsCloud 受理/交付状态：未记录
 - 归档日期：2026-09-24
-- 依据：[进度变更 JCH-008](../PROJECT_PROGRESS.md#10.%20变更记录)、[正式复用入口交付需求](../../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_REQUEST.md)
+- 依据：[进度变更 JCH-008](../PROJECT_PROGRESS.md#10.%20变更记录)、[正式复用入口交付需求](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ENTRY_REQUEST.md)
 
 ## 背景
 
@@ -10,7 +10,7 @@ jagonzn-service 要在独立进程和同构数据库中复用 ThingsCloud 已交
 
 ## 决策
 
-jagonzn 负责人选择**方案 A**：向 ThingsCloud 提交[正式复用入口需求](../../../docs/reuse-entry/THINGS_CLOUD_REUSE_ENTRY_REQUEST.md)，由 ThingsCloud 自行评审并提供受支持的制品、装配方式、原样迁移和运行合同；jagonzn 在正式交付后按同一版本基线接收、装配和验证。正式入口可以由平台选择 Starter/BOM 或等效方式，本决策不指定其内部实现，也不授权 jagonzn 修改平台代码或表。
+jagonzn 负责人选择**方案 A**：向 ThingsCloud 提交[正式复用入口需求](../../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_REUSE_ENTRY_REQUEST.md)，由 ThingsCloud 自行评审并提供受支持的制品、装配方式、原样迁移和运行合同；jagonzn 在正式交付后按同一版本基线接收、装配和验证。正式入口可以由平台选择 Starter/BOM 或等效方式，本决策不指定其内部实现，也不授权 jagonzn 修改平台代码或表。
 
 ## 备选与取舍
 

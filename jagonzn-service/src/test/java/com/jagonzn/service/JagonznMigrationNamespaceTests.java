@@ -15,12 +15,12 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 class JagonznMigrationNamespaceTests {
 
     private static final Map<String, String> ROLES = Map.of(
-            "thingscloud_app", "jagonzn_app",
-            "thingscloud_quota_operator", "jagonzn_quota_operator",
-            "thingscloud_commercial_admin", "jagonzn_commercial_admin",
-            "thingscloud_topology_guard", "jagonzn_topology_guard",
-            "thingscloud_constraint", "jagonzn_constraint",
-            "thingscloud_automation_cleanup", "jagonzn_automation_cleanup");
+            "thingslink_app", "jagonzn_app",
+            "thingslink_quota_operator", "jagonzn_quota_operator",
+            "thingslink_commercial_admin", "jagonzn_commercial_admin",
+            "thingslink_topology_guard", "jagonzn_topology_guard",
+            "thingslink_constraint", "jagonzn_constraint",
+            "thingslink_automation_cleanup", "jagonzn_automation_cleanup");
 
     @Test
     void generatedMigrationsKeepPlatformSqlAndFlywayMetadata() throws IOException {

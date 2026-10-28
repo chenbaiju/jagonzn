@@ -3,7 +3,7 @@ package com.jagonzn.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.things.cloud.FlywayCompatibilityConfiguration;
+import com.things.link.FlywayMigrationConfiguration;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -46,7 +46,7 @@ class JagonznServiceUpgradeTests {
         }
 
         Flyway latest = flyway(locations, null);
-        try (var context = new AnnotationConfigApplicationContext(FlywayCompatibilityConfiguration.class)) {
+        try (var context = new AnnotationConfigApplicationContext(FlywayMigrationConfiguration.class)) {
             context.getBean(FlywayMigrationStrategy.class).migrate(latest);
         }
         latest.validate();
@@ -55,7 +55,7 @@ class JagonznServiceUpgradeTests {
         try (Connection upgraded = owner(); Statement sql = upgraded.createStatement()) {
             assertEquals("kept", scalar(sql, "SELECT value FROM reuse_upgrade_marker"));
             assertEquals("0", scalar(sql,
-                    "SELECT count(*)::text FROM pg_roles WHERE rolname LIKE 'thingscloud%'"));
+                    "SELECT count(*)::text FROM pg_roles WHERE rolname LIKE 'thingscloud%' OR rolname LIKE 'thingslink%'"));
         }
     }
 
