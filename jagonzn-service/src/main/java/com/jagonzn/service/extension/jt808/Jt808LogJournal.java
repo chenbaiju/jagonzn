@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 /** Jagonzn自己的协议日志事实和待交付原件；不写ThingsLink事件表，也不伪造平台标准事件。 */
 public final class Jt808LogJournal implements AutoCloseable {
     private final Path directory;
+    private final Path externalRoot;
+    private final Object directoryKey;
     private final ObjectMapper json;
     private final FileChannel channel;
     private final FileLock lock;
@@ -30,6 +32,8 @@ public final class Jt808LogJournal implements AutoCloseable {
         FileChannel opened=null;FileLock acquired=null;
         try{
             this.directory=directory.toRealPath();
+            this.externalRoot=externalRoot.toRealPath();
+            this.directoryKey=Files.readAttributes(this.directory,java.nio.file.attribute.BasicFileAttributes.class).fileKey();
             if(Files.isSymbolicLink(directory)||!this.directory.startsWith(externalRoot.toRealPath())
                     ||Files.getFileStore(externalRoot).equals(Files.getFileStore(Path.of("").toAbsolutePath())))throw new IllegalArgumentException();
             Jt808StateStore.requirePrivate(directory,true);
@@ -71,14 +75,59 @@ public final class Jt808LogJournal implements AutoCloseable {
     }
     /** 有界返回未被cloud持久签收的原件；响应丢失不会修改事件或删除原件。 */
     public synchronized List<Entry> pending(){
+        return pending(entry->true);
+    }
+    /** 先按已确认范围筛选再取十条，历史待交付不能占满批次或被标记为已发送。 */
+    public synchronized List<Entry> pending(java.util.function.Predicate<Entry> selection){
         if(closed)return List.of();
         try(var files=Files.list(directory)){
             var paths=files.filter(p->p.getFileName().toString().matches("log-[0-9a-f]{64}\\.json")&&!Files.exists(p.resolveSibling(p.getFileName()+".accepted"))).toList();
             var result=new java.util.ArrayList<Entry>();
-            for(Path path:paths){Jt808StateStore.requirePrivate(path,false);if(Files.size(path)>262000)throw new IllegalArgumentException();result.add(new Entry(path,Files.readString(path)));}
+            for(Path path:paths){Jt808StateStore.requirePrivate(path,false);if(Files.size(path)>262000)throw new IllegalArgumentException();var entry=new Entry(path,Files.readString(path));if(selection.test(entry))result.add(entry);}
             result.sort(java.util.Comparator.comparingLong(entry->json.readTree(entry.json()).path("sourceSequence").asLong()));
             return List.copyOf(result.subList(0,Math.min(10,result.size())));
         }catch(Exception failure){throw new IllegalStateException("JT808日志原件读取失败");}
+    }
+    /** 返回持有独占锁的真实目录和外盘根，供独立发送范围比对，不采用第二份环境变量推断。 */
+    public Path directory(){return directory;}
+    public Path externalRoot(){return externalRoot;}
+
+    /** 首次确认只允许从当前序号之后发送；重启须沿用同一范围摘要，不重新计算起点。 */
+    public synchronized void bindDeliveryScope(UUID scopeId,String digest,long afterSequence){
+        try{
+            requireDirectory();
+            Path marker=scopeMarker(scopeId);
+            if(Files.exists(marker,java.nio.file.LinkOption.NOFOLLOW_LINKS)){requireDeliveryScope(scopeId,digest);return;}
+            Path sequenceFile=directory.resolve("sequence.txt");long sequence=0;
+            if(Files.exists(sequenceFile,java.nio.file.LinkOption.NOFOLLOW_LINKS)){
+                Jt808StateStore.requirePrivate(sequenceFile,false);if(Files.size(sequenceFile)>32)throw new IllegalArgumentException();
+                sequence=Long.parseLong(Files.readString(sequenceFile).trim());
+            }
+            if(sequence<0||sequence!=afterSequence)throw new IllegalArgumentException();
+            // 连同已签收的原件核对，删除计数文件不能把旧目录伪装成空目录。
+            try(var files=Files.list(directory)){
+                for(Path path:files.filter(p->p.getFileName().toString().matches("log-[0-9a-f]{64}\\.json")).toList()){
+                    Jt808StateStore.requirePrivate(path,false);if(Files.size(path)>262000)throw new IllegalArgumentException();
+                    var value=json.readTree(Files.readString(path)).path("sourceSequence");
+                    if(!value.isIntegralNumber()||value.decimalValue().longValueExact()<1||value.decimalValue().longValueExact()>sequence)throw new IllegalArgumentException();
+                }
+            }
+            if(!digest.matches("[0-9a-f]{64}"))throw new IllegalArgumentException();
+            atomic(marker,(digest+"\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }catch(Exception failure){throw new IllegalStateException("JT808发送范围首次序号或既有确认不匹配，禁止补交历史");}
+    }
+    /** 每批及每次发送前核对目录身份、独占锁和范围确认，替换目录或确认文件后停止发送。 */
+    public synchronized void requireDeliveryScope(UUID scopeId,String digest){
+        try{
+            requireDirectory();Path marker=scopeMarker(scopeId);Jt808StateStore.requirePrivate(marker,false);
+            if(Files.size(marker)!=65||!Files.readString(marker).equals(digest+"\n"))throw new IllegalArgumentException();
+        }catch(Exception failure){throw new IllegalStateException("JT808发送范围确认已改变，停止发送并保留原件");}
+    }
+    private Path scopeMarker(UUID scopeId){return directory.resolve("delivery-scope-"+scopeId+".sha256");}
+    private void requireDirectory() throws java.io.IOException {
+        if(closed||!lock.isValid()||Files.isSymbolicLink(directory)||!directory.toRealPath().equals(directory)
+                ||!java.util.Objects.equals(directoryKey,Files.readAttributes(directory,java.nio.file.attribute.BasicFileAttributes.class).fileKey()))throw new IllegalStateException();
+        Jt808StateStore.requirePrivate(directory,true);
     }
     /** 仅cloud返回约定的持久签收后落标记，原日志保留用于核对与受控重放。 */
     public synchronized void accepted(Entry entry){

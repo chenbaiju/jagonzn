@@ -1,0 +1,13 @@
+{
+  "uuid": "123e4567e89b12d3a456426655440000",
+  "planBeginTime": "2025-12-04 08:00",
+  "planEndTime": "2025-12-04 10:00",
+  "lockNum": "860000000000000",
+  "phoneNum": "13800000000",
+  "title": "施工作业",
+  "lineName": "京沪线",
+  "lineKm": "K893+500",
+  "sealOffBeginTime": "2025-12-04 08:10",
+  "sealOffEndTime": "2025-12-04 09:40",
+  "sealOffNum": "67646"
+}

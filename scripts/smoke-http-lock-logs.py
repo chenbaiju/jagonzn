@@ -152,9 +152,20 @@ def main():
                    'enrollment.until': (dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=15)).isoformat(),
                    'property.door_closed': 'door_closed', 'property.battery_percent': 'battery_percent'}
         binding_file = properties('binding', binding)
+        # 新候选须先独立固定空日志目录与发送边界，不能因继承旧环境变量而补交其他日志。
+        scope_file = run / 'service-log-delivery-scope.json'
+        probe['private_json'](scope_file, {
+            'schemaVersion': 1, 'scopeId': str(uuid.uuid4()), 'mode': 'NEW_ONLY',
+            'journalDirectory': str((run / 'journal').resolve()),
+            'cloudUrl': 'https://127.0.0.1:18281/api/v1/internal/service-events',
+            'sourceDeploymentId': source, 'tenantId': tenant, 'projectId': project, 'deviceId': device['id'],
+            'afterSequence': 0, 'receivedNotBefore': (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=30)).isoformat(),
+            'receivedNotAfter': (dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=15)).isoformat(),
+            'logTypes': ['REGISTERED', 'AUTHENTICATED', 'UNLOCK_REPORTED', 'LOCK_REPORTED']})
         original.update({'jagonzn.jt808.enabled': 'true', 'jagonzn.jt808.binding-file': str(binding_file), 'jagonzn.jt808.state-directory': str(run / 'state'),
                          'jagonzn.jt808.logs.enabled': 'true', 'jagonzn.jt808.logs.directory': str(run / 'journal'),
                          'jagonzn.jt808.logs.delivery-enabled': 'true', 'jagonzn.jt808.logs.poll-millis': '250',
+                         'jagonzn.jt808.logs.delivery-scope-file': str(scope_file),
                          'jagonzn.cloud.private-delivery.url': 'https://127.0.0.1:18281/api/v1/internal/service-events',
                          'jagonzn.cloud.private-delivery.source-deployment-id': source, 'jagonzn.cloud.private-delivery.key-id': 'runtime',
                          'jagonzn.cloud.private-delivery.secret-base64': base64.b64encode(key).decode()})

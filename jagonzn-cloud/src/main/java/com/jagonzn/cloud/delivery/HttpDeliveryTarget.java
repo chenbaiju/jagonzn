@@ -11,8 +11,17 @@ import tools.jackson.databind.ObjectMapper;
 public record HttpDeliveryTarget(String id,int revision,UUID sourceDeploymentId,UUID tenantId,UUID projectId,
         URI url,String method,Set<String> eventTypes,Map<String,String> headers,Map<String,String> secretHeaderEnvironment,
         Map<String,String> fieldMappings,JsonNode constants,Set<Integer> successStatuses,String successPointer,
-        JsonNode successValue,boolean idempotencySupported,int maxAttempts,int timeoutSeconds,boolean loopbackTest) {
+        JsonNode successValue,boolean idempotencySupported,int maxAttempts,int timeoutSeconds,boolean loopbackTest,
+        String payloadProfile,UUID deviceId,String receivedNotBefore,String receivedNotAfter) {
+    /** 兼容既有通用连接器构造及历史任务快照，不为通用格式默认启用业务转换。 */
+    public HttpDeliveryTarget(String id,int revision,UUID sourceDeploymentId,UUID tenantId,UUID projectId,URI url,String method,
+            Set<String> eventTypes,Map<String,String> headers,Map<String,String> secretHeaderEnvironment,Map<String,String> fieldMappings,
+            JsonNode constants,Set<Integer> successStatuses,String successPointer,JsonNode successValue,boolean idempotencySupported,int maxAttempts,int timeoutSeconds,boolean loopbackTest){
+        this(id,revision,sourceDeploymentId,tenantId,projectId,url,method,eventTypes,headers,secretHeaderEnvironment,fieldMappings,constants,successStatuses,successPointer,successValue,idempotencySupported,maxAttempts,timeoutSeconds,loopbackTest,null,null,null,null);
+    }
     public HttpDeliveryTarget {
+        if(payloadProfile==null)payloadProfile="GENERIC_JSON";
+        if(!Set.of("GENERIC_JSON","WORK_LOCK_RECORD_V1").contains(payloadProfile))throw new IllegalArgumentException("不支持的投递格式");
         if(id==null||!id.matches("[A-Za-z0-9_-]{1,64}")||revision<1||sourceDeploymentId==null||tenantId==null||projectId==null
                 ||url==null||url.getHost()==null||url.getUserInfo()!=null||url.getFragment()!=null
                 ||!("https".equals(url.getScheme())||loopbackTest&&"http".equals(url.getScheme())&&Set.of("127.0.0.1","localhost","[::1]").contains(url.getHost()))
@@ -35,6 +44,15 @@ public record HttpDeliveryTarget(String id,int revision,UUID sourceDeploymentId,
         if(constants!=null&&!constants.isObject())throw new IllegalArgumentException("常量须为JSON对象");
         fieldMappings.forEach((key,path)->{if(!key.matches("[A-Za-z][A-Za-z0-9_]{0,63}")||!path.startsWith("/"))throw new IllegalArgumentException("字段映射无效");});
         if(constants!=null&&fieldMappings.keySet().stream().anyMatch(constants::has))throw new IllegalArgumentException("常量不能覆盖字段映射");
+        if("WORK_LOCK_RECORD_V1".equals(payloadProfile)){
+            if(!"POST".equals(method)||!eventTypes.equals(Set.of("jagonzn.lock.log"))||!fieldMappings.isEmpty()||deviceId==null||!idempotencySupported
+                    ||!successStatuses.equals(Set.of(200))||!"/code".equals(successPointer)||successValue==null||!successValue.isIntegralNumber()||successValue.decimalValue().intValueExact()!=200
+                    ||receivedNotBefore==null||receivedNotAfter==null)
+                throw new IllegalArgumentException("作业开关锁记录须显式绑定设备、POST、uuid去重和code=200合同");
+            var from=java.time.Instant.parse(receivedNotBefore);var through=java.time.Instant.parse(receivedNotAfter);
+            if(!from.isBefore(through))throw new IllegalArgumentException("须明确新接收事件的投递窗口");
+            WorkLockRecord.validateConstants(constants);
+        }else if(deviceId!=null||receivedNotBefore!=null||receivedNotAfter!=null)throw new IllegalArgumentException("通用格式不接受会被忽略的业务范围字段");
     }
     private static void validateHeader(String name,String value){
         if(!name.matches("[A-Za-z0-9-]{1,64}")||Set.of("host","content-length","connection","content-type","idempotency-key","x-jagonzn-event-id").contains(name.toLowerCase(java.util.Locale.ROOT))
@@ -42,11 +60,17 @@ public record HttpDeliveryTarget(String id,int revision,UUID sourceDeploymentId,
     }
     /** 仅从受信Inbox事件取值，缺字段拒绝生成请求，不发送半份数据。 */
     public String body(JsonNode event,ObjectMapper json){
+        if(workLockRecords()){
+            if(!deviceId.toString().equals(event.path("deviceId").asText())||!tenantId.toString().equals(event.path("tenantId").asText())||!projectId.toString().equals(event.path("projectId").asText()))throw new IllegalArgumentException("开关锁记录身份与目标不匹配");
+            return WorkLockRecord.fromEvent(event,constants).json(json);
+        }
         var result=json.createObjectNode();
         if(fieldMappings.isEmpty())event.properties().forEach(e->result.set(e.getKey(),e.getValue()));
         fieldMappings.forEach((key,path)->{JsonNode value=event.at(path);if(value.isMissingNode())throw new IllegalArgumentException("日志缺少映射字段");result.set(key,value);});
         if(constants!=null)constants.properties().forEach(e->result.set(e.getKey(),e.getValue()));return result.toString();
     }
+    /** 业务格式在入队前按精确设备、明确接收窗口及开关日志类型筛选。 */
+    public boolean workLockRecords(){return "WORK_LOCK_RECORD_V1".equals(payloadProfile);}
     /** HTTP成功码还须满足可选业务JSON条件；202只有显式配置才算约定的接收成功。 */
     public boolean success(int status,String response,ObjectMapper json){
         if(!successStatuses.contains(status))return false;

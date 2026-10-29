@@ -22,7 +22,13 @@ public class HttpDeliveryStore {
         return transaction.execute(status->{
             var arguments=new ArrayList<Object>();arguments.add(target.id());arguments.add(target.sourceDeploymentId());arguments.add(target.tenantId());arguments.add(target.projectId());arguments.addAll(target.eventTypes());
             String placeholders=String.join(",",java.util.Collections.nCopies(target.eventTypes().size(),"?"));
-            var events=jdbc.query("SELECT i.event_id,i.event_body::text FROM cloud_service_event_inbox i LEFT JOIN cloud_http_log_delivery d ON d.source_deployment_id=i.source_deployment_id AND d.event_id=i.event_id AND d.target_id=? WHERE i.source_deployment_id=? AND i.tenant_id=? AND i.project_id=? AND i.event_type IN ("+placeholders+") AND d.id IS NULL ORDER BY i.received_at,i.event_id LIMIT 100",
+            String scope="";
+            if(target.workLockRecords()){
+                // 先在SQL中筛选再分页，旧历史、其他设备及伴随日志不能占满首批或生成业务投递。
+                scope=" AND i.event_body->>'deviceId'=? AND i.event_body#>>'{payload,logType}' IN ('UNLOCK_REPORTED','LOCK_REPORTED') AND i.received_at>=? AND i.received_at<=?";
+                arguments.add(target.deviceId().toString());arguments.add(java.time.Instant.parse(target.receivedNotBefore()).atOffset(java.time.ZoneOffset.UTC));arguments.add(java.time.Instant.parse(target.receivedNotAfter()).atOffset(java.time.ZoneOffset.UTC));
+            }
+            var events=jdbc.query("SELECT i.event_id,i.event_body::text FROM cloud_service_event_inbox i LEFT JOIN cloud_http_log_delivery d ON d.source_deployment_id=i.source_deployment_id AND d.event_id=i.event_id AND d.target_id=? WHERE i.source_deployment_id=? AND i.tenant_id=? AND i.project_id=? AND i.event_type IN ("+placeholders+") AND d.id IS NULL"+scope+" ORDER BY i.received_at,i.event_id LIMIT 100",
                 (row,index)->new String[]{row.getString(1),row.getString(2)},arguments.toArray());
             int count=0;
             for(var event:events){String body;String state="PENDING",failure=null;
@@ -37,8 +43,14 @@ public class HttpDeliveryStore {
     public Attempt claim(HttpDeliveryTarget current){
         return transaction.execute(status->{
             UUID lease=UUID.randomUUID();
-            var rows=jdbc.query("UPDATE cloud_http_log_delivery SET state='SENDING',attempt_count=attempt_count+1,lease_token=?,lease_until=clock_timestamp()+interval '45 seconds',updated_at=clock_timestamp() WHERE id=(SELECT d.id FROM cloud_http_log_delivery d JOIN cloud_service_event_inbox i ON i.source_deployment_id=d.source_deployment_id AND i.event_id=d.event_id WHERE d.target_id=? AND d.source_deployment_id=? AND d.target_snapshot->>'tenantId'=? AND d.target_snapshot->>'projectId'=? AND d.state IN ('PENDING','RETRY_WAIT') AND d.next_attempt_at<=clock_timestamp() ORDER BY i.received_at,d.created_at,d.id FOR UPDATE OF d SKIP LOCKED LIMIT 1) RETURNING id,event_id,target_snapshot::text,request_body,attempt_count",
-                (row,index)->new Attempt(row.getObject(1,UUID.class),row.getObject(2,UUID.class),json.readValue(row.getString(3),HttpDeliveryTarget.class),row.getString(4),row.getInt(5),lease),lease,current.id(),current.sourceDeploymentId(),current.tenantId().toString(),current.projectId().toString());
+            var arguments=new ArrayList<Object>(List.of(lease,current.id(),current.sourceDeploymentId(),current.tenantId().toString(),current.projectId().toString(),current.payloadProfile()));
+            String scope="";
+            if(current.workLockRecords()){
+                scope=" AND d.target_snapshot->>'deviceId'=? AND d.target_snapshot->>'receivedNotBefore'=? AND d.target_snapshot->>'receivedNotAfter'=?";
+                arguments.add(current.deviceId().toString());arguments.add(current.receivedNotBefore());arguments.add(current.receivedNotAfter());
+            }
+            var rows=jdbc.query("UPDATE cloud_http_log_delivery SET state='SENDING',attempt_count=attempt_count+1,lease_token=?,lease_until=clock_timestamp()+interval '45 seconds',updated_at=clock_timestamp() WHERE id=(SELECT d.id FROM cloud_http_log_delivery d JOIN cloud_service_event_inbox i ON i.source_deployment_id=d.source_deployment_id AND i.event_id=d.event_id WHERE d.target_id=? AND d.source_deployment_id=? AND d.target_snapshot->>'tenantId'=? AND d.target_snapshot->>'projectId'=? AND COALESCE(d.target_snapshot->>'payloadProfile','GENERIC_JSON')=?"+scope+" AND d.state IN ('PENDING','RETRY_WAIT') AND d.next_attempt_at<=clock_timestamp() ORDER BY i.received_at,d.created_at,d.id FOR UPDATE OF d SKIP LOCKED LIMIT 1) RETURNING id,event_id,target_snapshot::text,request_body,attempt_count",
+                (row,index)->new Attempt(row.getObject(1,UUID.class),row.getObject(2,UUID.class),json.readValue(row.getString(3),HttpDeliveryTarget.class),row.getString(4),row.getInt(5),lease),arguments.toArray());
             return rows.isEmpty()?null:rows.getFirst();
         });
     }

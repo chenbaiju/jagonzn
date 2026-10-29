@@ -10,6 +10,8 @@ jagonzn-cloud 定位为未来 jagonzn 定制化设备 SaaS 的业务后端，负
 
 已新增默认关闭的[第三方JSON HTTP交付](../docs/http-lock-log-delivery.md)：从可信Inbox生成逐目标持久任务，支持POST/PUT、字段映射、环境变量认证头、响应JSON判断和结果未知保护；后端打印脱敏收发JSON及接收/发送成功。专属发送执行器不阻塞默认维护调度，不增加前端；接口合同确定后再配置正式目标。下方早期Inbox回执保留历史范围。
 
+作业系统对接现已准备两个方向：`POST /azy/task/receiveSafetyProSystemTask`接收第三方任务参数（保留`/api/v1/partner/work-unlock-tasks`兼容路径），仅校验、打印并保存原始JSON日志；`WORK_LOCK_RECORD_V1`将可信开/关锁日志转为约定六字段后POST第三方，按记录uuid去重、失败有界重试，设备与新接收窗口均须显式固定。接收端已按授权通过服务器HTTP80单一路径临时转发开放，无需Bearer、用户或租户鉴权，仅记录JSON、不触发开锁；后端运行在本机，需保持本机与隧道在线。接口2发送URL仍未提供，发送端关闭。配置、原件路径和73项本地回归只维护在[作业系统双向HTTP合同](../docs/http-lock-log-delivery.md#作业系统双向HTTP合同)。
+
 
 当前已有**第一项独立业务后端基础能力**：显式启用的私有 service 事件接收 API、独立 PostgreSQL Inbox/nonce 迁移与健康入口。它只持久接收并去重已验签的技术事件，尚未实现人员、场所、开锁权限、业务投影、命令或统一前端；`jagonzn-console` 当前仅有免登录静态测试页。合同见 [JADR-0009](../docs/adr/0009-cloud-private-event-inbox.md)。
 

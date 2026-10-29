@@ -42,7 +42,12 @@ public class HttpDeliveryWorker {
         audit.record("发送请求 "+target.method(),id,attempt.body());
         JsonHttpTransport.Response response;
         try{response=transport.send(target,attempt.eventId().toString(),attempt.body());}
-        catch(java.io.IOException unknown){store.complete(attempt,retryState(attempt),null,null,"IO_RESULT_UNKNOWN");audit.record("发送结果未知",id,"{}");return;}
+        catch(java.io.IOException unknown){
+            String state=retryState(attempt);boolean exhausted=target.workLockRecords()&&state.equals("FAILED");
+            if(store.complete(attempt,state,null,null,exhausted?"PARTNER_RETRY_EXHAUSTED_RESULT_UNKNOWN":"IO_RESULT_UNKNOWN")&&exhausted)
+                audit.record("发送结果未知_重试已耗尽_需联系接口提供方",id,"{\"error\":\"PARTNER_RETRY_EXHAUSTED_RESULT_UNKNOWN\"}");
+            audit.record("发送结果未知",id,"{}");return;
+        }
         catch(RuntimeException invalid){store.complete(attempt,"FAILED",null,null,"LOCAL_CONFIGURATION_INVALID");audit.record("发送配置失败",id,"{}");return;}
         String safe=audit.safe(response.body());audit.record("接收响应 HTTP_"+response.status(),id,response.body());
         // HTTP响应已收到后，数据库提交失败不能被重新归类成发送配置错误；保留租约供恢复核对。
@@ -51,10 +56,14 @@ public class HttpDeliveryWorker {
             return;
         }
         String state;
-        if(response.status()==202)state="UNCERTAIN";
+        // 作业系统已约定按正文uuid去重；任何非合同成功响应均有界重推原记录，不跟随重定向。
+        if(target.workLockRecords())state=retryState(attempt);
+        else if(response.status()==202)state="UNCERTAIN";
         else if(response.status()==429||response.status()>=500)state=retryState(attempt);
         else state="FAILED";
-        store.complete(attempt,state,response.status(),safe,"HTTP_OR_BUSINESS_REJECTED");
+        boolean exhausted=target.workLockRecords()&&state.equals("FAILED")&&attempt.number()>=target.maxAttempts();
+        if(store.complete(attempt,state,response.status(),safe,exhausted?"PARTNER_RETRY_EXHAUSTED":"HTTP_OR_BUSINESS_REJECTED")&&exhausted)
+            audit.record("发送失败_重试已耗尽_需联系接口提供方",id,"{\"error\":\"PARTNER_RETRY_EXHAUSTED\"}");
     }
 
     /** 停止本实例发送线程，未完成租约仍由持久状态机恢复。 */

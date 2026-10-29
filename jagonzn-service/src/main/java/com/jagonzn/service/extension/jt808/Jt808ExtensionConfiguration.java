@@ -5,6 +5,7 @@ import com.things.link.ingestion.application.access.DeviceAccessDeviceAuthentica
 import com.things.link.ingestion.application.access.DeviceAccessUplinkIngressService;
 import com.things.link.telemetry.application.DeviceCommandAccessReplyPort;
 import com.things.link.ingestion.application.access.DeviceAccessPushPort;
+import com.jagonzn.service.integration.Jt808LogDeliveryScope;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -45,11 +46,13 @@ public class Jt808ExtensionConfiguration {
         return new Jt808ThingsLinkGateway(budget,authenticator,ingress,replies);
     }
     @Bean Jt808TcpServer jt808TcpServer(Jt808PrivateConfiguration config,Jt808StateStore store,Jt808ThingsLinkGateway gateway,
-            ObjectMapper json,Environment environment,ObjectProvider<Jt808LogJournal> logs) {
+            ObjectMapper json,Environment environment,ObjectProvider<Jt808LogJournal> logs,ObjectProvider<Jt808LogDeliveryScope> scope) {
         // 沿用原TCP下行消费者的安全准入及规则链；不偷偷建立另一套Kafka消费者绕过保护。
         if(!"device-access".equals(environment.getProperty("things-link.deployment.role","device-access"))
                 || !environment.getProperty("things-link.access.tcp.enabled",Boolean.class,false))
             throw new IllegalStateException("JT808须装配device-access角色及现行TCP下行消费者，不能以仅监听代替命令链");
+        // 启用自动交付时，先固定首次序号和实际目录，再启动设备监听，避免首条上报抢在范围确认前落盘。
+        scope.getIfAvailable();
         return new Jt808TcpServer(config.binding(),config.cipher(),store,gateway,json,
                 new InetSocketAddress(environment.getProperty("jagonzn.jt808.bind-address","127.0.0.1"),environment.getProperty("jagonzn.jt808.port",Integer.class,6808)),
                 Duration.ofSeconds(environment.getProperty("jagonzn.jt808.idle-timeout-seconds",Integer.class,120)),

@@ -1,0 +1,31 @@
+[
+  {
+    "id": "work-lock-record",
+    "revision": 1,
+    "sourceDeploymentId": "00000000-0000-0000-0000-000000000811",
+    "tenantId": "00000000-0000-0000-0000-000000000822",
+    "projectId": "00000000-0000-0000-0000-000000000833",
+    "url": "https://partner.example.invalid/lock-records",
+    "method": "POST",
+    "eventTypes": ["jagonzn.lock.log"],
+    "headers": {},
+    "secretHeaderEnvironment": {},
+    "fieldMappings": {},
+    "constants": {
+      "lockNum": "860000000000000",
+      "phoneNum": "13800000000",
+      "sealOffNum": ""
+    },
+    "successStatuses": [200],
+    "successPointer": "/code",
+    "successValue": 200,
+    "idempotencySupported": true,
+    "maxAttempts": 3,
+    "timeoutSeconds": 5,
+    "loopbackTest": false,
+    "payloadProfile": "WORK_LOCK_RECORD_V1",
+    "deviceId": "00000000-0000-0000-0000-000000000844",
+    "receivedNotBefore": "2099-01-01T00:00:00Z",
+    "receivedNotAfter": "2099-01-02T00:00:00Z"
+  }
+]
