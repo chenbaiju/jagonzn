@@ -5,6 +5,7 @@ import com.things.link.shared.id.Uuid7;
 import com.things.link.shared.message.AuthenticatedDeviceIdentity;
 import com.things.link.telemetry.application.*;
 import com.things.link.device.application.DeviceAccessSessionPort;
+import com.things.link.ingestion.application.access.DeviceAccessAuthBudget;
 import com.things.link.shared.message.DeviceCommandDispatch;
 import com.things.link.shared.message.TransportProtocol;
 import com.things.link.ingestion.application.DownlinkPreprocessingChain;
@@ -26,6 +27,62 @@ import static org.mockito.Mockito.*;
 
 class Jt808TcpServerTests {
     @TempDir Path external;
+    @Test void rejectedFrameReportsProcessingStageWithoutExceptionPayload() throws Exception {
+        var gateway=mock(Jt808ThingsLinkGateway.class);
+        var binding=new Jt808DeviceBinding(Jt808TestLock.TERMINAL,Jt808TestLock.MAC,"project","lock","synthetic-secret","1.0.0",Instant.now().plusSeconds(60),Map.of("door_closed","door_closed"));
+        doThrow(new IllegalStateException("PRIVATE_PAYLOAD_MUST_NOT_BE_LOGGED")).when(gateway).checkAuthenticationBudget(any(),anyString());
+        var logger=(ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory.getLogger(Jt808TcpServer.class);
+        var captured=new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();captured.start();logger.addAppender(captured);
+        Path state=Files.createDirectory(external.resolve("reject-state"),PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+        try(var store=new Jt808StateStore(state,external);var cipher=new Jt808Sm4Cipher(Jt808TestLock.KEY,new byte[16]);
+            var server=new Jt808TcpServer(binding,cipher,store,gateway,new ObjectMapper(),new InetSocketAddress("127.0.0.1",0),Duration.ofSeconds(5),Duration.ofMillis(250),Clock.systemUTC())) {
+            server.start();
+            try(var socket=new Socket("127.0.0.1",server.boundPort())) {
+                socket.setSoTimeout(3000);socket.getOutputStream().write(Jt808TestLock.uplink(0x0100,1,Jt808TestLock.registration()));socket.getOutputStream().flush();
+                assertEquals(-1,socket.getInputStream().read());
+            }
+            long until=System.nanoTime()+Duration.ofSeconds(2).toNanos();
+            while(captured.list.isEmpty() && System.nanoTime()<until) Thread.sleep(10);
+            assertEquals(1,server.rejectedConnections());assertFalse(captured.list.isEmpty());
+            String text=captured.list.getFirst().getFormattedMessage();assertTrue(text.contains("stage=FRAME_PROCESS"));assertTrue(text.contains("type=IllegalStateException"));
+            assertFalse(text.contains("PRIVATE_PAYLOAD"));assertNull(captured.list.getFirst().getThrowableProxy());
+        } finally {logger.detachAppender(captured);captured.stop();}
+    }
+    @Test void rejectedOldAuthenticationCanRegisterAndAuthenticateOnSameTcpConnection() throws Exception {
+        Instant now=Instant.now(); var gateway=mock(Jt808ThingsLinkGateway.class);
+        var identity=new AuthenticatedDeviceIdentity(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),1);
+        var binding=new Jt808DeviceBinding(Jt808TestLock.TERMINAL,Jt808TestLock.MAC,"project","lock","synthetic-secret","1.0.0",now.plusSeconds(60),Map.of("door_closed","door_closed"));
+        when(gateway.authenticate(binding)).thenReturn(identity);
+        doNothing().doThrow(new Jt808ThingsLinkGateway.AuthenticationBudgetRejected(DeviceAccessAuthBudget.Decision.BACKOFF))
+                .doNothing().when(gateway).checkAuthenticationBudget(binding,"127.0.0.1");
+        Path state=Files.createDirectory(external.resolve("recovery-state"),PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+        try(var store=new Jt808StateStore(state,external); var cipher=new Jt808Sm4Cipher(Jt808TestLock.KEY,new byte[16]);
+            var server=new Jt808TcpServer(binding,cipher,store,gateway,new ObjectMapper(),new InetSocketAddress("127.0.0.1",0),Duration.ofSeconds(5),Duration.ofMillis(250),Clock.systemUTC())) {
+            server.start();
+            try(var socket=new Socket("127.0.0.1",server.boundPort())) {
+                socket.setSoTimeout(3000); var output=socket.getOutputStream(); var input=socket.getInputStream();
+                output.write(Jt808TestLock.uplink(0x0102,1,new byte[]{1,2,3,4,5,6})); output.flush();
+                Jt808Frame rejected=Jt808TestLock.downlink(Jt808TestLock.read(input));
+                assertEquals(0x8001,rejected.messageId()); assertEquals(1,rejected.body()[4]);
+                assertFalse(store.snapshot().containsKey("token")); verify(gateway,never()).authenticate(any());
+                byte[] registration=Jt808TestLock.registration(); registration[35]=0; registration[36]=0;
+                output.write(Jt808TestLock.uplink(0x0100,2,registration)); output.flush();
+                Jt808Frame registered=Jt808TestLock.downlink(Jt808TestLock.read(input));
+                assertEquals(0x8100,registered.messageId()); assertEquals(0,registered.body()[2]);
+                byte[] token=Arrays.copyOfRange(registered.body(),3,9);
+                assertEquals(HexFormat.of().formatHex(token),store.snapshot().get("token"));
+                output.write(Jt808TestLock.uplink(0x040f,3,new byte[]{0,0})); output.flush();
+                var time=Jt808TestLock.downlink(Jt808TestLock.read(input)); assertEquals(0x840f,time.messageId()); assertEquals(6,time.body().length);
+                output.write(Jt808TestLock.uplink(0x040f,4,new byte[]{1,0})); output.flush();
+                output.write(Jt808TestLock.uplink(0x0102,3,token)); output.flush();
+                assertEquals(0,Jt808TestLock.downlink(Jt808TestLock.read(input)).body()[4]);
+                output.write(Jt808TestLock.uplink(0x0002,4,new byte[0])); output.flush();
+                assertEquals(0,Jt808TestLock.downlink(Jt808TestLock.read(input)).body()[4]);
+                verify(gateway).authenticationFailed(binding);
+                verify(gateway,times(4)).checkAuthenticationBudget(binding,"127.0.0.1");
+            }
+        }
+    }
     @Test void realLoopbackTcpExercisesSm4RegistrationAuthenticationStateAndCorrelatedQuery() throws Exception {
         Instant now=Instant.now(); var gateway=mock(Jt808ThingsLinkGateway.class);
         var identity=new AuthenticatedDeviceIdentity(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),1);

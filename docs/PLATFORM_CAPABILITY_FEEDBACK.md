@@ -75,6 +75,10 @@
 
 2026-10-28固定上游`260fa694`核对补充：jagonzn已在自身扩展中组合现有认证、预算、属性受理、可信回复、公开`DeviceAccessPushPort`及`DownlinkPreprocessor`；不需要为当前软件路径新增平台表或接口。原TCP推送语义保留，不能改用HTTP/CoAP领取；完整信封中的直连目标在预处理时核对，避免Push投影缺少目标字段而误控网关子设备。原消费者及本机TCP组合先有软件测试，后继已用同一固定JAR在外置独立数据库/Kafka等真实中间件上验证正常启动、国密模拟终端注册鉴权、属性历史/影子、查询SUCCEEDED、控制仅一次派发后TIMED_OUT、重启去重与正常API撤销凭据。跨租户读取404、应用角色无范围0行/正确范围1行仅覆盖实际读取路径；平台在线事实、跨实例装配、全部越权写矩阵与实物结果未验，详情统一见[JT808计划](jt808-development-plan.md#外置独立环境与真实运行时联调回执)。本地会话不伪造标准TC心跳事实；控制ACK不能证明物理动作，独立逐次事件问题仍按JPF-002保留。此补充不等于正式扩展合同或平台评审已关闭。
 
+2026-10-28第三方锁日志方案核对补充：固定`260fa694`已有`device.event.report`内部来源族及`EventIngestionService`事件持久化，不能继续按早期合同笼统判断为没有设备事件能力。但该来源当前仅在`PublicWebhookSourceWriter.projectViewsEnabled()`成立时写出，受Project MQTT management、protocol、realtime三个配置共同控制；公开Webhook仍是原七类闭集。独立锁日志能否稳定复用此来源及其受支持配置，列为JPF-004待评审边界，不认定为已确认缺陷或已交付独立出口；若需平台解耦，由负责人评审后交ThingsLink开发者处理。当前JT808扩展尚未接通逐条锁事件映射，不以属性快照或模拟消息冒充锁日志。
+
+2026-10-28实现前进一步核对并已汇报：现行`DeviceAccessUplinkNormalizer`仍固定使用属性Reader和`PROPERTY_REPORT`类型，不能将锁日志交给公开新协议上行入口。本轮未改该端口或平台表，按负责人采纳的service/cloud分工实现Jagonzn自己的外置协议日志事实和私有签名交付，不把它认领成平台标准事件验收。是否增加公开新协议事件入口继续待负责人评审，平台开发者负责可能的改造。
+
 ## 7. JPF-005：Console 读取权限误用菜单按钮清单
 
 - 来源：2026-10-10，当前上游 `fb349e1f8` 的 `useAuth` 在 backend 模式仅查询 route.meta.authList；AlarmRules 菜单仅列 alarm:manage，页面却用 hasAuth('alarm:read') 决定是否加载。

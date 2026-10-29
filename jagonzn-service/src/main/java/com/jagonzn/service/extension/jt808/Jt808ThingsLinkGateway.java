@@ -11,6 +11,14 @@ import java.time.Instant;
 
 /** 仅组合平台公开应用端口；会话为扩展本地事实，不伪造标准TC的AUTH_RESPONSE或空03心跳。 */
 public class Jt808ThingsLinkGateway {
+    /** 原样保留平台预算结果，由协议层决定关闭连接或在握手时限内等待退避。 */
+    public static final class AuthenticationBudgetRejected extends IllegalStateException {
+        private final DeviceAccessAuthBudget.Decision decision;
+        public AuthenticationBudgetRejected(DeviceAccessAuthBudget.Decision decision) {
+            super("JT808认证预算拒绝："+decision); this.decision=decision;
+        }
+        public DeviceAccessAuthBudget.Decision decision() { return decision; }
+    }
     private final DeviceAccessAuthBudget authBudget;
     private final DeviceAccessDeviceAuthenticator authenticator;
     private final DeviceAccessUplinkIngressService ingress;
@@ -25,8 +33,9 @@ public class Jt808ThingsLinkGateway {
 
     /** @param binding 预绑定 @param ip 真实连接来源；不能从设备载荷读取 */
     public void checkAuthenticationBudget(Jt808DeviceBinding binding,String ip) {
-        if(authBudget.check(ip,binding.projectKey(),binding.deviceKey())!=DeviceAccessAuthBudget.Decision.ALLOW)
-            throw new IllegalStateException("JT808认证预算拒绝");
+        var decision=authBudget.check(ip,binding.projectKey(),binding.deviceKey());
+        if(decision!=DeviceAccessAuthBudget.Decision.ALLOW)
+            throw new AuthenticationBudgetRejected(decision);
     }
     public void authenticationFailed(Jt808DeviceBinding binding) { authBudget.recordFailure(binding.projectKey(),binding.deviceKey()); }
     public void authenticationSucceeded(Jt808DeviceBinding binding) { authBudget.recordSuccess(binding.projectKey(),binding.deviceKey()); }

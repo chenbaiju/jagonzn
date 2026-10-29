@@ -20,6 +20,9 @@ service 使用独立的 `jagonzn` 数据库，cloud 使用独立的 `jagonzn_clo
 
 ## 当前进度
 
+后端已新增[锁具日志JSON HTTP交付能力](docs/http-lock-log-delivery.md)：service外置保存协议日志并签名交给cloud，cloud按配置POST/PUT投递，打印脱敏请求、响应和成功结果。正式第三方合同未定，出口默认关闭。后继已在service完成[真机注册鉴权、门磁状态与命令闭环](jagonzn-service/src/main/java/com/jagonzn/service/extension/jt808/README.md#门磁上报与命令结果关联)：新鲜门磁OPEN报告经现有认证回复接口完成本次开锁任务，正常API状态为SUCCEEDED、派发1次，后续CLOSED日志关联同一命令。133项service聚焦测试通过，历史超时原件和缺少协议ACK的事实保留；仅本机测试候选，未部署线上应用。下文较早的暂停和未验记录保留其历史范围。
+
+
 2026-10-28已将service依赖、Java引用和配置前缀同步至改名后的ThingsLink固定提交`260fa694`，并把JT808迁入service的`com.jagonzn.service.extension.jt808`扩展包。后继已在外置独立Lima/Docker、数据库及Kafka上启动正常service，用SM4模拟终端验证注册鉴权、属性历史/影子、查询命令、控制超时不重发、重启去重及真实凭据撤销。测试应用已停止，中间件及原件保留外置；历史库升级和真机未验，未部署、提交或推送。详见[JT808计划](docs/jt808-development-plan.md)、[同步记录](docs/console-reuse-and-evolution.md#2026-10-28%20ThingsLink运行时同步与JT808扩展迁入)及[固定清单](docs/service-upstream.json)。下方旧接收记录保留其历史范围；Console和cloud未在本轮升级。
 
 已有内核本地装配、标准协议属性链路、双后端事件交付及部分 TEST 权益的限定验证记录。

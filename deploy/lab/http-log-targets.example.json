@@ -1,0 +1,23 @@
+[
+  {
+    "id": "partner-json-post",
+    "revision": 1,
+    "sourceDeploymentId": "00000000-0000-0000-0000-000000000711",
+    "tenantId": "00000000-0000-0000-0000-000000000722",
+    "projectId": "00000000-0000-0000-0000-000000000733",
+    "url": "http://127.0.0.1:19081/logs",
+    "method": "POST",
+    "eventTypes": ["jagonzn.lock.log"],
+    "headers": {"X-Client": "jagonzn"},
+    "secretHeaderEnvironment": {},
+    "fieldMappings": {"lockCode": "/deviceId", "operation": "/payload/logType", "time": "/occurredAt", "sequence": "/sourceSequence"},
+    "constants": {"source": "jagonzn"},
+    "successStatuses": [200],
+    "successPointer": "/received",
+    "successValue": true,
+    "idempotencySupported": false,
+    "maxAttempts": 3,
+    "timeoutSeconds": 5,
+    "loopbackTest": true
+  }
+]

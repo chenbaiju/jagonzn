@@ -5,6 +5,7 @@ import com.things.link.shared.id.Uuid7;
 import com.things.link.shared.message.AuthenticatedDeviceIdentity;
 import com.things.link.telemetry.application.DeviceCommandAccessReplyPort;
 import com.things.link.ingestion.application.access.DeviceAccessPushPort;
+import com.things.link.ingestion.application.access.DeviceAccessAuthBudget;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -78,12 +79,190 @@ class Jt808SessionTests {
             assertThrows(IllegalArgumentException.class,()->f.session().receive(wrong,NOW,wire->fail())); verify(f.gateway,never()).authenticate(any());
         }
     }
-    @Test void badTokenCannotUseStoredPlatformSecretAndClosesConnection() throws Exception {
-        try(var f=new Fixture()) {
+    @Test void badTokenOutsideEnrollmentCannotUseStoredPlatformSecretAndClosesConnection() throws Exception {
+        try(var f=new Fixture(null)) {
             var session=f.session(); var output=new ArrayList<byte[]>();
             session.receive(Jt808TestLock.uplink(0x0102,2,new byte[6]),NOW,output::add);
             assertTrue(session.isClosed()); assertEquals(1,Jt808TestLock.downlink(output.getFirst()).body()[4]);
             verify(f.gateway,never()).authenticate(any()); verify(f.gateway).authenticationFailed(f.binding);
+        }
+    }
+    @Test void unknownTokenDuringEnrollmentRequiresRegistrationBeforeAuthentication() throws Exception {
+        try(var f=new Fixture()) {
+            var session=f.session(); var output=new ArrayList<byte[]>();
+            session.receive(Jt808TestLock.uplink(0x0102,1,new byte[6]),NOW,output::add);
+            assertFalse(session.isClosed()); assertFalse(session.active());
+            assertEquals(1,Jt808TestLock.downlink(output.getFirst()).body()[4]);
+            assertFalse(f.store.snapshot().containsKey("token")); assertFalse(f.store.snapshot().containsKey("identity"));
+            verify(f.gateway,never()).authenticate(any());
+            f.authenticate(session,f.register(session));
+            verify(f.gateway).authenticationFailed(f.binding);
+        }
+    }
+    @Test void recoveryCannotPublishBeforeRegistrationOrRetryAuthenticationWithoutRegistering() throws Exception {
+        for(int message:new int[]{0x0200,0x0102,0x0002}) {
+            try(var f=new Fixture()) {
+                var session=f.session(); session.receive(Jt808TestLock.uplink(0x0102,1,new byte[6]),NOW,ignored->{});
+                byte[] body=message==0x0200?Jt808TestLock.location():message==0x0102?new byte[6]:new byte[0];
+                assertThrows(IllegalStateException.class,()->session.receive(Jt808TestLock.uplink(message,2,body),NOW,ignored->fail()));
+                assertTrue(session.isClosed()); assertFalse(session.active());
+                verify(f.gateway,never()).authenticate(any()); verify(f.gateway,never()).report(any(),any(),any(),anyString());
+            }
+        }
+    }
+    @Test void recoveryReusesPersistedTokenAndCannotRepeatAfterAnotherFailedAuthentication() throws Exception {
+        try(var f=new Fixture()) {
+            byte[] issued=f.register(f.session()); byte[] wrong=issued.clone(); wrong[0]^=1;
+            var session=f.session(); session.receive(Jt808TestLock.uplink(0x0102,2,wrong),NOW,ignored->{});
+            assertFalse(session.isClosed()); assertArrayEquals(issued,f.register(session));
+            session.receive(Jt808TestLock.uplink(0x0102,3,wrong),NOW,ignored->{});
+            assertTrue(session.isClosed()); assertFalse(session.active());
+            assertEquals(HexFormat.of().formatHex(issued),f.store.snapshot().get("token"));
+        }
+    }
+    @Test void malformedTokenAndRecoveryRegistrationWithWrongMacOrExpiredWindowStayRejected() throws Exception {
+        try(var f=new Fixture()) {
+            var session=f.session(); session.receive(Jt808TestLock.uplink(0x0102,1,new byte[5]),NOW,ignored->{});
+            assertTrue(session.isClosed()); verify(f.gateway,never()).authenticate(any());
+        }
+        for(boolean wrongMac:new boolean[]{true,false}) {
+            try(var f=new Fixture()) {
+                var session=f.session(); session.receive(Jt808TestLock.uplink(0x0102,1,new byte[6]),NOW,ignored->{});
+                byte[] registration=Jt808TestLock.registration(); if(wrongMac)registration[29]^=1;
+                var output=new ArrayList<byte[]>();
+                session.receive(Jt808TestLock.uplink(0x0100,2,registration),wrongMac?NOW:NOW.plusSeconds(61),output::add);
+                assertEquals(1,Jt808TestLock.downlink(output.getFirst()).body()[2]);
+                assertTrue(session.isClosed()); assertFalse(f.store.snapshot().containsKey("token"));
+                verify(f.gateway,never()).authenticate(any());
+            }
+        }
+    }
+    @Test void matchingIssuedTokenCanAuthenticateAfterEnrollmentCloses() throws Exception {
+        try(var f=new Fixture()) {
+            byte[] issued=f.register(f.session()); var session=f.session(); var output=new ArrayList<byte[]>();
+            session.receive(Jt808TestLock.uplink(0x0102,3,issued),NOW.plusSeconds(61),output::add);
+            assertEquals(0,Jt808TestLock.downlink(output.getFirst()).body()[4]); assertTrue(session.active());
+        }
+    }
+    @Test void recoveryDoesNotClearOrBypassPlatformBudgetRejection() throws Exception {
+        for(var decision:new DeviceAccessAuthBudget.Decision[]{DeviceAccessAuthBudget.Decision.BACKOFF,DeviceAccessAuthBudget.Decision.RATE_LIMITED}) {
+            try(var f=new Fixture()) {
+                var session=f.session(); session.receive(Jt808TestLock.uplink(0x0102,1,new byte[6]),NOW,ignored->{});
+                doThrow(new Jt808ThingsLinkGateway.AuthenticationBudgetRejected(decision)).when(f.gateway).checkAuthenticationBudget(f.binding,"127.0.0.1");
+                var rejected=assertThrows(Jt808ThingsLinkGateway.AuthenticationBudgetRejected.class,
+                        ()->session.receive(Jt808TestLock.uplink(0x0100,2,Jt808TestLock.registration()),NOW,ignored->fail()));
+                assertEquals(decision,rejected.decision()); assertFalse(f.store.snapshot().containsKey("token"));
+                verify(f.gateway,never()).authenticate(any()); verify(f.gateway,never()).authenticationSucceeded(any());
+            }
+        }
+    }
+    @Test void registeredTimeSyncCannotAuthorizeBusinessAndCorrectTokenIsStillRequired() throws Exception {
+        try(var f=new Fixture()) {
+            var session=f.session(); byte[] token=f.register(session); var output=new ArrayList<byte[]>();
+            session.receive(Jt808TestLock.uplink(0x040f,3,new byte[]{0,0}),NOW,output::add);
+            var time=Jt808TestLock.downlink(output.getFirst()); assertEquals(0x840f,time.messageId());
+            assertArrayEquals(new byte[]{26,10,28,20,0,0},time.body()); assertFalse(session.active());
+            session.receive(Jt808TestLock.uplink(0x040f,4,new byte[]{1,0}),NOW,ignored->fail()); assertFalse(session.active());
+            assertThrows(IllegalStateException.class,()->session.receive(Jt808TestLock.uplink(0x0200,5,Jt808TestLock.location()),NOW,ignored->fail()));
+            verify(f.gateway,never()).report(any(),any(),any(),anyString());
+            f.authenticate(session,token);
+            output.clear(); session.receive(Jt808TestLock.uplink(0x040f,6,new byte[]{2,0}),NOW,output::add);
+            assertEquals(0x840f,Jt808TestLock.downlink(output.getFirst()).messageId());
+            verify(f.gateway,never()).reply(any(),any(),anyString());
+        }
+    }
+    @Test void unregisteredTimeRequestsAndUncorrelatedRegisteredAcksStayRejected() throws Exception {
+        try(var f=new Fixture()) {
+            assertThrows(IllegalStateException.class,()->f.session().receive(Jt808TestLock.uplink(0x040f,1,new byte[]{0,0}),NOW,ignored->fail()));
+            var session=f.session(); f.register(session);
+            assertThrows(IllegalStateException.class,()->session.receive(Jt808TestLock.uplink(0x040f,2,new byte[]{1,0}),NOW,ignored->fail()));
+            var output=new ArrayList<byte[]>(); session.receive(Jt808TestLock.uplink(0x040f,3,new byte[]{0,0}),NOW,output::add);
+            int serial=Jt808TestLock.downlink(output.getFirst()).serial();
+            assertThrows(IllegalStateException.class,()->session.receive(Jt808TestLock.uplink(0x0001,4,Jt808Messages.acknowledgement(serial,0x8500,0)),NOW,ignored->fail()));
+            session.receive(Jt808TestLock.uplink(0x0001,5,Jt808Messages.acknowledgement(serial,0x840f,0)),NOW,ignored->fail());
+            assertFalse(session.active()); verify(f.gateway,never()).report(any(),any(),any(),anyString());
+        }
+    }
+    @Test void explicitFirmwareProbeRunsOnceAfterAuthenticationAndNeverBecomesAControlCommand() throws Exception {
+        try(var f=new Fixture()) {
+            var session=new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true);
+            byte[] token=f.register(session); var output=new ArrayList<byte[]>();
+            assertFalse(f.store.snapshot().containsKey("metadata.firmware-probe"));
+            session.receive(Jt808TestLock.uplink(0x0102,2,token),NOW,output::add); assertEquals(1,output.size());
+            session.maintain(NOW.plusMillis(999),output::add); assertEquals(1,output.size());
+            assertFalse(f.store.snapshot().containsKey("metadata.firmware-probe"));
+            session.maintain(NOW.plusSeconds(1),output::add); assertEquals(2,output.size());
+            var probe=Jt808TestLock.downlink(output.get(1)); assertEquals(0x8413,probe.messageId()); assertArrayEquals(new byte[]{0,1},probe.body());
+            assertTrue(f.store.snapshot().get("metadata.firmware-probe").startsWith("SENT|"));
+            output.clear(); session.receive(Jt808TestLock.uplink(0x0413,3,"0223122412".getBytes(java.nio.charset.StandardCharsets.US_ASCII)),NOW,output::add);
+            assertEquals(0,Jt808TestLock.downlink(output.getFirst()).body()[4]); assertTrue(f.store.snapshot().containsKey("metadata.firmware-version"));
+            var reconnected=new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true);
+            output.clear(); reconnected.receive(Jt808TestLock.uplink(0x0102,4,token),NOW,output::add); assertEquals(1,output.size());
+            reconnected.maintain(NOW.plusSeconds(1),output::add); assertEquals(1,output.size());
+            verify(f.gateway,never()).reply(any(),any(),anyString());
+        }
+    }
+    @Test void firmwareWriteUnknownIsPreservedAndNotRepeatedAfterReconnect() throws Exception {
+        try(var f=new Fixture()) {
+            var session=new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true);
+            byte[] token=f.register(session); var sent=new ArrayList<byte[]>();
+            session.receive(Jt808TestLock.uplink(0x0102,2,token),NOW,sent::add);
+            assertThrows(IOException.class,()->session.maintain(NOW.plusSeconds(1),wire->{
+                if(Jt808TestLock.downlink(wire).messageId()==0x8413)throw new IOException("unknown"); sent.add(wire);
+            }));
+            assertTrue(f.store.snapshot().get("metadata.firmware-probe").startsWith("PREPARED|"));
+            var reconnected=new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true);
+            sent.clear(); reconnected.receive(Jt808TestLock.uplink(0x0102,3,token),NOW,sent::add); assertEquals(1,sent.size());
+            reconnected.maintain(NOW.plusSeconds(1),sent::add); assertEquals(1,sent.size());
+        }
+    }
+    @Test void namedFirmwareProbePreservesEarlierEvidenceAndDoesNotRepeatAcrossRestart() throws Exception {
+        try(var f=new Fixture()) {
+            byte[] token=f.register(f.session()); f.store.update(map->map.put("metadata.firmware-probe","SENT|14|earlier"));
+            var session=new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true,"paced-v1");
+            var output=new ArrayList<byte[]>(); session.receive(Jt808TestLock.uplink(0x0102,2,token),NOW,output::add);
+            session.maintain(NOW.plusSeconds(1),output::add); assertEquals(2,output.size());
+            assertEquals("SENT|14|earlier",f.store.snapshot().get("metadata.firmware-probe"));
+            assertTrue(f.store.snapshot().get("metadata.firmware-probe.paced-v1").startsWith("SENT|"));
+            f.store.close(); f.store=new Jt808StateStore(f.directory,external);
+            var restarted=new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true,"paced-v1");
+            output.clear(); restarted.receive(Jt808TestLock.uplink(0x0102,3,token),NOW,output::add);
+            restarted.maintain(NOW.plusSeconds(2),output::add); assertEquals(1,output.size());
+            assertThrows(IllegalArgumentException.class,()->new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true,"../other"));
+        }
+    }
+    @Test void deferredFirmwareProbeRechecksCredentialBeforePersistingOrWriting() throws Exception {
+        try(var f=new Fixture()) {
+            var session=new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true);
+            f.authenticate(session,f.register(session)); when(f.gateway.authenticate(f.binding)).thenThrow(new IllegalStateException("revoked"));
+            assertThrows(IllegalStateException.class,()->session.maintain(NOW.plusSeconds(1),ignored->fail()));
+            assertFalse(f.store.snapshot().containsKey("metadata.firmware-probe"));
+        }
+    }
+    @Test void sleepNoticeDefersNewCommandsAndHeartbeatDoesNotPretendTheLockBodyIsAwake() throws Exception {
+        try(var f=new Fixture()) {
+            var session=f.ready(); var command=f.command("jt808_query"); assertTrue(session.owns(command));
+            session.receive(Jt808TestLock.uplink(0x0001,4,Jt808Messages.acknowledgement(2,0x8418,0)),NOW,ignored->fail());
+            assertTrue(session.active()); assertFalse(session.owns(command));
+            assertEquals(DeviceAccessPushPort.PushOutcome.DEFERRED_NOT_OWNER,session.push(command,NOW,ignored->fail()));
+            assertFalse(f.store.snapshot().containsKey("cmd."+command.commandId()+".state"));
+            session.receive(Jt808TestLock.uplink(0x0002,5,new byte[0]),NOW,ignored->{}); assertFalse(session.owns(command));
+            byte[] wake=Jt808TestLock.location(); wake[31]=15;
+            session.receive(Jt808TestLock.uplink(0x0200,6,wake),NOW.plusSeconds(120),ignored->{}); assertFalse(session.owns(command));
+            wake[26]=2; wake[31]=31; session.receive(Jt808TestLock.uplink(0x0200,7,wake),NOW.plusSeconds(120),ignored->{}); assertTrue(session.owns(command));
+            verify(f.gateway,never()).reply(any(),any(),anyString());
+        }
+    }
+    @Test void sleepNoticeIsNotAQueryAckAndAlsoDefersUnsentDiagnosticUntilNextConnection() throws Exception {
+        try(var f=new Fixture()) {
+            var session=new Jt808Session(f.binding,f.store,f.gateway,f.coordinator,f.cipher,f.json,"127.0.0.1",null,true);
+            byte[] token=f.register(session); f.authenticate(session,token); var command=f.command("jt808_query");
+            var query=f.push(session,command).getFirst();
+            session.receive(Jt808TestLock.uplink(0x0001,4,Jt808Messages.acknowledgement(query.serial(),0x8418,0)),NOW,ignored->fail());
+            session.maintain(NOW.plusSeconds(2),ignored->fail());
+            assertEquals("SENT",f.store.snapshot().get("cmd."+command.commandId()+".state"));
+            assertFalse(f.store.snapshot().containsKey("metadata.firmware-probe")); verify(f.gateway,never()).reply(any(),any(),anyString());
+            var reconnected=f.session(); f.authenticate(reconnected,token); assertTrue(reconnected.owns(f.command("jt808_query")));
         }
     }
     @Test void unauthenticatedReportAndMalformedRegistrationAreRejected() throws Exception {
@@ -178,6 +357,29 @@ class Jt808SessionTests {
             var second=f.command("jt808_lock"); assertEquals(DeviceAccessPushPort.PushOutcome.WRITE_FAILED,session.push(second,NOW.plusSeconds(2),output::add));
             assertTrue(output.isEmpty()); var reply=ArgumentCaptor.forClass(DeviceCommandAccessReplyPort.Reply.class);
             verify(f.gateway,never()).reply(any(),any(),anyString());
+        }
+    }
+    @Test void sleepNoticeUsingControlSerialIsNotItsAcknowledgement() throws Exception {
+        try(var f=new Fixture()) {
+            var session=f.ready();var command=f.command("jt808_unlock");var control=f.push(session,command).getFirst();
+            session.receive(Jt808TestLock.uplink(0x0001,5,Jt808Messages.acknowledgement(control.serial(),0x8418,0)),NOW,ignored->fail());
+            assertEquals("SENT",f.store.snapshot().get("cmd."+command.commandId()+".state"));
+            verify(f.gateway,never()).reply(any(),any(),anyString());
+            session.maintain(NOW.plusSeconds(31));assertEquals("UNKNOWN",f.store.snapshot().get("cmd."+command.commandId()+".state"));
+        }
+    }
+    @Test void reviewedCurrentLockStateAllowsNewIntentWithoutReplayingOldOrReplyingSuccess() throws Exception {
+        try(var f=new Fixture()) {
+            var session=f.ready();var old=f.command("jt808_unlock");f.push(session,old);session.maintain(NOW.plusSeconds(31));
+            var next=f.command("jt808_unlock");var output=new ArrayList<byte[]>();assertEquals(DeviceAccessPushPort.PushOutcome.WRITE_FAILED,session.push(next,NOW,output::add));
+            Path evidence=external.resolve("current-locked.json");Files.writeString(evidence,"现场确认当前锁舌伸出");Files.setPosixFilePermissions(evidence,PosixFilePermissions.fromString("rw-------"));
+            String digest=HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(evidence)));
+            Path file=external.resolve("review.json");Files.writeString(file,f.json.writeValueAsString(Map.of("source","OPERATOR","observation","CURRENT_LOCKED",
+                    "commandId",old.commandId().toString(),"deviceId",f.identity.deviceId().toString(),"observedAt",NOW.plusSeconds(31).toString(),"evidenceFile",evidence.toString(),"evidenceSha256",digest)));
+            Files.setPosixFilePermissions(file,PosixFilePermissions.fromString("rw-------"));Jt808ControlReview.importReview(file,external,f.store,f.json,NOW.plusSeconds(32));
+            assertEquals("UNKNOWN",f.store.snapshot().get("cmd."+old.commandId()+".state"));session.push(old,NOW,output::add);assertTrue(output.isEmpty());
+            assertEquals(DeviceAccessPushPort.PushOutcome.DELIVERED,session.push(next,NOW,output::add));assertEquals(1,output.size());
+            assertArrayEquals(new byte[]{1,0},Jt808TestLock.downlink(output.getFirst()).body());verify(f.gateway,never()).reply(any(),any(),anyString());
         }
     }
     @Test void preparedIntentAfterRestartBecomesUnknownAndIsNeverResent() throws Exception {

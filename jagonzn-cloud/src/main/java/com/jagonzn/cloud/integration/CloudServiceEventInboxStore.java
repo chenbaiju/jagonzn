@@ -12,9 +12,11 @@ import java.util.UUID;
 @ConditionalOnProperty(name = "jagonzn.cloud.service-events.enabled", havingValue = "true")
 public class CloudServiceEventInboxStore {
     private final JdbcTemplate jdbc;
+    private final com.jagonzn.cloud.delivery.HttpDeliveryAudit audit;
 
-    public CloudServiceEventInboxStore(JdbcTemplate jdbc) {
+    public CloudServiceEventInboxStore(JdbcTemplate jdbc, com.jagonzn.cloud.delivery.HttpDeliveryAudit audit) {
         this.jdbc = jdbc;
+        this.audit = audit;
     }
 
     /** 只对已验签且已核对来源范围的事件调用。 */
@@ -33,7 +35,14 @@ public class CloudServiceEventInboxStore {
                 VALUES (?,?,?,?,?,?,?,?::jsonb) ON CONFLICT DO NOTHING
                 """, sourceDeploymentId, eventId, deliveryId, tenantId, projectId, eventType,
                 eventDigest, eventJson);
-        if (inserted == 1) return Outcome.ACCEPTED;
+        if (inserted == 1) {
+            // 事务提交后才打印接收成功，避免回滚留下假成功；签名头和密钥从不进入日志。
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override public void afterCommit() { audit.record("接收成功_来源事件已持久保存",eventId.toString(),eventJson); }
+                    });
+            return Outcome.ACCEPTED;
+        }
         var existing = jdbc.query("""
                 SELECT event_digest FROM cloud_service_event_inbox
                  WHERE source_deployment_id=? AND event_id=?

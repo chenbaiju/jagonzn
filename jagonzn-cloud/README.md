@@ -8,6 +8,9 @@ jagonzn-cloud 定位为未来 jagonzn 定制化设备 SaaS 的业务后端，负
 
 ## 当前状态
 
+已新增默认关闭的[第三方JSON HTTP交付](../docs/http-lock-log-delivery.md)：从可信Inbox生成逐目标持久任务，支持POST/PUT、字段映射、环境变量认证头、响应JSON判断和结果未知保护；后端打印脱敏收发JSON及接收/发送成功。专属发送执行器不阻塞默认维护调度，不增加前端；接口合同确定后再配置正式目标。下方早期Inbox回执保留历史范围。
+
+
 当前已有**第一项独立业务后端基础能力**：显式启用的私有 service 事件接收 API、独立 PostgreSQL Inbox/nonce 迁移与健康入口。它只持久接收并去重已验签的技术事件，尚未实现人员、场所、开锁权限、业务投影、命令或统一前端；`jagonzn-console` 当前仅有免登录静态测试页。合同见 [JADR-0009](../docs/adr/0009-cloud-private-event-inbox.md)。
 
 | 配置项 | 当前值 |

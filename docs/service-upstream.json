@@ -3,7 +3,7 @@
   "upstreamCommit": "260fa694876fce1b728ba87a4b91466765942aac",
   "coordinates": "com.things.link:things-link-runtime:0.0.1-SNAPSHOT",
   "jagonznBaseCommit": "59a006124632e63a2f857cab6c0442afed1b7001",
-  "serviceJarSha256": "09c6207bd6fc5f2103f7b3788429d4e898a67ac5d4a41e6b021fea7c75070850",
+  "serviceJarSha256": "9604f76819d28ca1cec246ff9afeb1efd8166735d95ce3905881339613e28b2b",
   "modules": [
     {
       "module": "things-link-runtime",
@@ -135,8 +135,18 @@
       "applied": 548
     },
     "jt808RealRuntime": "PASS, synthetic SM4 terminal, real middleware and public HTTPS APIs",
-    "realDevicePreparation": "PASS, separate credential/binding/state, 30-minute enrollment armed, normal real-device mode running",
-    "realDevicePublicIngress": "PASS, scoped Cloud TCP6808 rule created after human confirmation, public bidirectional nonce round-trip"
+    "realDevicePreparation": "PASS for separate credential/binding and normal mode startup; device test now paused by user",
+    "realDevicePublicIngress": "PASS, scoped Cloud TCP6808 rule created after human confirmation, public bidirectional nonce round-trip",
+    "httpLogBackend": {
+      "serviceTests": 97,
+      "cloudTests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "artifactInheritance": "PASS, 18 identical platform modules",
+      "physicalDevice": "NOTRUN",
+      "realThirdParty": "NOTRUN"
+    }
   },
   "notes": [
     "候选仅绑定已提交上游260fa694，主工作区未提交后继不纳入",
@@ -144,8 +154,12 @@
     "新旧品牌迁移的历史校验和尚未对实际旧库验证",
     "真实运行时与中间件联调通过，设备侧为合成国密终端；历史库升级和真实锁具验证仍NOTRUN"
   ],
-  "candidateScope": "local dirty workspace; SM4 registration/authentication, property ingress, public TCP push and durable command correlation; fixed upstream 260fa694",
+  "candidateScope": "local dirty workspace on cac51a5; fixed ThingsLink 260fa694 libraries; Jagonzn protocol log journal and signed cloud handoff, configurable third-party JSON HTTP delivery",
   "evidenceReceipt": ".private/deployment-session/jt808-session-development-20261028/receipt.json (local external evidence; not distributed)",
   "runtimeIntegrationEvidenceReceipt": ".private/deployment-session/jt808-runtime-integration-20261028/receipt.json (local external evidence; not distributed)",
-  "realDevicePreparationReceipt": ".private/deployment-session/jt808-real-device-20261028/receipt.json (local external evidence; not distributed)"
+  "realDevicePreparationReceipt": ".private/deployment-session/jt808-real-device-20261028/receipt.json (local external evidence; not distributed)",
+  "realDeviceOperationalState": "PAUSED_BY_USER; application, relay, SSH, capture and idle-sleep assertion stopped; original files and cloud firewall rule retained",
+  "httpLogCloudJarSha256": "541006e307311aae49438d7cdf9eae9a8cd1b956dd83007fed0b1305721d884d",
+  "currentLocalCandidateBaseCommit": "cac51a5e4b156fbf6d53243e9bd24d48c303dbd0",
+  "httpLogBackendEvidenceReceipt": ".private/deployment-session/http-lock-log-20261028/receipt.json (local external evidence; not distributed)"
 }

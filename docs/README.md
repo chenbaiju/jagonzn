@@ -2,7 +2,9 @@
 
 更新时间：2026-10-10。当前阶段优先建设设备接入与运行服务，暂不启动 cloud 业务开发；统一浏览器前端 `jagonzn-console` 曾新增[本机免登录静态测试页](upstream/static-console/README.md)，现已完整复制上游 Console 并适配品牌和 service 代理，本机验证见专题记录；真实登录及16个主要页面读取已通过，设备业务与正式接收仍未验收，见[复用与同步方案](console-reuse-and-evolution.md)。负责人已交接后续开发与本地测试，结果和剩余前置见[进度总览](PROJECT_PROGRESS.md)及[本轮专项回执](../../.private/thingslink-docs/docs/reuse-entry/THINGS_LINK_LOCAL_TEST_EXECUTION_20260929.md)。jagonzn 是 ThingsCloud 的一个租户，目标是在独立的 jagonzn-service 与同构的 `jagonzn` 数据库中适配并验证设备。**jagonzn 禁止修改 ThingsCloud 的任何代码或数据库表；只记录不足、证据和改进建议，由 ThingsCloud 自行评审。**自定义数据流与公共协议扩展属于反馈方向，不是本项目的平台改造授权。
 
-当前service继承版本与JT808迁入结果见[本轮同步记录](console-reuse-and-evolution.md#2026-10-28%20ThingsLink运行时同步与JT808扩展迁入)及[固定制品清单](service-upstream.json)。JT808开发切片、首台VA型号、外设存储与实际结果统一见[JT808开发测试计划](jt808-development-plan.md)，其中[真实运行时回执](jt808-development-plan.md#外置独立环境与真实运行时联调回执)包含独立外置数据库/Kafka、模拟国密终端闭环及资源恢复边界；真机仍未验。
+当前service继承版本与JT808迁入结果见[本轮同步记录](console-reuse-and-evolution.md#2026-10-28%20ThingsLink运行时同步与JT808扩展迁入)及[固定制品清单](service-upstream.json)。JT808开发切片、首台VA型号、外设存储与实际结果统一见[JT808开发测试计划](jt808-development-plan.md)，其中[真实运行时回执](jt808-development-plan.md#外置独立环境与真实运行时联调回执)包含独立外置数据库/Kafka、模拟国密终端闭环及资源恢复边界。后继真机注册鉴权、门磁状态与命令SUCCEEDED的最新限定结果见[service真机专题](../jagonzn-service/src/main/java/com/jagonzn/service/extension/jt808/README.md#门磁上报与命令结果关联)，不由模拟回执继承资格。
+
+[锁具日志与第三方JSON HTTP交付](http-lock-log-delivery.md)：后端日志留存、service→cloud签名交接、可配置POST/PUT、成功判断及外置验证；真实第三方接口尚未确定，出口默认关闭。
 
 ## 项目分工
 

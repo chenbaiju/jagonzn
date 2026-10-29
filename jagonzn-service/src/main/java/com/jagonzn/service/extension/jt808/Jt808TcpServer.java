@@ -3,6 +3,7 @@ package com.jagonzn.service.extension.jt808;
 import com.jagonzn.service.extension.jt808.protocol.Jt808FrameReader;
 import com.jagonzn.service.extension.jt808.protocol.Jt808Sm4Cipher;
 import com.things.link.ingestion.application.access.DeviceAccessPushPort;
+import com.things.link.ingestion.application.access.DeviceAccessAuthBudget;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -22,6 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /** 专用有界TCP监听器；默认由关闭的扩展开关隔离，不接管平台原生TC注册表或消费者。 */
 public final class Jt808TcpServer implements SmartLifecycle,AutoCloseable {
+    private static final org.slf4j.Logger LOGGER=org.slf4j.LoggerFactory.getLogger(Jt808TcpServer.class);
     private final Jt808DeviceBinding binding;
     private final Jt808Sm4Cipher cipher;
     private final Jt808StateStore store;
@@ -30,6 +32,10 @@ public final class Jt808TcpServer implements SmartLifecycle,AutoCloseable {
     private final InetSocketAddress address;
     private final Duration idleTimeout,pollInterval;
     private final Clock clock;
+    private final Jt808LogJournal logs;
+    private final boolean firmwareProbeEnabled;
+    private final String firmwareProbeId;
+    private final boolean doorContactConfirmationEnabled;
     private final Jt808SessionCoordinator coordinator=new Jt808SessionCoordinator();
     private final Set<Socket> sockets=ConcurrentHashMap.newKeySet();
     private final Semaphore permits=new Semaphore(32);
@@ -45,6 +51,35 @@ public final class Jt808TcpServer implements SmartLifecycle,AutoCloseable {
     public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
                           Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
                           Duration pollInterval,Clock clock) {
+        this(binding,cipher,store,gateway,json,address,idleTimeout,pollInterval,clock,null);
+    }
+    /** 带可选外置日志的专用监听器；日志失败不冒称设备日志已受理。 */
+    public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
+                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Duration pollInterval,Clock clock,Jt808LogJournal logs) {
+        this(binding,cipher,store,gateway,json,address,idleTimeout,pollInterval,clock,logs,false);
+    }
+    /** 只读版本诊断与监听分别配置，未显式开启时不增加任何设备查询。 */
+    public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
+                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Duration pollInterval,Clock clock,Jt808LogJournal logs,boolean firmwareProbeEnabled) {
+        this(binding,cipher,store,gateway,json,address,idleTimeout,pollInterval,clock,logs,firmwareProbeEnabled,"initial");
+    }
+    /** 显式诊断操作标识保证保留旧探针证据，不把重启当成一次新的操作授权。 */
+    public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
+                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Duration pollInterval,Clock clock,Jt808LogJournal logs,boolean firmwareProbeEnabled,String firmwareProbeId) {
+        this(binding,cipher,store,gateway,json,address,idleTimeout,pollInterval,clock,logs,firmwareProbeEnabled,firmwareProbeId,false);
+    }
+    /** 显式厂家门磁关联模式；不替代平台命令准入、有效期或原认证身份。 */
+    public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
+                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Duration pollInterval,Clock clock,Jt808LogJournal logs,boolean firmwareProbeEnabled,String firmwareProbeId,
+                          boolean doorContactConfirmationEnabled) {
+        if(firmwareProbeId==null || !firmwareProbeId.matches("[a-z0-9-]{1,32}")) throw new IllegalArgumentException("JT808诊断操作标识无效");
+        this.firmwareProbeId=firmwareProbeId;
+        this.logs=logs; this.firmwareProbeEnabled=firmwareProbeEnabled;
+        this.doorContactConfirmationEnabled=doorContactConfirmationEnabled;
         if(idleTimeout.compareTo(Duration.ofSeconds(1))<0 || pollInterval.compareTo(Duration.ofMillis(250))<0) throw new IllegalArgumentException("JT808运行周期无效");
         this.binding=binding; this.cipher=cipher; this.store=store; this.gateway=gateway; this.json=json;
         this.address=address; this.idleTimeout=idleTimeout; this.pollInterval=pollInterval; this.clock=clock;
@@ -71,32 +106,50 @@ public final class Jt808TcpServer implements SmartLifecycle,AutoCloseable {
     }
     private void serve(Socket socket) {
         Jt808Session session=null;
+        String stage="CONNECTION_SETUP";
         try(socket) {
             socket.setSoTimeout(250); socket.setTcpNoDelay(true);
-            session=new Jt808Session(binding,store,gateway,coordinator,cipher,json,socket.getInetAddress().getHostAddress());
+            session=new Jt808Session(binding,store,gateway,coordinator,cipher,json,socket.getInetAddress().getHostAddress(),logs,firmwareProbeEnabled,firmwareProbeId,doorContactConfirmationEnabled);
             var frames=new Jt808FrameReader(); var input=socket.getInputStream(); var output=socket.getOutputStream();
             Jt808Session.WireSink sink=wire->{ output.write(wire); output.flush(); };
-            byte[] chunk=new byte[2048]; long lastFrame=System.nanoTime(),lastPoll=0;
+            byte[] chunk=new byte[2048]; long connectedAt=System.nanoTime(),lastFrame=connectedAt,lastPoll=0;
             boolean authenticated=false;
             while(isRunning() && !socket.isClosed()) {
                 try {
+                    stage="SOCKET_READ";
                     int count=input.read(chunk); if(count<0) return;
+                    stage="FRAME_READ";
                     for(byte[] wire:frames.accept(Arrays.copyOf(chunk,count))) {
-                        session.receive(wire,clock.instant(),sink); lastFrame=System.nanoTime();
+                        // 失败后的快速注册可能落在平台正常退避中；不清退避、不跳过预算，只重查同一注册帧。
+                        while(true) {
+                            if(!isRunning() || socket.isClosed()
+                                    || !authenticated && System.nanoTime()-connectedAt>Duration.ofSeconds(20).toNanos()) return;
+                            try { stage="FRAME_PROCESS"; session.receive(wire,clock.instant(),sink); break; }
+                            catch(Jt808ThingsLinkGateway.AuthenticationBudgetRejected denied) {
+                                if(!session.awaitingRegistration() || denied.decision()!=DeviceAccessAuthBudget.Decision.BACKOFF) throw denied;
+                                Thread.sleep(250);
+                            }
+                        }
+                        lastFrame=System.nanoTime();
                         authenticated|=session.active();
                         synchronized(coordinator) { if(session.active()) endpoint=new Endpoint(session,sink); }
                     }
                 } catch(SocketTimeoutException waiting) { }
                 if(session.isClosed() || authenticated && !session.active()) return;
                 long now=System.nanoTime();
-                if(now-lastFrame>(authenticated?idleTimeout:Duration.ofSeconds(20)).toNanos()) return;
+                // 未鉴权连接使用绝对握手时限，重复坏码或注册帧不能延长恢复窗口。
+                if(authenticated ? now-lastFrame>idleTimeout.toNanos() : now-connectedAt>Duration.ofSeconds(20).toNanos()) return;
                 if(session.active() && now-lastPoll>=pollInterval.toNanos()) {
-                    session.maintain(clock.instant()); lastPoll=now;
+                    stage="SESSION_MAINTENANCE";
+                    session.maintain(clock.instant(),sink); lastPoll=now;
                 }
             }
+        } catch(InterruptedException canceled) {
+            Thread.currentThread().interrupt();
         } catch(IOException | RuntimeException failure) {
             // 只保留低基数失败计数，禁止把密钥、鉴权码、注册信息或原始报文带入普通日志。
             rejected.incrementAndGet();
+            LOGGER.warn("JT808连接处理被拒绝：stage={} type={}",stage,failure.getClass().getSimpleName());
         } finally {
             synchronized(coordinator) {
                 if(session!=null) session.close();

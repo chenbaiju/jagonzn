@@ -9,6 +9,27 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Jt808MessagesTests {
+    @Test void firmwareVersionAcceptsDocumentedCommaAndFixedFormatsButRejectsUnknownPayloads() {
+        var expected=new Jt808Messages.FirmwareVersion(2,"231224",1,2);
+        assertEquals(expected,Jt808Messages.firmwareVersion("0223122412".getBytes(java.nio.charset.StandardCharsets.US_ASCII)));
+        assertEquals(expected,Jt808Messages.firmwareVersion("02,231224,1,2".getBytes(java.nio.charset.StandardCharsets.US_ASCII)));
+        for(String bad:new String[]{"02,231332,1,2","secret","02,231224,256,2","02,231224,1,2\n"})
+            assertThrows(Jt808ProtocolException.class,()->Jt808Messages.firmwareVersion(bad.getBytes(java.nio.charset.StandardCharsets.US_ASCII)));
+    }
+    @Test void timeSyncUsesSixBinaryBeijingFieldsAndRejectsMalformedOperations() {
+        assertArrayEquals(new byte[]{26,10,29,9,12,34},Jt808Messages.serverTime(Instant.parse("2026-10-29T01:12:34Z")));
+        assertEquals(new Jt808Messages.TimeSync(0,0),Jt808Messages.timeSync(new byte[]{0,0}));
+        assertEquals(new Jt808Messages.TimeSync(2,0),Jt808Messages.timeSync(new byte[]{2,0}));
+        for(byte[] invalid:new byte[][]{{0},{3,0},{0,1},{1,2}}) assertThrows(Jt808ProtocolException.class,()->Jt808Messages.timeSync(invalid));
+        assertThrows(Jt808ProtocolException.class,()->Jt808Messages.serverTime(Instant.parse("2100-01-01T00:00:00Z")));
+    }
+    @Test void registrationKeepsUnspecifiedFirmwareMetadataWithoutInferringLockType() {
+        byte[] body=Jt808TestLock.registration(); body[35]=0; body[36]=0;
+        var parsed=Jt808Messages.registration(body);
+        assertEquals(0,parsed.series()); assertEquals(0,parsed.lockType());
+        assertArrayEquals(new byte[5],parsed.manufacturer()); assertArrayEquals(new byte[20],parsed.model());
+        assertArrayEquals(Jt808TestLock.MAC,parsed.mac());
+    }
     @Test void registrationUsesVendor59ByteLayoutAndDefensiveCopies() {
         byte[] body=Jt808TestLock.registration(); var parsed=Jt808Messages.registration(body);
         assertArrayEquals(Jt808TestLock.MAC,parsed.mac()); assertEquals(2,parsed.lockType()); assertEquals(255,parsed.series());
