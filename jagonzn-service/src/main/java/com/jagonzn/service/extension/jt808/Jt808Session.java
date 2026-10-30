@@ -29,7 +29,7 @@ public final class Jt808Session {
     @FunctionalInterface public interface WireSink { void write(byte[] wire) throws IOException; }
     private final Jt808DeviceBinding binding;
     private final Jt808StateStore store;
-    private final Jt808ThingsLinkGateway gateway;
+    private final Jt808PlatformGateway gateway;
     private final Jt808SessionCoordinator coordinator;
     private final Jt808Sm4FrameCodec codec;
     private final ObjectMapper json;
@@ -55,31 +55,31 @@ public final class Jt808Session {
 
     /** @param binding 私有预绑定 @param store 外盘独占状态 @param gateway 平台公开端口组合
      * @param coordinator 此设备共享的会话代次 @param cipher 私有密码实例 @param json 应用JSON配置 @param clientIp 实际来源IP */
-    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808ThingsLinkGateway gateway,
+    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808PlatformGateway gateway,
                         Jt808SessionCoordinator coordinator,Jt808Sm4Cipher cipher,ObjectMapper json,String clientIp) {
         this(binding,store,gateway,coordinator,cipher,json,clientIp,null);
     }
 
     /** 显式装配外置日志时保存Jagonzn自己的协议事实，不改变平台属性/命令合同。 */
-    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808ThingsLinkGateway gateway,
+    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808PlatformGateway gateway,
                         Jt808SessionCoordinator coordinator,Jt808Sm4Cipher cipher,ObjectMapper json,String clientIp,Jt808LogJournal logs) {
         this(binding,store,gateway,coordinator,cipher,json,clientIp,logs,false);
     }
 
     /** 版本诊断缺省关闭；显式开启也只在完整鉴权后持久登记一次只读查询。 */
-    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808ThingsLinkGateway gateway,
+    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808PlatformGateway gateway,
                         Jt808SessionCoordinator coordinator,Jt808Sm4Cipher cipher,ObjectMapper json,String clientIp,Jt808LogJournal logs,boolean firmwareProbeEnabled) {
         this(binding,store,gateway,coordinator,cipher,json,clientIp,logs,firmwareProbeEnabled,"initial");
     }
 
     /** 诊断操作标识由管理员显式给定；同一标识跨连接、重启保持一次尝试，旧记录不删除。 */
-    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808ThingsLinkGateway gateway,
+    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808PlatformGateway gateway,
                         Jt808SessionCoordinator coordinator,Jt808Sm4Cipher cipher,ObjectMapper json,String clientIp,Jt808LogJournal logs,boolean firmwareProbeEnabled,String firmwareProbeId) {
         this(binding,store,gateway,coordinator,cipher,json,clientIp,logs,firmwareProbeEnabled,firmwareProbeId,false);
     }
 
     /** 厂家门磁结果关联必须显式开启，旧实例继续保持只记录状态与ACK的原行为。 */
-    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808ThingsLinkGateway gateway,
+    public Jt808Session(Jt808DeviceBinding binding,Jt808StateStore store,Jt808PlatformGateway gateway,
                         Jt808SessionCoordinator coordinator,Jt808Sm4Cipher cipher,ObjectMapper json,String clientIp,Jt808LogJournal logs,
                         boolean firmwareProbeEnabled,String firmwareProbeId,boolean doorContactConfirmationEnabled) {
         if(firmwareProbeId==null || !firmwareProbeId.matches("[a-z0-9-]{1,32}")) throw new IllegalArgumentException("JT808诊断操作标识无效");
@@ -179,7 +179,7 @@ public final class Jt808Session {
             return;
         }
         var authenticated=gateway.authenticate(binding); pinIdentity(authenticated);
-        identity=authenticated; generation=coordinator.establish(); gateway.authenticationSucceeded(binding);
+        identity=authenticated; generation=coordinator.establish(); gateway.sessionOpened(generation); gateway.authenticationSucceeded(binding);
         log(frame,receivedAt,receivedAt,"AUTHENTICATED",Map.of());
         respond(frame,0,sink); flushReplies();
         LOGGER.info("JT808握手：stage=AUTHENTICATED");
@@ -281,12 +281,13 @@ public final class Jt808Session {
         confirmation.ifPresent(match->{details.put("related_command_id",match.commandId().toString());
             details.put("correlation_basis",match.completion()?"SINGLE_PENDING_COMMAND_DOOR_TRANSITION":"POST_UNLOCK_DOOR_CLOSE");});
         log(frame,location.occurredAt(),Instant.parse(parts[1]),kind,details);
+        gateway.event("REPORT|"+digest,kind,location.occurredAt(),Instant.parse(parts[1]),details);
         if(confirmation.isPresent()) {
             contactConfirmation.confirm(confirmation.get(),identity);flushReplies();
         }
         if(!query && !location.occurredAt().isBefore(receivedAt.minusSeconds(60))
                 && !location.occurredAt().isAfter(receivedAt.plusSeconds(60))) {
-            sleepReported=false; LOGGER.info("JT808会话：stage=DEVICE_WAKE_REPORT reason={}",reason);
+            sleepReported=false; gateway.sessionOpened(generation); LOGGER.info("JT808会话：stage=DEVICE_WAKE_REPORT reason={}",reason);
         }
         if(query) {
             int serial=Short.toUnsignedInt(ByteBuffer.wrap(frame.body()).getShort());
@@ -304,10 +305,16 @@ public final class Jt808Session {
         var ack=Jt808Messages.acknowledgement(frame.body()); String prefix=findCommand(ack.serial(),ack.messageId());
         if(ack.messageId()==0x8418 && ack.result()==0) {
             log(frame,receivedAt,receivedAt,"SLEEP_NOTIFICATION",Map.of("responseMessage","0x8418","responseSerial",ack.serial(),"result",ack.result()));
-            sleepReported=true; LOGGER.info("JT808会话：stage=DEVICE_SLEEP_NOTICE dispatch=DEFERRED"); return;
+            sleepReported=true; gateway.sessionClosed(generation); LOGGER.info("JT808会话：stage=DEVICE_SLEEP_NOTICE dispatch=DEFERRED"); return;
         }
         log(frame,receivedAt,receivedAt,"DEVICE_ACK",Map.of("responseMessage",String.format("0x%04X",ack.messageId()),"responseSerial",ack.serial(),"result",ack.result()));
-        if(prefix==null || !live(prefix,receivedAt)) return;
+        if(prefix==null) return;
+        if(!live(prefix,receivedAt)) {
+            // 过期空档的明确失败不能被后继重试恢复为可成功的等待，原未知结果仍保留。
+            if(ack.result()!=0 && "RESULT_WAIT_EXPIRED".equals(store.snapshot().get(prefix+"unknownReason")))
+                store.update(map->map.put(prefix+"contact.invalidated","DEVICE_REJECTED_DURING_EXPIRED_WINDOW"));
+            return;
+        }
         boolean failed=ack.result()!=0;
         String current=store.snapshot().get(prefix+"state");
         if("ACKNOWLEDGED".equals(current) && !failed) { flushReplies(); return; }
@@ -324,7 +331,7 @@ public final class Jt808Session {
             if(closed) throw new IllegalStateException("JT808连接已关闭");
             if(!active()) throw new IllegalStateException("JT808会话已失效");
             expire(now);
-            if(store.snapshot().keySet().stream().anyMatch(k->k.startsWith("reply.") && !k.endsWith(".done") && !store.snapshot().containsKey(k+".done"))) {
+            if(!sleepReported && store.snapshot().keySet().stream().anyMatch(k->k.startsWith("reply.") && !k.endsWith(".done") && !store.snapshot().containsKey(k+".done"))) {
                 requireCurrent(); flushReplies();
             }
         }
@@ -340,6 +347,25 @@ public final class Jt808Session {
         synchronized(coordinator) {
             return active() && !sleepReported && identity.tenantId().equals(push.tenantId()) && identity.projectId().equals(push.projectId())
                     && identity.deviceId().equals(push.deviceId()) && !store.snapshot().containsKey("cmd."+push.commandId()+".state");
+        }
+    }
+
+    /** 远程网关核验同命令当前尝试后只续接结果等待；不会领取新命令、写网络或重新分配流水。 */
+    public boolean resumeResultWait(DeviceAccessPushPort.Push push,Instant now) {
+        return resumeResultWait(push,()->now);
+    }
+
+    /** 核验可能耗时，运行时须在核验结束后读取当前时钟，不能沿用进入方法时的旧时间。 */
+    boolean resumeResultWait(DeviceAccessPushPort.Push push,java.util.function.Supplier<Instant> time) {
+        synchronized(coordinator) {
+            if(!active() || sleepReported || !identity.tenantId().equals(push.tenantId())
+                    || !identity.projectId().equals(push.projectId()) || !identity.deviceId().equals(push.deviceId())) return false;
+            try { var input=json.readTree(push.inputJson());if(!input.isObject() || !input.isEmpty()) return false; }
+            catch(tools.jackson.core.JacksonException invalid) { return false; }
+            requireCurrent();Instant now=time.get();expire(now);
+            boolean resumed=contactConfirmation.resume(push,now,identity);
+            if(resumed) LOGGER.info("JT808结果等待续接 commandId={} attempt={} expiresAt={} physicalDispatch=false",push.commandId(),push.attempt(),push.expiresAt());
+            return resumed;
         }
     }
 
@@ -379,6 +405,7 @@ public final class Jt808Session {
         store.update(map-> { map.put(prefix+"state","PREPARED"); map.put(prefix+"serial",Integer.toString(serial));
             map.put(prefix+"message",Integer.toString(message)); map.put(prefix+"expires",claimed.expiresAt().toString());
             map.put(prefix+"key",claimed.commandKey());
+            map.put(prefix+"attempt",Integer.toString(claimed.attempt()));
             if(message==0x8500) contactConfirmation.prepare(map,prefix,now,identity); });
         if(logs!=null)logs.append(identity,"COMMAND|"+id,"COMMAND_DISPATCH_REQUESTED","DOWN",message,serial,now,now,
                 Map.of("commandId",id.toString(),"commandKey",claimed.commandKey(),"physicalResult","UNCONFIRMED"));
@@ -387,7 +414,7 @@ public final class Jt808Session {
             store.update(map->map.put(prefix+"state","SENT"));
             return DeviceAccessPushPort.PushOutcome.DELIVERED;
         } catch(IOException | RuntimeException failure) {
-            store.update(map->map.put(prefix+"state","UNKNOWN")); throw failure;
+            store.update(map->{map.put(prefix+"state","UNKNOWN");map.put(prefix+"unknownReason","WRITE_UNCERTAIN");}); throw failure;
         }
     }
 
@@ -410,7 +437,12 @@ public final class Jt808Session {
         if(needs) store.update(map->snapshot.forEach((key,value)-> {
             if(key.startsWith("cmd.") && key.endsWith("state") && ("PREPARED".equals(value)
                     || (("SENT".equals(value) || "ACKNOWLEDGED".equals(value)) && !now.isBefore(Instant.parse(snapshot.get(key.replace("state","expires")))))))
+            {
+                String prefix=key.substring(0,key.length()-5);
                 map.put(key,"UNKNOWN");
+                map.put(prefix+"unknownReason","PREPARED".equals(value)?"PREPARED_UNCERTAIN":"RESULT_WAIT_EXPIRED");
+                map.put(prefix+"wait.previousState",value);
+            }
         }));
     }
     private void log(Jt808Frame frame,Instant occurredAt,Instant receivedAt,String kind,Map<String,Object> details) {
@@ -429,5 +461,5 @@ public final class Jt808Session {
     public boolean active() { synchronized(coordinator) { return !closed && identity!=null && coordinator.owns(generation); } }
     public boolean isClosed() { synchronized(coordinator) { return closed; } }
     /** 仅关闭本连接；不关闭共享密码实例或删除持久状态。 */
-    public void close() { synchronized(coordinator) { closed=true; } }
+    public void close() { synchronized(coordinator) { closed=true; gateway.sessionClosed(generation); } }
 }

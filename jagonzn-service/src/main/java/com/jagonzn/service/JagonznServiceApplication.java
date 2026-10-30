@@ -23,6 +23,12 @@ public class JagonznServiceApplication {
 
     /** 启动独立服务；协议与设备业务能力仍须按正式合同逐项验收。 */
     public static void main(String[] args) throws Exception {
+        if(args.length>0 && "--prepare-remote-jt808-state".equals(args[0])) {
+            com.jagonzn.service.extension.jt808.Jt808RemoteStateMigration.run(args);return;
+        }
+        if(args.length>0 && "--remote-jt808".equals(args[0])) {
+            com.jagonzn.remote.Jt808RemoteApplication.main(java.util.Arrays.copyOfRange(args,1,args.length));return;
+        }
         if (args.length > 0 && "--prepare-enrollment".equals(args[0])) {
             EnrollmentRequestCommand.run(args);
             return;

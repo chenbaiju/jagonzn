@@ -2,6 +2,8 @@
 
 jagonzn-service 是 jagonzn 的设备接入与运行服务，当前通过平台普通运行时 JAR 复用 ThingsLink 后端内核，目标是独立承担多协议接入、设备管理、遥测、规则、技术告警、任务、命令和可靠信息转发。
 
+后继新增默认关闭的[JT808远程模式](../docs/tenant-validation-and-contract-evolution.md#10-jagonzn远程模式实现与启用前置)：以`--remote-jt808`独立入口及私有范围文件，通过平台既有MQTT/TLS和管理GET接入，禁止同时启动本机内核或旧发送器。属性/事件等匹配PERSISTED后签收；控制缺省关闭，写前核对命令截止及门磁基线，结果须回读平台原生命令事实。该模式已有本地合同网络验证，线上项目已只读核对但设备尚未创建、未切换实物入口；模型/范围示例、验证和剩余前置只在专题维护。
+
 service 不内嵌独立的浏览器管理页面，但必须保留受控设备及授权管理 API 和无前端时可用的运维/恢复入口；后续由 `jagonzn-console` 统一呈现技术操作，并集成 `jagonzn-cloud` 的业务操作。当前已完整复用 Console，真实联调与运行时同步见[专题记录](../docs/console-reuse-and-evolution.md)，旧静态页回执不代替新候选验证，见 [JADR-0007](../docs/adr/0007-unified-console-and-backend-boundary.md)。
 
 jagonzn 是 ThingsLink 租户，禁止修改 ThingsLink 的任何代码或数据库表；仅通过已有受支持能力开发自身设备适配并验证。平台不足及建议登记到[独立反馈文档](../docs/PLATFORM_CAPABILITY_FEEDBACK.md)，由 ThingsLink 自行评审。

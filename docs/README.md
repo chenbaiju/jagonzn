@@ -6,6 +6,10 @@
 
 [锁具日志与第三方JSON HTTP交付](http-lock-log-delivery.md)：后端日志留存、service→cloud签名交接、可配置POST/PUT、成功判断及外置验证；真实第三方接口尚未确定，出口默认关闭。
 
+[ThingsLink公网接入方案与远程实现](tenant-validation-and-contract-evolution.md#10-jagonzn远程模式实现与启用前置)：固定线上`260fa694`与实际制品摘要，远程MQTT/TLS入口、PERSISTED恢复、命令截止/终态核验及198项本地回归；用户项目已核对并后继完成专属类型/模型/IMEI设备建档，当前INACTIVE，真实平台数据闭环及实物入口尚未切换。第9节保留核对和方案依据。
+
+[ThingsLink接入问题登记](thingslink/README.md)：后继平台功能缺陷逐项新增Markdown，保存复现和证据，交负责人评审；不直接修改ThingsLink代码或文件。原有能力反馈与历史回执保留。
+
 ## 项目分工
 
 | 项目 | 定位 |

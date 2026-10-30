@@ -10,7 +10,7 @@ import com.things.link.telemetry.application.DeviceCommandAccessReplyPort;
 import java.time.Instant;
 
 /** 仅组合平台公开应用端口；会话为扩展本地事实，不伪造标准TC的AUTH_RESPONSE或空03心跳。 */
-public class Jt808ThingsLinkGateway {
+public class Jt808ThingsLinkGateway implements Jt808PlatformGateway {
     /** 原样保留平台预算结果，由协议层决定关闭连接或在握手时限内等待退避。 */
     public static final class AuthenticationBudgetRejected extends IllegalStateException {
         private final DeviceAccessAuthBudget.Decision decision;

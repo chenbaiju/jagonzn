@@ -2,6 +2,7 @@ package com.jagonzn.service.extension.jt808;
 
 import com.jagonzn.service.extension.jt808.protocol.Jt808Messages;
 import com.things.link.shared.message.AuthenticatedDeviceIdentity;
+import com.things.link.ingestion.application.access.DeviceAccessPushPort;
 import com.things.link.telemetry.application.DeviceCommandAccessReplyPort;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -45,6 +46,35 @@ final class Jt808DoorContactConfirmation {
         values.put(prefix+"contact.baselineDigest",latest.digest());recentUnlock=null;
     }
 
+    /** 仅续接同连接、同身份的原控制结果等待；平台当前尝试由远程网关核验，此方法不接触发送器。 */
+    boolean resume(DeviceAccessPushPort.Push push,Instant now,AuthenticatedDeviceIdentity identity) {
+        if(!enabled || !"jt808_unlock".equals(push.commandKey()) || push.expiresAt()==null || !push.expiresAt().isAfter(now)) return false;
+        var snapshot=store.snapshot();String prefix="cmd."+push.commandId()+".";String state=snapshot.get(prefix+"state");
+        boolean expired="UNKNOWN".equals(state) && "RESULT_WAIT_EXPIRED".equals(snapshot.get(prefix+"unknownReason"));
+        Instant sent=parse(snapshot.get(prefix+"contact.sent")),deadline=parse(snapshot.get(prefix+"expires"));
+        if(sent==null || deadline==null || now.isBefore(sent) || !now.isBefore(sent.plusSeconds(300))
+                || push.expiresAt().isAfter(sent.plusSeconds(300)) || !push.expiresAt().isAfter(deadline)
+                || push.attempt()<=Integer.parseInt(snapshot.getOrDefault(prefix+"attempt","0"))
+                || !snapshot.containsKey(prefix+"attempt") || !push.commandKey().equals(snapshot.get(prefix+"key"))
+                || !"34048".equals(snapshot.get(prefix+"message")) || !session.equals(snapshot.get(prefix+"contact.session"))
+                || !Long.toString(identity.credentialVersion()).equals(snapshot.get(prefix+"contact.version"))
+                || snapshot.containsKey(prefix+"contact.invalidated") || snapshot.containsKey(prefix+"contact.evidence")
+                || snapshot.containsKey(prefix+"physicalReview")
+                || !(expired || "SENT".equals(state) || "ACKNOWLEDGED".equals(state))
+                || pending().stream().anyMatch(p->!p.equals(prefix))) return false;
+        if(expired && (latest==null || latest.closed()!=Boolean.parseBoolean(snapshot.get(prefix+"contact.before")))) return false;
+        String restored=expired?snapshot.get(prefix+"wait.previousState"):state;
+        if(!"SENT".equals(restored) && !"ACKNOWLEDGED".equals(restored)) return false;
+        store.update(map->{
+            map.putIfAbsent(prefix+"originalExpires",deadline.toString());
+            map.put(prefix+"expires",push.expiresAt().toString());map.put(prefix+"attempt",Integer.toString(push.attempt()));
+            map.put(prefix+"state",restored);map.put(prefix+"wait.resumedAt",now.toString());
+            if(expired) map.put(prefix+"contact.observationNotBefore",now.toString());
+            map.remove(prefix+"unknownReason");
+        });
+        return true;
+    }
+
     /** 只观察真正主动上报；时间、顺序、原因、状态变化和唯一在途命令须同时成立。 */
     Optional<Match> observe(boolean query,int serial,Jt808Messages.Location location,Instant originalReceived,
                             Instant now,String digest,AuthenticatedDeviceIdentity identity) {
@@ -56,13 +86,24 @@ final class Jt808DoorContactConfirmation {
         var report=new Observation(closed,reason,serial,occurred,originalReceived,digest);
         if(latest!=null && (serial<=latest.serial() || !originalReceived.isAfter(latest.received()) || occurred.isBefore(latest.occurred()))) return Optional.empty();
         var snapshot=store.snapshot();var waiting=pending();Match match=null;
+        // 过期空档已经观察到动作时，不允许稍后的平台重试追认该动作或恢复原闭合基线。
+        snapshot.forEach((key,value)->{
+            if(key.startsWith("cmd.") && key.endsWith(".state") && "UNKNOWN".equals(value)) {
+                String prefix=key.substring(0,key.length()-5);
+                if("RESULT_WAIT_EXPIRED".equals(snapshot.get(prefix+"unknownReason")) && session.equals(snapshot.get(prefix+"contact.session"))
+                        && ((latest!=null && latest.closed()!=closed) || List.of(1,2,10,12,14).contains(reason)))
+                    store.update(map->map.put(prefix+"contact.invalidated","OBSERVED_DURING_EXPIRED_WINDOW"));
+            }
+        });
         if(waiting.size()==1 && !snapshot.containsKey("contact.used."+digest)) {
             String prefix=waiting.getFirst(),key=snapshot.get(prefix+"key");Instant sent=parse(snapshot.get(prefix+"contact.sent"));
+            Instant notBefore=parse(snapshot.get(prefix+"contact.observationNotBefore"));
             boolean applicable=sent!=null && session.equals(snapshot.get(prefix+"contact.session"))
                     && Long.toString(identity.credentialVersion()).equals(snapshot.get(prefix+"contact.version"))
                     && ("SENT".equals(snapshot.get(prefix+"state")) || "ACKNOWLEDGED".equals(snapshot.get(prefix+"state")))
                     && now.isBefore(Instant.parse(snapshot.get(prefix+"expires"))) && originalReceived.isAfter(sent)
                     && !occurred.isBefore(sent.truncatedTo(ChronoUnit.SECONDS))
+                    && (notBefore==null || originalReceived.isAfter(notBefore) && !occurred.isBefore(notBefore))
                     && serial>Integer.parseInt(snapshot.get(prefix+"contact.serial"));
             if(applicable && !snapshot.containsKey(prefix+"contact.invalidated")) {
                 boolean target=key.equals("jt808_lock");int expected=target?2:1;
@@ -73,6 +114,8 @@ final class Jt808DoorContactConfirmation {
                     output.put("evidence_message_id","0x0200");output.put("evidence_serial",serial);output.put("evidence_digest",digest);
                     output.put("evidence_occurred_at",occurred.toString());output.put("evidence_received_at",originalReceived.toString());
                     output.put("command_sent_at",sent.toString());output.put("independent_bolt_position","UNKNOWN");
+                    output.put("command_attempt",Integer.parseInt(snapshot.getOrDefault(prefix+"attempt","1")));
+                    output.put("confirmation_deadline",snapshot.get(prefix+"expires"));
                     output.put("baseline_digest",snapshot.get(prefix+"contact.baselineDigest"));
                     output.put("baseline_received_at",snapshot.get(prefix+"contact.baselineReceived"));
                     match=new Match(prefix,Map.copyOf(output),digest,occurred,originalReceived,true);
@@ -82,7 +125,8 @@ final class Jt808DoorContactConfirmation {
             }
         }
         // 成功开锁后的关门只补同一现场周期的日志关系，不生成第二次命令成功或关锁指令。
-        if(match==null && recentUnlock!=null && waiting.isEmpty() && latest!=null && !latest.closed() && closed && reason==2
+        boolean onlyConfirmedUnlock=recentUnlock!=null && (waiting.isEmpty() || waiting.size()==1 && waiting.getFirst().equals(recentUnlock.prefix()) && "CONFIRMED_PENDING".equals(snapshot.get(recentUnlock.prefix()+"state")));
+        if(match==null && recentUnlock!=null && onlyConfirmedUnlock && latest!=null && !latest.closed() && closed && reason==2
                 && now.isBefore(recentUnlock.received().plusSeconds(30)) && originalReceived.isAfter(recentUnlock.received())) {
             match=new Match(recentUnlock.prefix(),Map.of(),digest,occurred,originalReceived,false);recentUnlock=null;
         }

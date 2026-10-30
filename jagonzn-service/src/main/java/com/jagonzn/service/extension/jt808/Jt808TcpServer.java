@@ -27,7 +27,7 @@ public final class Jt808TcpServer implements SmartLifecycle,AutoCloseable {
     private final Jt808DeviceBinding binding;
     private final Jt808Sm4Cipher cipher;
     private final Jt808StateStore store;
-    private final Jt808ThingsLinkGateway gateway;
+    private final Jt808PlatformGateway gateway;
     private final ObjectMapper json;
     private final InetSocketAddress address;
     private final Duration idleTimeout,pollInterval;
@@ -49,31 +49,31 @@ public final class Jt808TcpServer implements SmartLifecycle,AutoCloseable {
      * @param json 应用JSON配置 @param address 明确监听地址 @param idleTimeout 本地无活动断开策略
      * @param pollInterval 状态维护间隔 @param clock 平台接收时钟 */
     public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
-                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Jt808PlatformGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
                           Duration pollInterval,Clock clock) {
         this(binding,cipher,store,gateway,json,address,idleTimeout,pollInterval,clock,null);
     }
     /** 带可选外置日志的专用监听器；日志失败不冒称设备日志已受理。 */
     public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
-                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Jt808PlatformGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
                           Duration pollInterval,Clock clock,Jt808LogJournal logs) {
         this(binding,cipher,store,gateway,json,address,idleTimeout,pollInterval,clock,logs,false);
     }
     /** 只读版本诊断与监听分别配置，未显式开启时不增加任何设备查询。 */
     public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
-                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Jt808PlatformGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
                           Duration pollInterval,Clock clock,Jt808LogJournal logs,boolean firmwareProbeEnabled) {
         this(binding,cipher,store,gateway,json,address,idleTimeout,pollInterval,clock,logs,firmwareProbeEnabled,"initial");
     }
     /** 显式诊断操作标识保证保留旧探针证据，不把重启当成一次新的操作授权。 */
     public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
-                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Jt808PlatformGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
                           Duration pollInterval,Clock clock,Jt808LogJournal logs,boolean firmwareProbeEnabled,String firmwareProbeId) {
         this(binding,cipher,store,gateway,json,address,idleTimeout,pollInterval,clock,logs,firmwareProbeEnabled,firmwareProbeId,false);
     }
     /** 显式厂家门磁关联模式；不替代平台命令准入、有效期或原认证身份。 */
     public Jt808TcpServer(Jt808DeviceBinding binding,Jt808Sm4Cipher cipher,Jt808StateStore store,
-                          Jt808ThingsLinkGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
+                          Jt808PlatformGateway gateway,ObjectMapper json,InetSocketAddress address,Duration idleTimeout,
                           Duration pollInterval,Clock clock,Jt808LogJournal logs,boolean firmwareProbeEnabled,String firmwareProbeId,
                           boolean doorContactConfirmationEnabled) {
         if(firmwareProbeId==null || !firmwareProbeId.matches("[a-z0-9-]{1,32}")) throw new IllegalArgumentException("JT808诊断操作标识无效");
@@ -175,6 +175,10 @@ public final class Jt808TcpServer implements SmartLifecycle,AutoCloseable {
     }
     public boolean owns(DeviceAccessPushPort.Push push) {
         synchronized(coordinator) { return endpoint!=null && endpoint.session().owns(push); }
+    }
+    /** 仅向当前已认证连接续接原命令的结果等待；该入口没有网络写入器。 */
+    public boolean resumeResultWait(DeviceAccessPushPort.Push push) {
+        synchronized(coordinator) { return endpoint!=null && endpoint.session().resumeResultWait(push,clock::instant); }
     }
     /** 调用方仍须通过平台命令准入与规则链；此处只选择已认证连接并执行厂家编码。 */
     public DeviceAccessPushPort.PushOutcome push(DeviceAccessPushPort.Push push) {

@@ -21,6 +21,7 @@ public final class Jt808StateStore implements AutoCloseable {
     private static final int MAX_BYTES=4*1024*1024;
     private final Path directory;
     private final Path state;
+    private final Object directoryKey;
     private final FileChannel lockChannel;
     private final FileLock lock;
     private Map<String,String> values;
@@ -36,6 +37,7 @@ public final class Jt808StateStore implements AutoCloseable {
             this.directory=directory.toRealPath();
             if(!this.directory.startsWith(external) || external.startsWith(Path.of("").toAbsolutePath().normalize())) throw invalid();
             requirePrivate(this.directory,true);
+            directoryKey=Files.readAttributes(this.directory,java.nio.file.attribute.BasicFileAttributes.class).fileKey();
             Path lockFile=this.directory.resolve("adapter.lock");
             if(Files.exists(lockFile,LinkOption.NOFOLLOW_LINKS)) requirePrivate(lockFile,false);
             channel=FileChannel.open(lockFile,java.util.Set.of(StandardOpenOption.CREATE,StandardOpenOption.WRITE),
@@ -97,7 +99,11 @@ public final class Jt808StateStore implements AutoCloseable {
         int next=(int)current+1; update(map->map.put("serial",Integer.toString(next))); return next;
     }
 
-    private void requireOpen() { if(stopped) throw invalid(); }
+    private void requireOpen() {
+        if(stopped||!lock.isValid())throw invalid();
+        try{requirePrivate(directory,true);if(!directory.toRealPath().equals(directory)||!java.util.Objects.equals(directoryKey,Files.readAttributes(directory,java.nio.file.attribute.BasicFileAttributes.class).fileKey()))throw invalid();}
+        catch(java.io.IOException changed){throw invalid();}
+    }
     private static IllegalStateException invalid() { return new IllegalStateException("JT808私有状态不可用，已停止处理"); }
 
     /** 释放独占租约；状态和首败原件保留。 */

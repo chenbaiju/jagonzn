@@ -1,0 +1,167 @@
+{
+  "purpose": "准备材料，不自动提交线上请求；类型、设备及不可变版本必须先通过正常API建立",
+  "deviceType": {
+    "typeKey": "jt808_dm08_va",
+    "name": "JT808国密4G锁",
+    "deviceKind": "DIRECT",
+    "payloadProtocol": "STANDARD",
+    "networkType": "CELLULAR_4G"
+  },
+  "properties": [
+    {
+      "propertyKey": "door_closed",
+      "name": "门磁贴合",
+      "accessType": "REPORT",
+      "dataType": "SWITCH",
+      "sortOrder": 0
+    },
+    {
+      "propertyKey": "battery_percent",
+      "name": "电量",
+      "accessType": "REPORT",
+      "dataType": "NUMBER",
+      "decimalPlaces": 0,
+      "minimumValue": 0,
+      "maximumValue": 100,
+      "sortOrder": 1
+    },
+    {
+      "propertyKey": "lock_state",
+      "name": "厂家门磁判据锁状态",
+      "accessType": "REPORT",
+      "dataType": "ENUM",
+      "enumOptions": [
+        "UNKNOWN",
+        "OPEN",
+        "CLOSED"
+      ],
+      "sortOrder": 2
+    },
+    {
+      "propertyKey": "lock_state_source",
+      "name": "状态依据",
+      "accessType": "REPORT",
+      "dataType": "ENUM",
+      "enumOptions": [
+        "MANUFACTURER_DOOR_CONTACT",
+        "NOT_REPORTED"
+      ],
+      "sortOrder": 3
+    }
+  ],
+  "events": [
+    {
+      "eventKey": "lock_opened",
+      "name": "开锁",
+      "level": "INFO",
+      "sortOrder": 0,
+      "parameters": [
+        {
+          "parameterKey": "door_closed",
+          "name": "门磁贴合",
+          "dataType": "SWITCH",
+          "required": true,
+          "sortOrder": 0
+        },
+        {
+          "parameterKey": "report_reason",
+          "name": "厂家原因码",
+          "dataType": "NUMBER",
+          "required": true,
+          "sortOrder": 1
+        },
+        {
+          "parameterKey": "lock_state",
+          "name": "状态",
+          "dataType": "ENUM",
+          "enumOptions": [
+            "OPEN",
+            "CLOSED"
+          ],
+          "required": true,
+          "sortOrder": 2
+        },
+        {
+          "parameterKey": "lock_state_source",
+          "name": "状态依据",
+          "dataType": "TEXT",
+          "required": true,
+          "sortOrder": 3
+        },
+        {
+          "parameterKey": "related_command_id",
+          "name": "关联命令",
+          "dataType": "TEXT",
+          "required": false,
+          "sortOrder": 4
+        }
+      ]
+    },
+    {
+      "eventKey": "lock_closed",
+      "name": "关锁",
+      "level": "INFO",
+      "sortOrder": 1,
+      "parameters": [
+        {
+          "parameterKey": "door_closed",
+          "name": "门磁贴合",
+          "dataType": "SWITCH",
+          "required": true,
+          "sortOrder": 0
+        },
+        {
+          "parameterKey": "report_reason",
+          "name": "厂家原因码",
+          "dataType": "NUMBER",
+          "required": true,
+          "sortOrder": 1
+        },
+        {
+          "parameterKey": "lock_state",
+          "name": "状态",
+          "dataType": "ENUM",
+          "enumOptions": [
+            "OPEN",
+            "CLOSED"
+          ],
+          "required": true,
+          "sortOrder": 2
+        },
+        {
+          "parameterKey": "lock_state_source",
+          "name": "状态依据",
+          "dataType": "TEXT",
+          "required": true,
+          "sortOrder": 3
+        },
+        {
+          "parameterKey": "related_command_id",
+          "name": "关联命令",
+          "dataType": "TEXT",
+          "required": false,
+          "sortOrder": 4
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandKey": "jt808_query",
+      "name": "状态查询",
+      "inputSchema": "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}",
+      "outputSchema": "{\"type\":\"object\"}",
+      "timeoutSeconds": 20,
+      "sortOrder": 0
+    },
+    {
+      "commandKey": "jt808_unlock",
+      "name": "远程开锁",
+      "inputSchema": "{\"type\":\"object\",\"properties\":{},\"additionalProperties\":false}",
+      "outputSchema": "{\"type\":\"object\"}",
+      "timeoutSeconds": 20,
+      "sortOrder": 1
+    }
+  ],
+  "activation": "publish完成后创建/绑定设备，通过access-config明确MQTT；不更改已有已绑定设备类型或直接写数据库"
+}

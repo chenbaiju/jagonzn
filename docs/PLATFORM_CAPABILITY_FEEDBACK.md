@@ -7,7 +7,7 @@
 ## 1. 权限与记录规则
 
 - jagonzn **不得修改 ThingsCloud 的任何代码或数据库表**，包括其独立部署使用的公共模块、JAR、表、函数和迁移；只通过已有受支持接口与配置复用能力，在自身项目开发厂商适配。
-- 发现或怀疑ThingsLink业务代码问题、功能缺陷时，必须先向负责人汇报，登记固定版本、复现步骤、预期/实际、脱敏证据和影响，并区分已确认与待核实。由负责人评审，再交ThingsLink开发者修复；jagonzn不自行补丁平台源码、JAR、表、函数或迁移，也不绕过问题制造通过。依赖项保持受阻，可继续不依赖该问题的适配/验证，平台修复交付后复验。
+- 发现或怀疑ThingsLink业务代码问题、功能缺陷时，必须先向负责人汇报，并在[ThingsLink接入问题目录](thingslink/README.md)逐项新增Markdown，登记固定版本、复现步骤、预期/实际、脱敏证据和影响，并区分已确认与待核实。本文保留历史反馈，后继新问题只增摘要链接。由负责人评审，再交ThingsLink开发者修复；jagonzn不修改ThingsLink代码或文件，不自行补丁平台JAR、表、函数或迁移，也不绕过问题制造通过。依赖项保持受阻，可继续不依赖该问题的适配/验证，平台修复交付后复验。
 - ThingsCloud 自行决定是否采纳、设计、排期、实现和交付。本文不改变 ThingsCloud 的合同、版本、进度或门禁，不代表已向其他人发送消息或已获平台受理。
 - 状态分别记录“证据状态”“平台评审状态”“平台交付状态”“jagonzn 复验状态”。登记、采纳、实现和复验通过是不同阶段；没有结果文档不得推定下一状态。
 - 验证证据应包含平台版本及制品/commit、设备型号/固件、环境、脱敏报文、步骤、预期与实际结果；文档/静态代码分析不能写成真机复现。
@@ -40,6 +40,8 @@
 **已补本地证据：**历史版本增量升级和独立实栈的标准 HTTP 属性上报已通过，见[实栈记录](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-REUSE-3-local-stack-2026-09-24.md)；四协议标准属性链路、含样例业务数据的数据库恢复及资源身份见[本机候选核对](../../.private/thingslink-docs/docs/reuse-entry/audits/G3-REUSE-3-5-local-candidate-2026-09-25.md)。**待补：**不可变制品发布仓库、生产级跨资源恢复、外部集成与完整故障矩阵；本地候选不等于正式交付。
 
 ## 4. JPF-002：设备自报事件入口与持久处理
+
+**2026-10-29当前范围校准：**以下早期“通用标准化仅处理属性”的判断限于该路径，不能推断线上平台没有独立事件能力。本轮已核对线上`260fa694`实际JAR/公共模块与固定源码，MQTT raw消费者在属性Normalizer之前独立分流EVENT，存在事件持久化、事件历史管理GET及事务提交后PERSISTED回执/同身份补查。此处不以历史“无事件”结论要求平台重复建设；HTTP属性入口仍不承载业务事件，Jagonzn当前进程内JT808日志未自动成为公网标准事件。首选远程MQTT映射与本型号公网事件复验仍待实施，范围及外置证据统一见[公网方案](tenant-validation-and-contract-evolution.md#9-thingslink公网平台接入核对与实施方案)。
 
 **发现依据：**[标准协议合同 §1](../../.private/thingslink-docs/docs/device-integration/STANDARD_PROTOCOL_ACCESS.md)排除设备事件上报；[MQTT 指南](../../.private/thingslink-docs/docs/device-integration/DEVICE_INTEGRATION_GUIDE.md)登记 Topic 不等于已有事件标准化处理。`RawUplinkMessageNormalizer` 的通用标准化路径目前只处理属性消息，其他不支持类型进入拒绝/DLQ 流程。设备需求见[烟感及智能锁调研](protocol-extensibility-and-smoke-adapter-research.md)。
 
@@ -78,6 +80,17 @@
 2026-10-28第三方锁日志方案核对补充：固定`260fa694`已有`device.event.report`内部来源族及`EventIngestionService`事件持久化，不能继续按早期合同笼统判断为没有设备事件能力。但该来源当前仅在`PublicWebhookSourceWriter.projectViewsEnabled()`成立时写出，受Project MQTT management、protocol、realtime三个配置共同控制；公开Webhook仍是原七类闭集。独立锁日志能否稳定复用此来源及其受支持配置，列为JPF-004待评审边界，不认定为已确认缺陷或已交付独立出口；若需平台解耦，由负责人评审后交ThingsLink开发者处理。当前JT808扩展尚未接通逐条锁事件映射，不以属性快照或模拟消息冒充锁日志。
 
 2026-10-28实现前进一步核对并已汇报：现行`DeviceAccessUplinkNormalizer`仍固定使用属性Reader和`PROPERTY_REPORT`类型，不能将锁日志交给公开新协议上行入口。本轮未改该端口或平台表，按负责人采纳的service/cloud分工实现Jagonzn自己的外置协议日志事实和私有签名交付，不把它认领成平台标准事件验收。是否增加公开新协议事件入口继续待负责人评审，平台开发者负责可能的改造。
+
+### 2026-10-29公网接口边界核对
+
+- **固定版本及证据：**线上实际发布`overview-observed-20261028-1`、源码`260fa694876fce1b728ba87a4b91466765942aac`；两个后端JAR匹配发布摘要，内含各18个公共模块与Jagonzn固定清单一致。SSH只读证据、公网GET和TLS握手位于已核验外盘`.private/deployment-session/public-platform-access-audit-20261029/receipt.json`；完整清单与方案统一维护于[公网接入方案](tenant-validation-and-contract-evolution.md#9-thingslink公网平台接入核对与实施方案)，本台账不复制原始凭据或业务数据。
+- **已核实部署范围：**HTTP属性上报/命令领取/回复被Nginx精确放行；源码已有的attributes/runtime-logs/time三条路径被兜底404，公网无凭据GET与实际Nginx配置一致。预期若采用这些能力需有受控开放路径，当前不可达；属于部署配置范围，不认定平台业务代码缺陷，本轮未改路由。
+- **已核实命令合同：**`MqttCommandMessageEncoder`下行只含targetDeviceKey/commandKey/input/attempt，commandId在Topic，不携带deadlineAt。现有本机适配器要求可信expiresAt及原身份，不能直接将网络消息构造为本机Push放行。平台管理命令详情已有attempts[].deadlineAt，但要求当前项目控制权限；API Key命令结果仅能查该Key来源，不能拿它读取Console提交的任意命令。
+- **已核实回复含义：**HTTP命令回复202是ACCEPTED，成功应用和幂等/终态吸收返回同形；`DeviceCommandAccessReplyService`明确保留命令终态，不因迟到回复改写。预期公网适配器独立确认SUCCEEDED必须回读实际命令事实，不能把202、MQTT PUBACK或本机门磁动作直接当作平台成功。此为当前接口保证边界，尚未在本轮产生线上控制失败，不登记为已确认业务缺陷。
+- **对Jagonzn的影响与建议：**先实现互斥远程MQTT模式和上行PERSISTED恢复；若使用现有管理GET，应先由负责人评审受控控制身份、最小项目范围及失效策略，核验截止/目标/尝试与终态。若要求网关只持设备凭据，则请平台评审设备可用的可信命令时效及结果查询合同；未确定之前远程开锁保持关闭。跨网络核验不等于进程内原子准入，重启、迟到、断线及凭据撤销场景必须实测。
+- **评审及复验状态：**本轮已向负责人汇报边界，未修改ThingsLink源码/表/迁移/JAR，未要求或宣称平台已采纳；远程桥接、线上设备归属及本型号公网闭环均待实现/验证。没有确认新的ThingsLink业务缺陷；后继若发生业务异常，先保存请求、预期/实际、固定候选与影响并汇报，不在Jagonzn私改平台制造通过。
+
+2026-10-29后继Jagonzn远程实现补充：已使用现有`auth/me`、项目列表、设备/DIRECT类型、`access-config`、`thing-model-binding`与命令详情GET核对实际身份和版本，MQTT/PERSISTED、补查及命令结果回读已有本地候选。首版限制用户当前租户项目OWNER，未虚构credentialVersion，未新增平台接口。198项回归包含真实TLS Broker、HTTPS合同模拟与SM4模拟锁，不认领真实ThingsLink或实物新闭环；实际用户项目0台设备，未创建线上资源。实现、启用前置及失败恢复统一见[远程实现记录](tenant-validation-and-contract-evolution.md#10-jagonzn远程模式实现与启用前置)。未确认新的ThingsLink业务缺陷，设备侧最小权限合同和跨网络准入限制继续保留评审边界。
 
 ## 7. JPF-005：Console 读取权限误用菜单按钮清单
 

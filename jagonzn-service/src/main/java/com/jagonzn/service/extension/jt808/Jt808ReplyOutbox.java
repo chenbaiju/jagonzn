@@ -16,10 +16,10 @@ import tools.jackson.databind.ObjectMapper;
 final class Jt808ReplyOutbox {
     private static final TypeReference<Map<String,Object>> MAP=new TypeReference<>() { };
     private final Jt808StateStore store;
-    private final Jt808ThingsLinkGateway gateway;
+    private final Jt808PlatformGateway gateway;
     private final ObjectMapper json;
 
-    Jt808ReplyOutbox(Jt808StateStore store,Jt808ThingsLinkGateway gateway,ObjectMapper json) {
+    Jt808ReplyOutbox(Jt808StateStore store,Jt808PlatformGateway gateway,ObjectMapper json) {
         this.store=store; this.gateway=gateway; this.json=json;
     }
 
@@ -59,7 +59,9 @@ final class Jt808ReplyOutbox {
                     UUID.fromString((String)value.get("command")),UUID.fromString((String)value.get("message")),
                     DeviceCommandAccessReplyPort.Status.valueOf((String)value.get("status")),(Map<String,Object>)value.get("output"),
                     (String)value.get("error"),null,occurred,received,(String)value.get("message"));
-            var outcome=gateway.reply(original,reply,(String)value.get("digest"));
+            DeviceCommandAccessReplyPort.Outcome outcome;
+            try { outcome=gateway.reply(original,reply,(String)value.get("digest")); }
+            catch(Jt808PlatformGateway.ReplyPending pending){continue;}
             if(outcome!=DeviceCommandAccessReplyPort.Outcome.APPLIED && outcome!=DeviceCommandAccessReplyPort.Outcome.DUPLICATE)
                 throw new IllegalStateException("JT808命令回复未被平台确认");
             store.update(map->map.put(key+".done",outcome.name()));
