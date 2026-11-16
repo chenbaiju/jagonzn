@@ -35,7 +35,7 @@
  * - 刷新页面保持标签状态
  *
  * @module store/modules/worktab
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
@@ -60,7 +60,6 @@ export const useWorktabStore = defineStore(
     const current = ref<Partial<WorkTab>>({})
     const opened = ref<WorkTab[]>([])
     const keepAliveExclude = ref<string[]>([])
-    const workbenchTabsMigrated = ref(false)
 
     // 计算属性
     const hasOpenedTabs = computed(() => opened.value.length > 0)
@@ -456,10 +455,7 @@ export const useWorktabStore = defineStore(
         }
 
         // 新首页首次出现时迁移旧系统固定概要，其他标签和偏好保持原状。
-        if (!workbenchTabsMigrated.value && routerInstance.hasRoute('Workbench')) {
-          for (const tab of opened.value) if (tab.name === 'Overview') tab.fixedTab = false
-          workbenchTabsMigrated.value = true
-        }
+
         // 过滤出有效的标签页
         const validTabs = opened.value.filter((tab) => isTabRouteValid(tab))
 
@@ -532,7 +528,6 @@ export const useWorktabStore = defineStore(
 
     return {
       // 状态
-      workbenchTabsMigrated,
       current,
       opened,
       keepAliveExclude,

@@ -20,7 +20,7 @@
  * - 类型提示和自动补全
  *
  * @module types/store/index
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { MenuThemeEnum, SystemThemeEnum } from '@/enums/appEnum'

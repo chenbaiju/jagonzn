@@ -1,10 +1,7 @@
 <template>
   <section data-testid="device-evidence-tools">
     <ElDivider content-position="left">历史与告警事实</ElDivider>
-    <ElAlert type="info" :closable="false" show-icon>
-      <template v-if="!available">请先加载设备属性目录。</template>
-      手动读取，不调用模型；空结果不代表正常，单位及行业阈值未提供。
-    </ElAlert>
+    <p v-if="!available" class="console-description">请先加载设备属性目录。</p>
     <template v-if="available">
       <ElDivider content-position="left">单属性历史</ElDivider>
       <div class="console-toolbar">
@@ -33,23 +30,24 @@
           >读取历史</ElButton
         >
       </div>
-      <ElAlert type="info" :closable="false" show-icon
-        >使用浏览器本地时区，提交时转换为 UTC；最多过去 24
-        小时。时间和属性变化会清除旧结果。</ElAlert
-      >
+
       <p v-if="!propertyKeys.length">当前目录没有 NUMBER 数值属性。</p>
       <ElAlert v-if="historyError" type="error" :closable="false" :title="historyError" show-icon />
       <div v-if="history" data-testid="history-evidence-result">
-        <p>查询区间：{{ history.requestedFrom }} 至 {{ history.requestedTo }}</p>
         <p
-          >实际区间：{{ history.effectiveFrom }} 至 {{ history.effectiveTo }}；保留窗口{{
+          >查询区间：{{ formatTime(history.requestedFrom) }} 至
+          {{ formatTime(history.requestedTo) }}</p
+        >
+        <p
+          >实际区间：{{ formatTime(history.effectiveFrom) }} 至
+          {{ formatTime(history.effectiveTo) }}；保留窗口{{
             history.retentionClipped ? '已裁剪' : '未裁剪'
           }}</p
         >
         <p
           >请求粒度 {{ history.requestedGranularity }}；实际粒度
           {{ history.actualGranularity }}；聚合 {{ history.aggregation }}；读取时间
-          {{ history.readAt }}</p
+          {{ formatTime(history.readAt) }}</p
         >
         <ElAlert v-if="history.state !== 'HAS_POINTS'" type="info" :closable="false" show-icon
           >{{
@@ -61,9 +59,7 @@
         >
         <div v-if="historyOverview.length" data-testid="history-evidence-overview">
           <ElDivider content-position="left">返回证据概览</ElDivider>
-          <ElAlert type="info" :closable="false" show-icon
-            >按来源模型分别统计，单位未提供；不计算完整率、异常或趋势。</ElAlert
-          >
+
           <ElAlert
             v-if="history.actualGranularity !== 'RAW'"
             type="info"
@@ -89,7 +85,9 @@
           </ul>
         </div>
         <ElTable :data="history.points">
-          <ElTableColumn prop="at" label="时间（UTC）" />
+          <ElTableColumn prop="at" label="时间">
+            <template #default="{ row }">{{ formatTime(row.at) }}</template>
+          </ElTableColumn>
           <ElTableColumn label="值（单位未提供）"
             ><template #default="{ row }">{{
               row.value ?? '来源未知，未提供数值'
@@ -113,14 +111,10 @@
           >读取下一页</ElButton
         >
       </div>
-      <ElAlert type="info" :closable="false" show-icon
-        >每页 20 条，下一页替换本页；无时间窗筛选，不承诺分页期间全量稳定快照。</ElAlert
-      >
+
       <ElAlert v-if="alarmError" type="error" :closable="false" :title="alarmError" show-icon />
       <div v-if="alarms?.items" data-testid="alarm-evidence-result">
-        <ElAlert type="info" :closable="false" show-icon
-          >取证时间 {{ alarms.collectedAt }}；事故来源模型未提供，当前模型仅用于访问复核。</ElAlert
-        >
+        <p class="console-description">取证时间 {{ formatTime(alarms.collectedAt) }}</p>
         <ElAlert v-if="!alarms.items.length" type="info" :closable="false" show-icon
           >本页为空，不代表设备正常。</ElAlert
         >
@@ -141,32 +135,39 @@
               row.ackState === 'ACKNOWLEDGED' ? '已确认' : '未确认'
             }}</template></ElTableColumn
           >
-          <ElTableColumn prop="firstConditionAt" label="首次条件成立" />
+          <ElTableColumn prop="firstConditionAt" label="首次条件成立">
+            <template #default="{ row }">{{ formatTime(row.firstConditionAt) }}</template>
+          </ElTableColumn>
           <ElTableColumn label="激活时间"
             ><template #default="{ row }">{{
-              row.activatedAt ?? '未提供'
+              formatTime(row.activatedAt, '未提供')
             }}</template></ElTableColumn
           >
           <ElTableColumn label="清除时间"
-            ><template #default="{ row }">{{ row.clearedAt ?? '未提供' }}</template></ElTableColumn
+            ><template #default="{ row }">{{
+              formatTime(row.clearedAt, '未提供')
+            }}</template></ElTableColumn
           >
           <ElTableColumn label="确认时间"
             ><template #default="{ row }">{{
-              row.acknowledgedAt ?? '未提供'
+              formatTime(row.acknowledgedAt, '未提供')
             }}</template></ElTableColumn
           >
-          <ElTableColumn prop="lastReceivedAt" label="最近接收时间" />
+          <ElTableColumn prop="lastReceivedAt" label="最近接收时间">
+            <template #default="{ row }">{{ formatTime(row.lastReceivedAt) }}</template>
+          </ElTableColumn>
           <ElTableColumn prop="version" label="事故版本" />
         </ElTable>
-        <ElAlert type="info" :closable="false" show-icon>{{
+        <p class="console-description">{{
           alarms.hasMore ? '查询时有后续页，可手动继续。' : '查询时未返回后续游标。'
-        }}</ElAlert>
+        }}</p>
       </div>
     </template>
   </section>
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { useUserStore } from '@/store/modules/user'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'

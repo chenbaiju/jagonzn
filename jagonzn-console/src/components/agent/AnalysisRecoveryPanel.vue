@@ -4,10 +4,7 @@
     class="analysis-recovery console-feedback"
     data-testid="analysis-recovery"
   >
-    <ElAlert type="info" :closable="false" show-icon>
-      选题不发送数据；分析正文仅本次可见，刷新后无法恢复。事实记录与报告需手动生成。
-      <template v-if="!parentBusy && !localMessage">暂无待核对调用。</template>
-    </ElAlert>
+    <p v-if="!parentBusy && !localMessage" class="console-description">暂无待核对调用。</p>
     <template v-if="localMessage">
       <ElDivider content-position="left">原分析调用核对</ElDivider>
       <p>{{ localMessage }}</p>
@@ -17,9 +14,7 @@
         核对原调用状态
       </ElButton>
       <p v-if="call">调用编号：{{ call.id }}；{{ statusLabel }}</p>
-      <ElAlert class="console-hint" type="info" show-icon :closable="false"
-        >此操作只查询原调用，不重新分析。刷新后不能恢复模型正文，未知结果不能视为零费用。</ElAlert
-      >
+
       <template v-if="canForget">
         <ElCheckbox v-model="confirmed" :disabled="busy || parentBusy">
           我已记录核对结果，理解清除本地意图不会取消远端调用，后续新分析可能再次产生费用。

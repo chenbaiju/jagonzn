@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   parseDashboardRuntimeResponse,
   type AlarmQuery
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import { fetchDesignerAlarms } from '@/api/dashboard-alarms'
 const id = '11111111-1111-4111-8111-111111111111'
 const query: AlarmQuery = {

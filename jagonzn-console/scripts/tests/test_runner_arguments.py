@@ -115,6 +115,53 @@ IFS=':' read -r -a E2E_MATRIX_FILES <<< "$E2E_MATRIX_SPECS"
                     controlled = selector in ('alarm-smtp-journey.spec.ts', 'rule-smtp-journey.spec.ts', 'property-automation-smtp.spec.ts', 'time-once-smtp.spec.ts', 'time-cron-smtp.spec.ts', 'invitation-registration-smtp.spec.ts')
                     self.assertEqual(result.stdout.strip(), b'true' if controlled else b'false')
 
+    def test_simulator_tls_uses_one_owned_ca_and_stops_before_java_on_failure(self):
+        source = RUNNER.read_text()
+        start = source.index('# 模拟器与受控SMTP共用本轮可信TLS')
+        end = source.index('# 受控SMTP仍独立选场', start)
+        branch = source[start:end]
+        launch = next(line.strip().split(' >')[0] for line in source.splitlines()
+                      if line.strip().startswith('java ${simulator_java_args'))
+        for simulator, smtp, install_exit, keytool_exit in [
+                ('true', 'false', 0, 0), ('true', 'true', 0, 0),
+                ('false', 'false', 0, 0), ('true', 'false', 17, 0),
+                ('true', 'false', 0, 18)]:
+            with self.subTest(simulator=simulator, smtp=smtp,
+                              install_exit=install_exit, keytool_exit=keytool_exit), \
+                    tempfile.TemporaryDirectory(prefix='simulator TLS 中文 ') as temporary:
+                env = {**os.environ, 'CONSOLE_DIR': temporary, 'SCRIPT_DIR': temporary,
+                       'TS': 'fixture', 'WITH_SIMULATOR': simulator, 'CONTROLLED_SMTP': smtp,
+                       'EMQX_DASHBOARD_USER': 'fixture', 'EMQX_DASHBOARD_PASSWORD': 'fixture',
+                       'EMQX_DASHBOARD_PORT': '18083', 'EMQX_MQTT_TLS_PORT': '28883',
+                       'SIM_JAR': str(Path(temporary) / 'simulator.jar'),
+                       'Q7_PYTHON': sys.executable, 'INSTALL_EXIT': str(install_exit),
+                       'KEYTOOL_EXIT': str(keytool_exit)}
+                env.pop('E2E_SIMULATOR_BASE_URL', None)
+                env.pop('E2E_SIMULATOR_BROKER_URI', None)
+                prefix = r'''set -euo pipefail
+log() { :; }
+python3() { "$Q7_PYTHON" -c 'import json,sys;print(json.dumps(["install",*sys.argv[1:]]))' "$@"; return "$INSTALL_EXIT"; }
+keytool() { return "$KEYTOOL_EXIT"; }
+java() { "$Q7_PYTHON" -c 'import json,os,sys;print(json.dumps(["java",os.environ["E2E_SIMULATOR_BASE_URL"],os.environ["E2E_SIMULATOR_BROKER_URI"],*sys.argv[1:]]))' "$@"; }
+'''
+                result = subprocess.run([BASH, '-c', prefix + branch + '\nif $WITH_SIMULATOR; then\n' + launch + '\nfi'],
+                                        env=env, text=True, capture_output=True, timeout=5)
+                self.assertEqual(result.returncode, install_exit or keytool_exit, result.stderr)
+                calls = [json.loads(line) for line in result.stdout.splitlines()]
+                if simulator == 'false':
+                    self.assertEqual(calls, [])
+                    continue
+                self.assertEqual(sum(call[0] == 'install' for call in calls), 1)
+                if install_exit or keytool_exit:
+                    self.assertFalse(any(call[0] == 'java' for call in calls))
+                    continue
+                java = calls[-1]
+                self.assertEqual(java[:3], ['java', 'http://localhost:8090', 'ssl://localhost:28883'])
+                self.assertTrue(java[3].startswith('-Djavax.net.ssl.trustStore=' + temporary + '/'))
+                self.assertTrue(java[3].endswith('/trust.p12'))
+                self.assertEqual(java[4:], ['-Djavax.net.ssl.trustStoreType=PKCS12',
+                    '-Djavax.net.ssl.trustStorePassword=changeit', '-jar', env['SIM_JAR']])
+
     def test_private_identity_selection_is_exact_isolated_and_clears_inherited_values(self):
         source = RUNNER.read_text()
         start = source.index('# Identity messages are retained only')
@@ -122,7 +169,7 @@ IFS=':' read -r -a E2E_MATRIX_FILES <<< "$E2E_MATRIX_SPECS"
         branch = source[start:end]
         with tempfile.TemporaryDirectory(prefix='private identity selector ') as temporary:
             marker = Path(temporary) / 'isolated-marker'
-            branch = branch.replace('/.thingscloud-local-ci', shlex.quote(str(marker)))
+            branch = branch.replace('/.thingslink-local-ci', shlex.quote(str(marker)))
             for selector, isolated, expected in [
                     ('invitation-registration-smtp.spec.ts', False, 1),
                     ('invitation-registration-smtp.spec.ts', True, 0),
@@ -149,7 +196,7 @@ IFS=':' read -r -a E2E_MATRIX_FILES <<< "$E2E_MATRIX_SPECS"
         branch = source[start:end]
         with tempfile.TemporaryDirectory(prefix='association selector ') as temporary:
             marker = Path(temporary) / 'isolated-marker'
-            branch = branch.replace('/.thingscloud-local-ci', shlex.quote(str(marker)))
+            branch = branch.replace('/.thingslink-local-ci', shlex.quote(str(marker)))
             for selector, isolated, skip, simulator, expected in [
                     ('device-associations-populated.spec.ts', True, '0', 'true', 0),
                     ('device-associations-populated.spec.ts', False, '0', 'true', 1),
@@ -167,7 +214,7 @@ IFS=':' read -r -a E2E_MATRIX_FILES <<< "$E2E_MATRIX_SPECS"
                         'E2E_ASSOCIATION_FIXTURE': 'inherited'}, capture_output=True, text=True, timeout=5)
                     self.assertEqual(result.returncode, expected, result.stderr)
                     if not expected:
-                        self.assertEqual(result.stdout, 'THINGS_CLOUD_AUTOMATION_PROPERTY_ENABLED=true'
+                        self.assertEqual(result.stdout, 'THINGS_LINK_AUTOMATION_PROPERTY_ENABLED=true'
                             if selector == 'device-associations-populated.spec.ts' else '')
 
     def test_automation_fixture_authority_is_exactly_selected(self):
@@ -326,10 +373,10 @@ IFS=':' read -r -a E2E_MATRIX_FILES <<< "$E2E_MATRIX_SPECS"
         """普通 E2E 的胖 JAR 必须取得脚本所管理 MinIO 的四项配置。"""
         source = RUNNER.read_text()
         expected_assignments = (
-            'THINGS_CLOUD_STORAGE_INTERNAL_ENDPOINT="${MINIO_STORAGE_ENDPOINT}"',
-            'THINGS_CLOUD_STORAGE_EXTERNAL_ENDPOINT="${MINIO_STORAGE_ENDPOINT}"',
-            'THINGS_CLOUD_STORAGE_ACCESS_KEY="${MINIO_ROOT_USER}"',
-            'THINGS_CLOUD_STORAGE_SECRET_KEY="${MINIO_ROOT_PASSWORD}"',
+            'THINGS_LINK_STORAGE_INTERNAL_ENDPOINT="${MINIO_STORAGE_ENDPOINT}"',
+            'THINGS_LINK_STORAGE_EXTERNAL_ENDPOINT="${MINIO_STORAGE_ENDPOINT}"',
+            'THINGS_LINK_STORAGE_ACCESS_KEY="${MINIO_ROOT_USER}"',
+            'THINGS_LINK_STORAGE_SECRET_KEY="${MINIO_ROOT_PASSWORD}"',
         )
         for assignment in expected_assignments:
             with self.subTest(assignment=assignment):

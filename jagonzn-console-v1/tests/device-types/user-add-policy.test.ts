@@ -1,0 +1,40 @@
+import {afterEach,beforeEach,expect,it,vi} from 'vitest'
+import {DOMWrapper,flushPromises,mount,type VueWrapper} from '@vue/test-utils'
+import ElementPlus,{ElRadioGroup,ElSwitch} from 'element-plus'
+import Applications from '../../src/features/device-types/DeviceTypeApplications.vue'
+import Policy from '../../src/features/device-types/DeviceTypeUserAddPolicyDialog.vue'
+import {decodeUserAddPolicy,prepareUserAddPolicy,userAddPolicyTransport} from '../../src/features/device-types/user-add-policy-api'
+import type {UserAddSettingsTransport} from '../../src/features/device-types/user-add-settings-api'
+import {session} from '../../src/core/session'
+import * as http from '../../src/core/http'
+const project='00000000-0000-4000-8000-000000000001',type='00000000-0000-4000-8000-000000000100',other='00000000-0000-4000-8000-000000000101'
+const basicValue=(allowUserAdd=false,codeMode:'AUTO'|'BUSINESS_KEY'='AUTO',version='0')=>({allowUserAdd,codeMode,version})
+const value=(allowUserAdd=false,codeMode:'AUTO'|'BUSINESS_KEY'='AUTO',version='0')=>({...basicValue(allowUserAdd,codeMode,version),visibleInAddDirectory:true,promptText:null,showPromptImage:false,promptImage:null})
+function port(){return{read:vi.fn<UserAddSettingsTransport['read']>().mockResolvedValue(value()),change:vi.fn<UserAddSettingsTransport['change']>(),previewImage:vi.fn<UserAddSettingsTransport['previewImage']>()}}
+let wrapper:VueWrapper|undefined
+async function setup(transport:UserAddSettingsTransport){wrapper=mount(Applications,{props:{typeId:type,userAddTransport:transport},attachTo:document.body,global:{plugins:[ElementPlus]}});await flushPromises();await wrapper.findAll('article').find(node=>node.find('h4').text()==='用户添加设备')!.get('button').trigger('click');await flushPromises()}
+function button(text:string){const value=[...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find(node=>node.textContent?.trim()===text)||[...document.querySelectorAll<HTMLButtonElement>('button')].find(node=>node.textContent?.trim()===text);if(!value)throw new Error('缺少按钮 '+text);return new DOMWrapper(value)}
+async function edit(allow:boolean,mode:'AUTO'|'BUSINESS_KEY'){wrapper!.getComponent(ElSwitch).vm.$emit('update:modelValue',allow);wrapper!.getComponent(ElRadioGroup).vm.$emit('update:modelValue',mode);await flushPromises()}
+beforeEach(()=>{http.changeIdentity();session.ready=true;session.transitioning=false;session.user={accountId:project,currentProjectId:project,projectRole:'OWNER',permissions:['device:read','device:update']} as never;session.projects=[{id:project,myRole:'OWNER',status:'ACTIVE'}]})
+afterEach(()=>{wrapper?.unmount();wrapper=undefined;session.user=null;session.projects=[];document.body.innerHTML='';vi.restoreAllMocks()})
+
+it('应用Tab真实入口读取两字段，取消零写，一次保存及GET确认后才成功',async()=>{
+ const transport=port(),after=value(true,'BUSINESS_KEY','1');transport.change.mockImplementation(async()=>{transport.read.mockResolvedValue(after);return after});await setup(transport);expect(document.body.textContent).toContain('配置用户添加设备');expect(document.body.textContent).toContain('全局选项');expect(document.body.textContent).toContain('设备码选项');expect(document.body.textContent).not.toContain('使用设备唯一标识（DeviceKey）');expect(wrapper!.findAllComponents(ElSwitch)).toHaveLength(2);await edit(true,'BUSINESS_KEY');await button('取消').trigger('click');await flushPromises();expect(transport.change).not.toHaveBeenCalled()
+ await wrapper!.findAll('article').find(node=>node.find('h4').text()==='用户添加设备')!.get('button').trigger('click');await flushPromises();await edit(true,'BUSINESS_KEY');await button('保存').trigger('click');await flushPromises();expect(transport.change).toHaveBeenCalledTimes(1);expect(transport.change.mock.calls[0]![0].body).toEqual({expectedVersion:'0',allowUserAdd:true,codeMode:'BUSINESS_KEY',visibleInAddDirectory:true,promptText:null,showPromptImage:false,promptImage:null});expect(transport.read).toHaveBeenCalledTimes(3);expect(wrapper!.text()).toContain('用户添加设备设置已保存');expect(wrapper!.emitted('locked')?.at(-1)).toEqual([false])
+})
+
+it('CAS拒绝不重绑旧草稿，整份重读失败保持禁写，新版本只能重新选择保存',async()=>{
+ const transport=port();transport.change.mockRejectedValueOnce(new http.ApiError('冲突',409));await setup(transport);await edit(true,'BUSINESS_KEY');await button('保存').trigger('click');await flushPromises();expect(transport.read).toHaveBeenCalledTimes(1);expect(button('保存').attributes('disabled')).toBeDefined();transport.read.mockRejectedValueOnce(new Error('读取失败'));await button('重新读取设置').trigger('click');await flushPromises();expect(button('保存').attributes('disabled')).toBeDefined();transport.read.mockResolvedValue(value(false,'AUTO','7'));await button('重新读取设置').trigger('click');await flushPromises();expect(wrapper!.getComponent(ElSwitch).props('modelValue')).toBe(false);await edit(true,'AUTO');transport.change.mockImplementation(async()=>{const after=value(true,'AUTO','8');transport.read.mockResolvedValue(after);return after});await button('保存').trigger('click');await flushPromises();expect(transport.change).toHaveBeenCalledTimes(2);expect(transport.change.mock.calls[1]![0].body.expectedVersion).toBe('7');expect(transport.change.mock.calls[1]![0].key).not.toBe(transport.change.mock.calls[0]![0].key)
+})
+
+it('受理后GET409保持原请求未知，读成员降权只GET且当前同值不冒成功',async()=>{
+ const transport=port(),after=value(true,'AUTO','1');transport.change.mockResolvedValue(after);transport.read.mockResolvedValueOnce(value()).mockRejectedValueOnce(new http.ApiError('回读冲突',409)).mockResolvedValue(after);await setup(transport);await edit(true,'AUTO');await button('保存').trigger('click');await flushPromises();const original=transport.change.mock.calls[0]![0];expect(document.body.textContent).toContain('原保存结果尚未确认');expect(wrapper!.emitted('locked')?.at(-1)).toEqual([true]);session.user={...session.user!,projectRole:'VIEWER',permissions:['device:read']};session.projects=[{id:project,myRole:'VIEWER',status:'ARCHIVED'}];await wrapper!.setProps({disabled:true});await flushPromises();await button('读取当前设置').trigger('click');await flushPromises();expect(transport.change).toHaveBeenCalledTimes(1);expect(transport.change.mock.calls[0]![0]).toBe(original);expect(document.body.textContent).toContain('当前值不能证明原保存结果');await button('结束核对').trigger('click');await flushPromises();expect(wrapper!.text()).toContain('原保存结果仍未确认');expect(wrapper!.text()).not.toContain('用户添加设备设置已保存');expect(wrapper!.emitted('locked')?.at(-1)).toEqual([false])
+})
+
+it('切类型丢弃旧在途结果，撤读清私有设置与原稿',async()=>{
+ const transport=port();let release!:(result:ReturnType<typeof value>)=>void;transport.change.mockImplementation(()=>new Promise(resolve=>{release=resolve}));await setup(transport);await edit(true,'BUSINESS_KEY');button('保存').element.click();await flushPromises();await wrapper!.setProps({typeId:other});release(value(true,'BUSINESS_KEY','1'));await flushPromises();expect(transport.read).toHaveBeenCalledTimes(1);expect(wrapper!.getComponent(Policy).emitted('changed')).toBeUndefined();expect(wrapper!.emitted('locked')?.at(-1)).toEqual([false]);session.user={...session.user!,permissions:[]};await flushPromises();expect(document.querySelector('[aria-label="设备码类型"]')).toBeNull()
+})
+
+it('正式策略合同只发既有两字段与精确版本，不混入Source未实现选项',async()=>{
+ const before=basicValue(false,'AUTO','9007199254740993'),original=prepareUserAddPolicy(project,type,before,true,'BUSINESS_KEY'),after=basicValue(true,'BUSINESS_KEY','9007199254740994'),spy=vi.spyOn(http,'api').mockResolvedValue(after);await userAddPolicyTransport.change(original,new AbortController().signal);expect(spy.mock.calls[0]![0]).toBe(`/api/v1/projects/${project}/device-types/${type}/user-add-policy`);expect(spy.mock.calls[0]![1]).toMatchObject({method:'put',headers:{'Idempotency-Key':original.key},body:{expectedVersion:'9007199254740993',allowUserAdd:true,codeMode:'BUSINESS_KEY'}});expect(()=>decodeUserAddPolicy({...after,allowMultipleUsers:true})).toThrow();expect(()=>decodeUserAddPolicy({...after,version:9007199254740994})).toThrow();expect(()=>decodeUserAddPolicy({...after,codeMode:'MQTT_KEY'})).toThrow()
+})

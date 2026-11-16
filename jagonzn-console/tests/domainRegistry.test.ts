@@ -14,10 +14,10 @@ import { otaRoutes } from '@/router/modules/ota'
 import { ruleRoutes } from '@/router/modules/rule'
 import { projectRoutes } from '@/router/modules/project'
 import { systemStatusRoutes } from '@/router/modules/system-status'
-import { planCatalogRoutes } from '@/router/modules/plan-catalog'
 import { commercialRoutes } from '@/router/modules/commercial'
 import { selfHostedEnrollmentRoutes } from '@/router/modules/self-hosted-enrollment'
 import { selfHostedReviewRoutes } from '@/router/modules/self-hosted-review'
+import { tenantGovernanceRoutes } from '@/router/modules/tenant-governance'
 import { exceptionRoutes } from '@/router/modules/exception'
 import userCenterDomain from '@/domains/user-center/registration'
 
@@ -64,9 +64,9 @@ describe('控制台领域注册表', () => {
       { id: 'rule', order: 50 },
       { id: 'project', order: 60 },
       { id: 'system-status', order: 70 },
-      { id: 'plan-catalog', order: 75 },
       { id: 'commercial', order: 76 },
       { id: 'self-hosted-enrollment', order: 77 },
+      { id: 'tenant-governance', order: 78 },
       { id: 'exception', order: 80 },
       { id: 'user-center', order: 110 }
     ])
@@ -79,22 +79,21 @@ describe('控制台领域注册表', () => {
       ruleRoutes,
       projectRoutes,
       systemStatusRoutes,
-      planCatalogRoutes,
       commercialRoutes,
       selfHostedEnrollmentRoutes,
       selfHostedReviewRoutes,
+      tenantGovernanceRoutes,
       exceptionRoutes,
       ...userCenterDomain.routes
     ])
   })
 
-  it('登记工作台与项目概况并保留既有业务菜单译文', () => {
+  it('登记工作台并保留既有业务菜单译文', () => {
     expect(consoleDomainRegistry.zhCNMessages).toEqual({
       menus: {
         dashboard: {
           title: '工作台',
           workbench: '首页',
-          overview: '项目概况',
           designer: '看板设计器',
           applications: '应用管理'
         },
@@ -144,8 +143,8 @@ describe('控制台领域注册表', () => {
         commercialOperations: { title: '商业运营' },
         selfHostedEnrollment: { title: '自部署授权申请' },
         selfHostedReview: { title: '自部署申请审核' },
+        tenantGovernance: { title: '租户安全治理' },
         system: { userCenter: '个人中心' },
-        planCatalog: { title: '套餐与权益' },
         exception: {
           title: '异常页面',
           forbidden: '403',

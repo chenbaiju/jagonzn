@@ -108,7 +108,7 @@ describe('快照失败', () => {
 describe('复合快照安全呈现', () => {
   it('完整树保持词法数字品牌；纯文本显示HTML且本地翻页不重新读取', async () => {
     const { parseCompositeValue, parseDashboardRuntimeResponse } = await import(
-      '@things-cloud/client-contracts/dashboard/v1'
+      '@things-link/client-contracts/dashboard/v1'
     )
     const raw = parseDashboardRuntimeResponse(
       new TextEncoder().encode('{"large":9007199254740993,"text":"<img src=x onerror=alert(1)>"}')

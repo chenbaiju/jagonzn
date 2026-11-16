@@ -1,6 +1,6 @@
 <template>
   <ElDialog
-    class="console-dialog"
+    class="console-dialog console-developer-dialog"
     v-model="visible"
     title="一型一密产品凭据"
     width="620px"
@@ -9,12 +9,7 @@
     <ElAlert v-if="busy" class="console-hint" type="warning" show-icon :closable="false"
       >正在处理，请勿重复申请；关闭后结果可能未知。</ElAlert
     >
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >产品识别码是公开标识；产品注册秘密仅用于HTTPS动态注册，不是设备连接密码。</ElAlert
-    >
-    <ElAlert class="console-hint" type="warning" show-icon :closable="false"
-      >轮换立即使旧产品注册秘密失效，影响后续注册；已经签发的一机一密设备凭据保持独立。</ElAlert
-    >
+
     <ElAlert
       v-if="unknown"
       title="上次结果未确认，可能已生成或轮换。秘密无法回查；核对类型后再次申请将重新轮换。"
@@ -189,6 +184,7 @@
           : '本次生成产品注册秘密，仅返回一次，用于后续HTTPS动态注册。是否继续？',
         '确认产品凭据操作',
         {
+          customClass: 'console-studio-feedback',
           confirmButtonText: loaded.value.productKey || unknown.value ? '确认轮换' : '确认生成',
           cancelButtonText: '取消',
           type: 'warning'

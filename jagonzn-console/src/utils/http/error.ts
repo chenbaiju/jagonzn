@@ -19,7 +19,7 @@
  * - 错误日志收集和上报
  *
  * @module utils/http/error
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import { AxiosError } from 'axios'
 import { ApiStatus } from './status'

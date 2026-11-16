@@ -1,7 +1,7 @@
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => ({ accessToken: 'test-token' }) }))
 import { mount, flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { validateDashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+import { validateDashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
 const mocks = vi.hoisted(() => ({ catalog: vi.fn(), load: vi.fn(), close: vi.fn() }))
 vi.mock('../src/api/dashboard-binding', () => ({
   fetchDesignerDeviceCatalog: mocks.catalog,

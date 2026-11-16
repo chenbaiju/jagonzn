@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page webhooks-page">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace webhooks-page"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="Webhook"
@@ -25,7 +27,7 @@
       <ElAlert title="请选择有集成管理权限的项目" :closable="false" />
     </ElCard>
     <template v-else>
-      <ElCard shadow="never">
+      <ElCard class="console-list-data" shadow="never">
         <ElDivider content-position="left">事件订阅</ElDivider>
         <ElAlert v-if="error" :title="error" type="error" :closable="false" />
         <ElTable :data="items" row-key="id" v-loading="busy">
@@ -79,12 +81,7 @@
       </ElCard>
       <ElCard shadow="never">
         <ElDivider content-position="left">查询原操作</ElDivider>
-        <ElAlert
-          type="info"
-          show-icon
-          :closable="false"
-          title="响应丢失时先查询。查询不恢复秘密，秘密丢失请显式轮换。结束本地尝试不会取消服务器操作。"
-        />
+
         <p class="console-description" v-if="pending"
           >待确认操作：<code data-testid="pending-operation">{{ pending }}</code></p
         >
@@ -112,14 +109,9 @@
           :closable="false"
         />
       </ElCard>
-      <ElCard class="webhooks-section" shadow="never">
+      <ElCard class="webhooks-section console-list-data" shadow="never">
         <ElDivider content-position="left">投递与尝试</ElDivider>
-        <ElAlert
-          type="info"
-          show-icon
-          :closable="false"
-          title="终态和拒绝明细保留至少七天。列表是实时分页；找不到明细不代表从未发生，请结合原业务接口查询。"
-        />
+
         <ConsoleFilterBar
           :items="[{ key: 'field0', label: '投递状态' }]"
           :show-expand="false"
@@ -138,6 +130,9 @@
                 :value="value"
                 :label="value" /></ElSelect
           ></template>
+          <template #actions>
+            <ElButton :disabled="busy" @click="loadDeliveries()">刷新投递</ElButton>
+          </template>
         </ConsoleFilterBar>
         <ElTable :data="deliveryItems" row-key="id">
           <ElTableColumn
@@ -171,7 +166,7 @@
           >更多投递</ElButton
         >
       </ElCard>
-      <ElCard class="webhooks-section" shadow="never">
+      <ElCard class="webhooks-section console-list-data" shadow="never">
         <ElDivider content-position="left">事件受理记录</ElDivider>
         <ConsoleFilterBar
           :items="[
@@ -206,6 +201,9 @@
                 :value="value"
                 :label="value" /></ElSelect
           ></template>
+          <template #actions>
+            <ElButton :disabled="busy" @click="loadEvents()">刷新事件</ElButton>
+          </template>
         </ConsoleFilterBar>
         <ElTable :data="eventItems" row-key="eventId"
           ><ElTableColumn
@@ -218,7 +216,8 @@
             show-overflow-tooltip
             prop="acceptedAt"
             label="受理时间"
-          /><ElTableColumn label="冲突拒绝"
+            ><template #default="{ row }">{{ formatTime(row.acceptedAt) }}</template></ElTableColumn
+          ><ElTableColumn label="冲突拒绝"
             ><template #default="{ row }">{{
               row.hasConflict ? '已登记冲突' : '无'
             }}</template></ElTableColumn
@@ -228,7 +227,7 @@
       </ElCard>
     </template>
     <ElDialog
-      class="console-dialog webhooks-dialog"
+      class="console-dialog console-developer-dialog console-rule-dialog console-studio-dialog console-integration-dialog webhooks-dialog"
       v-model="formVisible"
       :title="target ? '编辑 Webhook' : '创建 Webhook'"
       :close-on-click-modal="false"
@@ -268,22 +267,16 @@
       </template>
     </ElDialog>
     <ElDialog
-      class="console-dialog webhooks-dialog"
+      class="console-dialog console-developer-dialog console-rule-dialog console-studio-dialog console-integration-dialog webhooks-dialog"
       v-model="secretVisible"
       title="仅本次展示签名秘密"
       :close-on-click-modal="false"
     >
-      <ElAlert
-        type="info"
-        show-icon
-        :closable="false"
-        title="请安全交给接收端。关闭后无法查询，丢失请显式轮换。"
-      />
       <ElInput :model-value="secret" aria-label="签名秘密" readonly />
       <template #footer><ElButton @click="clearSecret">已保存，关闭</ElButton></template>
     </ElDialog>
     <ElDialog
-      class="console-dialog webhooks-dialog"
+      class="console-dialog console-developer-dialog console-rule-dialog console-studio-dialog console-integration-dialog webhooks-dialog"
       v-model="detailVisible"
       title="Webhook 投递详情"
     >
@@ -315,6 +308,7 @@
   </div>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleFilterBar from '@/components/ConsoleFilterBar.vue'
   import { Plus } from '@element-plus/icons-vue'
@@ -507,7 +501,8 @@
       if (pending.value) return
       await ElMessageBox.confirm(
         '此操作产生新修订，旧修订的待发交付将失效。是否继续？',
-        '确认订阅操作'
+        '确认订阅操作',
+        { customClass: 'console-studio-feedback' }
       )
       if (!current()) return
       clearSecret()
@@ -547,12 +542,27 @@
     return run(async (current) => {
       await ElMessageBox.confirm(
         '不会取消已提交操作。请保留原操作 ID 并先核对服务器结果。',
-        '结束本地尝试'
+        '结束本地尝试',
+        { customClass: 'console-studio-feedback' }
       )
       if (current()) {
         forget()
         formVisible.value = false
       }
+    })
+  }
+  function loadInitial() {
+    return run(async (current, pid) => {
+      await refresh(current, pid)
+      if (!current()) return
+      const deliveries = await api.deliveries(pid, undefined, undefined)
+      if (!current()) return
+      deliveryItems.value = deliveries.items ?? []
+      deliveryNext.value = deliveries.nextCursor ?? undefined
+      const events = await api.events(pid, eventType.value, undefined, undefined)
+      if (!current()) return
+      eventItems.value = events.items ?? []
+      eventNext.value = events.nextCursor ?? undefined
     })
   }
   function loadDeliveries(more = false) {
@@ -598,7 +608,8 @@
       if (pending.value) return
       await ElMessageBox.confirm(
         '按原交付身份和正文开始下一轮有限尝试，接收端必须去重。是否继续？',
-        '恢复投递'
+        '恢复投递',
+        { customClass: 'console-studio-feedback' }
       )
       if (!current()) return
       const operation = crypto.randomUUID()
@@ -620,7 +631,7 @@
       clear()
       if (allowed.value) {
         restore()
-        void load()
+        void loadInitial()
       }
     },
     { immediate: true }
@@ -630,33 +641,62 @@
   })
   onBeforeUnmount(clear)
 </script>
-<style scoped>
-  .webhooks-page :deep(.workspace-header .console-actions) {
-    margin-bottom: 0;
-  }
-  .webhooks-page :deep(.el-alert),
-  .webhooks-dialog :deep(.el-alert) {
-    margin-bottom: 10px;
-  }
-  .webhooks-page :deep(.el-alert__title),
-  .webhooks-dialog :deep(.el-alert__title) {
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 20px;
-  }
-  .webhooks-page :deep(.el-alert__icon),
-  .webhooks-dialog :deep(.el-alert__icon) {
-    width: 14px;
-    font-size: 14px;
-  }
-  .webhooks-recovery {
+<style scoped lang="scss">
+  .webhooks-page :deep(.el-card__body) {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+
+    > .el-divider {
+      margin: 8px 0;
+    }
+    > .el-alert,
+    > .console-description {
+      margin: 0;
+    }
+  }
+  .webhooks-section :deep(.el-card__body) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+
+    > * {
+      grid-column: 1 / -1;
+    }
+    > .console-filter-bar {
+      grid-column: 1;
+    }
+    > .console-actions {
+      grid-column: 2;
+      align-self: end;
+      margin: 0;
+    }
+  }
+  .webhooks-section :deep(.console-filter-bar) {
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+  .webhooks-page .webhooks-section :deep(.console-filter-bar .el-form-item) {
     align-items: center;
   }
+  .webhooks-page .webhooks-section :deep(.console-filter-bar .el-form-item__label) {
+    margin: 0 12px 0 0;
+  }
+  .webhooks-recovery.console-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: 0;
+  }
   .webhooks-recovery > .el-select {
-    width: 180px;
+    flex: 0 0 180px;
   }
   .webhooks-recovery > .el-input {
     flex: 1 1 240px;
@@ -665,5 +705,28 @@
   .webhooks-recovery > .el-button {
     flex-shrink: 0;
     margin: 0;
+  }
+  @media (width <= 640px) {
+    .webhooks-page .webhooks-section :deep(.console-filter-bar .el-form-item) {
+      align-items: stretch;
+    }
+    .webhooks-page .webhooks-section :deep(.console-filter-bar .el-form-item__label) {
+      margin: 0 0 6px;
+    }
+
+    .webhooks-section :deep(.el-card__body) {
+      grid-template-columns: minmax(0, 1fr);
+
+      > .console-filter-bar,
+      > .console-actions {
+        grid-column: 1;
+      }
+    }
+
+    .webhooks-recovery > .el-select,
+    .webhooks-recovery > .el-input {
+      flex: 1 1 100%;
+      max-width: none;
+    }
   }
 </style>

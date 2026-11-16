@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import { localTablePage } from '@things-cloud/client-contracts/dashboard/v1'
+  import { localTablePage } from '@things-link/client-contracts/dashboard/v1'
   import type { PreviewRow } from '@/features/dashboard/device-preview'
   const props = defineProps<{ table: NonNullable<PreviewRow['table']> }>()
   const requested = ref(0)

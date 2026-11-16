@@ -1,6 +1,6 @@
 <template>
   <section aria-label="版本化历史快照">
-    <p>时间均为UTC；历史单位未提供，不套用当前模型单位。</p>
+    <p>历史单位未提供，不套用当前模型单位。</p>
     <article v-for="series in history.series" :key="series.id" :data-history-series="series.id">
       <h4>{{ series.label }}</h4>
       <p>{{ series.text }}</p>
@@ -14,7 +14,7 @@
         <p v-if="series.result.actualGranularity === 'RAW'">原始采样，未推定缺失周期。</p>
         <p v-else>聚合结果可能稍后更新。</p>
         <p v-if="range(series)"
-          >范围：{{ range(series)?.from }} 至 {{ range(series)?.to }}；最小
+          >范围：{{ formatTime(range(series)?.from) }} 至 {{ formatTime(range(series)?.to) }}；最小
           {{ range(series)?.minimum }}，最大 {{ range(series)?.maximum }}</p
         >
         <svg
@@ -37,7 +37,7 @@
               r="2"
             >
               <title>
-                {{ entry.point.ts }}：{{ entry.point.value.lexical }}；版本{{
+                {{ formatTime(entry.point.ts) }}：{{ entry.point.value.lexical }}；版本{{
                   entry.point.modelVersion
                 }}
               </title>
@@ -51,12 +51,12 @@
             ><table>
               <thead
                 ><tr
-                  ><th>时间UTC</th><th>值</th><th>样本数</th><th>版本</th><th>模型版本ID</th></tr
+                  ><th>时间</th><th>值</th><th>样本数</th><th>版本</th><th>模型版本ID</th></tr
                 ></thead
               >
               <tbody
                 ><tr v-for="(point, index) in pointPage(series)" :key="index"
-                  ><td>{{ point.ts }}</td
+                  ><td>{{ formatTime(point.ts) }}</td
                   ><td>{{ point.value.lexical }}</td
                   ><td>{{ point.sampleCount }}</td
                   ><td>{{ point.modelVersion }}</td
@@ -83,12 +83,13 @@
   </section>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { ref, watch } from 'vue'
   import {
     historySegments,
     historyGeometry,
     historyRange
-  } from '@things-cloud/client-contracts/dashboard/v1'
+  } from '@things-link/client-contracts/dashboard/v1'
   import type { PreviewRow, PreviewHistorySeries } from '@/features/dashboard/device-preview'
   const props = defineProps<{ history: NonNullable<PreviewRow['history']> }>()
   const pages = ref<Record<string, number>>({})

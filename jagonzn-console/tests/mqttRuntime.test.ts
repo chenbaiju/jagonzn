@@ -9,6 +9,7 @@ import {
 } from '../e2e/mqtt-runtime'
 
 let directory: string
+let outsideDirectory: string | undefined
 const hash = (value: Buffer | string) => createHash('sha256').update(value).digest('hex')
 const ca = Buffer.from('PUBLIC_SYNTHETIC_CA_BYTES_FOR_PURE_GUARD_TEST_ONLY')
 const runtime = () => ({
@@ -43,6 +44,8 @@ beforeEach(() => {
 })
 afterEach(() => {
   vi.unstubAllEnvs()
+  if (outsideDirectory) rmSync(outsideDirectory, { recursive: true, force: true })
+  outsideDirectory = undefined
   rmSync(directory, { recursive: true, force: true })
 })
 
@@ -78,8 +81,18 @@ it('不能用相对、日志外或symlink外逸路径读取CA', () => {
     material({ ...runtime(), tls: { ...runtime().tls, caPath } })
     expect(() => readOwnedMqttRuntime()).toThrow('OWNED_MQTT_RUNTIME_REJECTED')
   }
-  symlinkSync('/etc/hosts', resolve(directory, 'outside.pem'))
-  material({ ...runtime(), tls: { ...runtime().tls, caPath: resolve(directory, 'outside.pem') } })
+  // 使用同盘真实目录链接验证日志外CA，即使字节和摘要正确也必须拒绝。
+  outsideDirectory = mkdtempSync(resolve('logs', '..', 'mqtt-guard-outside-'))
+  writeFileSync(resolve(outsideDirectory, 'ca.pem'), ca)
+  symlinkSync(
+    outsideDirectory,
+    resolve(directory, 'outside'),
+    process.platform === 'win32' ? 'junction' : 'dir'
+  )
+  material({
+    ...runtime(),
+    tls: { ...runtime().tls, caPath: resolve(directory, 'outside', 'ca.pem') }
+  })
   expect(() => readOwnedMqttRuntime()).toThrow('OWNED_MQTT_RUNTIME_REJECTED')
   vi.stubEnv('E2E_OWNED_RUNTIME', '/etc/hosts')
   expect(() => readOwnedMqttRuntime()).toThrow('OWNED_MQTT_RUNTIME_REJECTED')

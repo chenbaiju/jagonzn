@@ -1,5 +1,5 @@
 <template>
-  <div class="console-page console-page--single-panel">
+  <div class="console-page console-developer-workspace console-page--single-panel">
     <ConsoleWorkspaceHeader
       project-style
       title="商业运营"
@@ -10,12 +10,6 @@
       ]"
     />
     <ElCard v-if="allowed" class="commercial-operations console-page__main-panel" shadow="never">
-      <ElAlert
-        type="info"
-        :closable="false"
-        title="仅审批当前租户的临时增量；数量不代表已验证的基础设施容量，最长有效期为24个UTC日历月。"
-        show-icon
-      />
       <ElAlert
         v-if="state.error"
         class="spacing"
@@ -47,7 +41,8 @@
           {{ state.pending.request.amount }}</p
         >
         <p class="console-description"
-          >{{ state.pending.request.startsAt }} 至 {{ state.pending.request.endsAt }}</p
+          >{{ formatTime(state.pending.request.startsAt) }} 至
+          {{ formatTime(state.pending.request.endsAt) }}</p
         >
         <p class="console-description">原因：{{ state.pending.request.reason }}</p>
         <div class="console-actions">
@@ -79,13 +74,13 @@
             inputmode="numeric"
             placeholder="完整十进制整数，例如 9007199254740993"
         /></ElFormItem>
-        <ElFormItem label="生效时间（UTC）"
+        <ElFormItem label="生效时间（RFC3339）"
           ><ElInput
             v-model="form.startsAt"
             :disabled="state.busy"
             placeholder="2026-09-21T00:00:00Z"
         /></ElFormItem>
-        <ElFormItem label="到期时间（UTC）"
+        <ElFormItem label="到期时间（RFC3339）"
           ><ElInput v-model="form.endsAt" :disabled="state.busy" placeholder="2026-10-21T00:00:00Z"
         /></ElFormItem>
         <ElFormItem label="审批原因／工单"
@@ -122,7 +117,9 @@
           >{{ dimensionLabel(state.result.dimensionCode) }} + {{ state.result.amount }}
           {{ state.result.unit }}</p
         >
-        <p class="console-description">{{ state.result.startsAt }} 至 {{ state.result.endsAt }}</p>
+        <p class="console-description"
+          >{{ formatTime(state.result.startsAt) }} 至 {{ formatTime(state.result.endsAt) }}</p
+        >
         <p class="console-description">审批人：{{ state.result.operatorId }}</p
         ><p class="console-description">原因：{{ state.result.reason }}</p>
         <template v-if="['ACTIVE', 'PENDING'].includes(state.result.status ?? '')">
@@ -150,6 +147,7 @@
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import { ElMessageBox } from 'element-plus'
@@ -246,9 +244,13 @@
     const frozen = { ...form }
     try {
       await ElMessageBox.confirm(
-        `目标：${preview.tenantName}（${preview.tenantId}）\n${dimensionLabel(frozen.dimensionCode)} 增加 ${frozen.amount}\n${frozen.startsAt} 至 ${frozen.endsAt}\n原因：${frozen.reason}`,
+        `目标：${preview.tenantName}（${preview.tenantId}）\n${dimensionLabel(frozen.dimensionCode)} 增加 ${frozen.amount}\n${formatTime(frozen.startsAt)} 至 ${formatTime(frozen.endsAt)}\n原因：${frozen.reason}`,
         '确认本次有限期调整',
-        { confirmButtonText: '确认审批', cancelButtonText: '返回修改' }
+        {
+          customClass: 'console-studio-feedback',
+          confirmButtonText: '确认审批',
+          cancelButtonText: '返回修改'
+        }
       )
       if (state.preview !== preview || !allowed.value) return
       await model.submit(frozen)
@@ -265,7 +267,11 @@
       await ElMessageBox.confirm(
         `撤销申请 ${original.idempotencyKey}，原因：${reason}`,
         '确认撤销',
-        { confirmButtonText: '撤销调整', cancelButtonText: '返回' }
+        {
+          customClass: 'console-studio-feedback',
+          confirmButtonText: '撤销调整',
+          cancelButtonText: '返回'
+        }
       )
       if (state.result === original && allowed.value) await model.revoke(reason)
     } catch {

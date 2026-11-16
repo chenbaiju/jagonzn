@@ -11,6 +11,23 @@ import {
 } from './helpers'
 import { observeCreatedHistoryDevice, verifyReportedHistory } from './history-sync'
 
+/** 在当前列表执行真实查询，避免整页重载反复打断路由与表格初始化。 */
+async function refreshDeviceList(page: Page, projectId: string) {
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === 'GET' &&
+        new URL(response.url()).pathname === `/api/v1/projects/${projectId}/devices/search`,
+      { timeout: 3_000 }
+    ),
+    page
+      .locator('.device-list__filter')
+      .getByRole('button', { name: '查询', exact: true })
+      .click({ timeout: 3_000 })
+  ])
+  expect(response.status()).toBe(200)
+}
+
 /** 在控制台创建指定分类的设备类型，并按需补齐温度属性与 reboot 命令后发布。 */
 async function createAndPublishType(
   page: Page,
@@ -193,17 +210,13 @@ test(
 
     // 子设备只有收到显式 sub/login 才能在线；batch/report 还必须进入历史/影子，而非只更新拓扑标签。
     await page.goto('/#/device/list')
-    let subRow = page
+    const subRow = page
       .locator('tr')
       .filter({ has: page.getByText(subDeviceKey, { exact: true }) })
       .first()
     await expect(async () => {
-      await page.reload()
-      subRow = page
-        .locator('tr')
-        .filter({ has: page.getByText(subDeviceKey, { exact: true }) })
-        .first()
-      await expect(subRow.getByText('在线')).toBeVisible({ timeout: 3_000 })
+      await refreshDeviceList(page, targetHistoryDevice.projectId)
+      await expect(subRow.getByText('在线', { exact: true })).toBeVisible({ timeout: 3_000 })
     }).toPass({ timeout: 45_000 })
     await verifyReportedHistory(
       page,
@@ -226,19 +239,11 @@ test(
 
     // 不发送 sub/logout，直接断开网关，证明 Broker disconnect 会把网关及其子设备级联为 OFFLINE。
     expect((await request.post(`${simulatorRuntime().baseURL}/simulations/stop`)).ok()).toBeTruthy()
-    await page.locator('.device-detail').getByRole('button', { name: '返回', exact: true }).click()
+    await page.getByRole('button', { name: '返回设备列表', exact: true }).click()
     await expect(async () => {
-      await page.reload()
-      gatewayRow = page
-        .locator('tr')
-        .filter({ has: page.getByText(gatewayKey, { exact: true }) })
-        .first()
-      subRow = page
-        .locator('tr')
-        .filter({ has: page.getByText(subDeviceKey, { exact: true }) })
-        .first()
-      await expect(gatewayRow.getByText('离线')).toBeVisible({ timeout: 3_000 })
-      await expect(subRow.getByText('离线')).toBeVisible({ timeout: 3_000 })
+      await refreshDeviceList(page, targetHistoryDevice.projectId)
+      await expect(gatewayRow.getByText('离线', { exact: true })).toBeVisible({ timeout: 3_000 })
+      await expect(subRow.getByText('离线', { exact: true })).toBeVisible({ timeout: 3_000 })
     }).toPass({ timeout: 45_000 })
   }
 )

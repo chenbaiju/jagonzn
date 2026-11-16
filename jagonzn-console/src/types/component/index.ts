@@ -18,7 +18,7 @@
  * - 组件事件参数类型
  *
  * @module types/component/index
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 // 搜索组件类型

@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import { localTablePage, type RuntimeValue } from '@things-cloud/client-contracts/dashboard/v1'
+  import { localTablePage, type RuntimeValue } from '@things-link/client-contracts/dashboard/v1'
   import DesignerJsonTree from './DesignerJsonTree.vue'
   const props = defineProps<{ value: RuntimeValue; rowLimit: number }>()
   const requested = ref(0)

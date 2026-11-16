@@ -1,9 +1,10 @@
 <template>
-  <section class="console-fragment console-editor-section" aria-label="看板发布与历史恢复">
+  <section
+    class="console-fragment console-editor-section console-studio-section console-studio-form"
+    aria-label="看板发布与历史恢复"
+  >
     <ElDivider content-position="left">发布与历史版本</ElDivider>
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >发布使用已保存草稿；回滚和撤回只改变运行版本，保留当前草稿。</ElAlert
-    >
+
     <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" show-icon />
     <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" show-icon />
     <p
@@ -88,7 +89,7 @@
         :data-testid="`publication-version-${version.id}`"
         :data-version-number="version.versionNumber"
       >
-        <span>版本 {{ version.versionNumber }} · {{ version.publishedAt }}</span>
+        <span>版本 {{ version.versionNumber }} · {{ formatTime(version.publishedAt) }}</span>
         <span v-if="version.id === state.catalog?.currentVersionId">（当前发布）</span>
         <div class="console-actions">
           <el-button
@@ -114,12 +115,10 @@
     <section v-if="state.selectedVersion" aria-label="不可变版本详情">
       <ElDivider content-position="left">版本 {{ state.selectedVersion.versionNumber }}</ElDivider>
       <p class="console-description"
-        >发布于 {{ state.selectedVersion.publishedAt }}；来源草稿修订
+        >发布于 {{ formatTime(state.selectedVersion.publishedAt) }}；来源草稿修订
         {{ state.selectedVersion.sourceDraftRevision }}。</p
       >
-      <ElAlert class="console-hint" type="info" show-icon :closable="false"
-        >该版本只读，查看不会覆盖当前草稿。</ElAlert
-      >
+
       <details>
         <summary>查看版本内容</summary>
         <pre>{{ JSON.stringify(state.selectedVersion.schema, null, 2) }}</pre>
@@ -128,6 +127,7 @@
   </section>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
@@ -268,7 +268,8 @@
       await ElMessageBox.confirm(texts[kind][0], texts[kind][1], {
         confirmButtonText: texts[kind][2],
         cancelButtonText: '取消',
-        type: 'warning'
+        type: 'warning',
+        customClass: 'console-studio-feedback'
       })
       // 确认窗口停留期间草稿、账号或项目发生变化，不能把旧意图应用到新上下文。
       if (confirmationContext() !== before) return

@@ -17,7 +17,7 @@
  * - 防止用户访问无权限的页面
  *
  * @module router/core/RoutePermissionValidator
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import type { AppRouteRecord } from '@/types/router'

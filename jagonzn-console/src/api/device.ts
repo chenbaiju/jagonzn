@@ -1,5 +1,6 @@
 import request from '@/utils/http'
 import type { components } from '@/types/api/schema'
+import { fetchDeviceBoundModel } from './device-bound-model'
 
 /** 设备响应。 */
 export type DeviceResponse = components['schemas']['DeviceResponse']
@@ -16,6 +17,11 @@ export type UpdateDeviceTypeRequest = components['schemas']['UpdateDeviceTypeReq
 /** 属性定义响应。 */
 export type DevicePropertyDefinitionResponse =
   components['schemas']['DevicePropertyDefinitionResponse']
+/** 设备绑定快照的属性投影；历史版本不保证包含后来新增的展示元数据或复合值能力声明。 */
+export type DevicePropertyDefinitionView = Omit<
+  DevicePropertyDefinitionResponse,
+  'description' | 'defaultValue' | 'presentation' | 'compositeProfile'
+> & Partial<Pick<DevicePropertyDefinitionResponse, 'description' | 'defaultValue' | 'presentation' | 'compositeProfile'>>
 /** 创建或修改属性定义请求。 */
 export type SaveDevicePropertyDefinitionRequest =
   components['schemas']['SaveDevicePropertyDefinitionRequest']
@@ -328,9 +334,53 @@ export function fetchPublishDeviceType(projectId: string, id: string) {
 }
 
 /** 读取设备类型的全部属性定义。 */
-export function fetchDevicePropertyDefinitions(projectId: string, deviceTypeId: string) {
-  return request.get<DevicePropertyDefinitionResponse[]>({
+export function fetchDevicePropertyDefinitions(
+  projectId: string,
+  deviceTypeId: string
+): Promise<DevicePropertyDefinitionResponse[]>
+export function fetchDevicePropertyDefinitions(
+  projectId: string,
+  deviceTypeId: string,
+  deviceId: string | undefined
+): Promise<DevicePropertyDefinitionView[]>
+export async function fetchDevicePropertyDefinitions(
+  projectId: string,
+  deviceTypeId: string,
+  deviceId?: string
+): Promise<DevicePropertyDefinitionResponse[] | DevicePropertyDefinitionView[]> {
+  const definitions = await request.get<DevicePropertyDefinitionResponse[]>({
     url: `/api/v1/projects/${projectId}/device-types/${deviceTypeId}/properties`
+  })
+  if (!deviceId) return definitions
+  const model = await fetchDeviceBoundModel(projectId, deviceTypeId, deviceId)
+  if (!model.properties || Array.isArray(model.properties)) throw new Error('冻结属性定义不可用')
+  return Object.entries(model.properties).map(([key, value]) => {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Array.isArray(value) ||
+      !['NUMBER', 'TEXT', 'SWITCH', 'ENUM', 'OBJECT', 'LIST'].includes(String(value.dataType))
+    )
+      throw new Error('冻结属性定义不合法')
+    const display = definitions.find((row) => row.propertyKey === key)
+    return {
+      id: display?.id ?? key,
+      deviceTypeId,
+      propertyKey: key,
+      name: display?.name ?? key,
+      dataType: value.dataType as DevicePropertyDefinitionResponse['dataType'],
+      accessType: value.accessType as DevicePropertyDefinitionResponse['accessType'],
+      unit: value.unit as string | undefined,
+      decimalPlaces: value.decimalPlaces as number | undefined,
+      minimumValue: value.minimum as number | undefined,
+      maximumValue: value.maximum as number | undefined,
+      enumOptions: value.enumOptions as string[] | undefined,
+      onLabel: value.onLabel as string | undefined,
+      offLabel: value.offLabel as string | undefined,
+      schema: value.schema == null ? undefined : JSON.stringify(value.schema),
+      numericStep: value.numericStep as number | null | undefined ?? null,
+      textDefaultValue: value.textDefaultValue as string | null | undefined ?? null
+    }
   })
 }
 
@@ -371,9 +421,45 @@ export function fetchDeleteDevicePropertyDefinition(
 }
 
 /** 读取设备类型的全部事件定义。 */
-export function fetchDeviceEventDefinitions(projectId: string, deviceTypeId: string) {
-  return request.get<DeviceEventDefinitionResponse[]>({
+export async function fetchDeviceEventDefinitions(
+  projectId: string,
+  deviceTypeId: string,
+  deviceId?: string
+) {
+  const definitions = await request.get<DeviceEventDefinitionResponse[]>({
     url: `/api/v1/projects/${projectId}/device-types/${deviceTypeId}/events`
+  })
+  if (!deviceId) return definitions
+  const model = await fetchDeviceBoundModel(projectId, deviceTypeId, deviceId)
+  if (!model.events || Array.isArray(model.events)) throw new Error('冻结事件定义不可用')
+  return Object.entries(model.events).map(([key, value]) => {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Array.isArray(value) ||
+      !['INFO', 'WARNING', 'ERROR'].includes(String(value.level))
+    )
+      throw new Error('冻结事件定义不合法')
+    const display = definitions.find((row) => row.eventKey === key)
+    return {
+      id: display?.id ?? key,
+      deviceTypeId,
+      eventKey: key,
+      name: display?.name ?? key,
+      description: display?.description,
+      level: value.level as DeviceEventDefinitionResponse['level'],
+      parameters: Object.entries(
+        (value.parameters ?? {}) as Record<string, Record<string, unknown>>
+      ).map(([parameterKey, parameter]) => ({
+        parameterKey,
+        name: parameterKey,
+        dataType: parameter.dataType as NonNullable<
+          DeviceEventDefinitionResponse['parameters']
+        >[number]['dataType'],
+        required: parameter.required as boolean | undefined,
+        enumOptions: parameter.enumOptions as string[] | undefined
+      }))
+    }
   })
 }
 

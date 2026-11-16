@@ -202,7 +202,11 @@ describe('应用发布产品会话', () => {
       }
     })
     await flushPromises()
-    expect(wrapper.text()).toContain('查看不会覆盖当前草稿')
+    expect(wrapper.text()).toContain('发布于 2026-09-07 08:00:00')
+    expect(wrapper.text()).toContain('历史内容')
+    expect(model.publish).not.toHaveBeenCalled()
+    expect(model.rollback).not.toHaveBeenCalled()
+    expect(model.withdraw).not.toHaveBeenCalled()
     await wrapper.get('[data-testid="application-publication-publish"]').trigger('click')
     await flushPromises()
     expect(mocks.confirm).toHaveBeenCalledWith(

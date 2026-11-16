@@ -26,7 +26,7 @@
  * 4. 登出时调用移除函数清理路由
  *
  * @module store/modules/menu
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'

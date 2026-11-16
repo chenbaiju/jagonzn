@@ -3,7 +3,7 @@
  * 提供向后兼容性和便捷导入
  *
  * @module utils/index
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 // UI 相关

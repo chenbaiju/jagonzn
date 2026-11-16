@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   validateDashboardSchemaV1,
   parseDashboardRuntimeResponse
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import { emptyDashboard } from '../src/features/dashboard/designer-model'
 import { loadDesignerDevicePreview } from '../src/features/dashboard/device-preview'
 const deviceId = '11111111-1111-4111-8111-111111111111'
@@ -20,7 +20,7 @@ const value = {
   occurredAt: '2026-09-08T00:00:00Z',
   reportedModelVersionId: versionId
 }
-function fixture() {
+function fixture(lastOnlineAt: string | null = null) {
   const schema = validateDashboardSchemaV1(
     new TextEncoder().encode(
       JSON.stringify({
@@ -60,7 +60,7 @@ function fixture() {
                 kind: 'STATUS',
                 componentVersion: '1.0.0',
                 layout: { x: 12, y: 0, w: 12, h: 10 },
-                props: { title: '状态' },
+                props: { title: '状态', showLastOnlineAt: true },
                 bindings: { status: { source: 'DEVICE_STATUS', device: { variableKey: 'device' } } }
               }
             ]
@@ -76,7 +76,7 @@ function fixture() {
         status: 'AVAILABLE',
         name: '设备',
         deviceStatus: 'ONLINE',
-        lastOnlineAt: null,
+        lastOnlineAt,
         currentModelVersionId: versionId
       }
     ],
@@ -114,9 +114,16 @@ function fixture() {
 }
 describe('草稿单设备快照验证', () => {
   it('去重状态和属性请求，精确展示大整数而不经过IEEE754', async () => {
-    const { schema, ports } = fixture()
+    const originalTime = '2026-10-23T18:43:39.488199999Z'
+    const { schema, snapshot, ports } = fixture(originalTime)
     const result = await loadDesignerDevicePreview(schema, 'main', ports)
     expect(result.map((entry) => entry.text)).toEqual(['9007199254740993', '在线'])
+    expect(result.map((entry) => entry.detail)).toEqual([
+      '上报时间：2026-09-08 08:00:00',
+      '最后在线：2026-10-24 02:43:39'
+    ])
+    expect(snapshot.devices[0]!.lastOnlineAt).toBe(originalTime)
+    expect(value.occurredAt).toBe('2026-09-08T00:00:00Z')
     expect(ports.snapshots.mock.calls[0]).toEqual([
       {
         models: [model],

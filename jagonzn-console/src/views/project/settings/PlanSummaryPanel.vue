@@ -15,7 +15,6 @@
       </div>
     </template>
 
-    <ElAlert type="info" show-icon :closable="false" :title="$t('quota.planSummaryHint')" />
     <ElAlert
       v-if="!model"
       data-testid="plan-summary-unavailable"
@@ -78,13 +77,15 @@
       <section class="plan-summary__sections">
         <div>
           <ElDivider content-position="left">{{ $t('quota.planLimitsTitle') }}</ElDivider>
-          <ElAlert type="info" show-icon :closable="false" :title="$t('quota.planLimitsHint')" />
+
           <ElTable data-testid="plan-frozen-limits" :data="model.limits" size="small">
             <ElTableColumn :label="$t('quota.planLimitDimension')" min-width="150">
               <template #default="{ row }">{{ row.label }}</template>
             </ElTableColumn>
             <ElTableColumn :label="$t('quota.planLimitValue')" min-width="140" align="right">
-              <template #default="{ row }">{{ formatNumber(row.value) }} {{ row.unit }}</template>
+              <template #default="{ row }"
+                >{{ formatNumber(row.value) }} {{ formatUnit(row.unit) }}</template
+              >
             </ElTableColumn>
             <ElTableColumn :label="$t('quota.planLimitWindow')" min-width="110">
               <template #default="{ row }">{{ row.windowLabel }}</template>
@@ -94,12 +95,7 @@
         </div>
         <div>
           <ElDivider content-position="left">{{ $t('quota.planEffectiveLimitsTitle') }}</ElDivider>
-          <ElAlert
-            type="info"
-            show-icon
-            :closable="false"
-            :title="$t('quota.planEffectiveLimitsHint')"
-          />
+
           <ElTable
             v-if="model.effectiveLimitsAvailable"
             data-testid="plan-effective-limits"
@@ -110,7 +106,9 @@
               <template #default="{ row }">{{ row.label }}</template>
             </ElTableColumn>
             <ElTableColumn :label="$t('quota.planLimitValue')" min-width="140" align="right">
-              <template #default="{ row }">{{ formatNumber(row.value) }} {{ row.unit }}</template>
+              <template #default="{ row }"
+                >{{ formatNumber(row.value) }} {{ formatUnit(row.unit) }}</template
+              >
             </ElTableColumn>
             <ElTableColumn :label="$t('quota.planLimitWindow')" min-width="110">
               <template #default="{ row }">{{ row.windowLabel }}</template>
@@ -128,7 +126,7 @@
         </div>
         <div>
           <ElDivider content-position="left">{{ $t('quota.planAdditionsTitle') }}</ElDivider>
-          <ElAlert type="info" show-icon :closable="false" :title="$t('quota.planAdditionsHint')" />
+
           <ElTable data-testid="plan-additions" :data="model.additions" size="small">
             <ElTableColumn :label="$t('quota.planAdditionSource')" min-width="100">
               <template #default="{ row }">{{ row.sourceLabel }}</template>
@@ -137,7 +135,9 @@
               <template #default="{ row }">{{ row.dimensionLabel }}</template>
             </ElTableColumn>
             <ElTableColumn :label="$t('quota.planAdditionAmount')" min-width="120" align="right">
-              <template #default="{ row }">{{ formatNumber(row.amount) }} {{ row.unit }}</template>
+              <template #default="{ row }"
+                >{{ formatNumber(row.amount) }} {{ formatUnit(row.unit) }}</template
+              >
             </ElTableColumn>
             <ElTableColumn :label="$t('quota.planAdditionPeriod')" min-width="220">
               <template #default="{ row }">{{ row.periodText }}</template>
@@ -157,12 +157,7 @@
         </div>
         <div>
           <ElDivider content-position="left">{{ $t('quota.planCapabilitiesTitle') }}</ElDivider>
-          <ElAlert
-            type="info"
-            show-icon
-            :closable="false"
-            :title="$t('quota.planCapabilitiesHint')"
-          />
+
           <div class="plan-summary__capabilities">
             <ElTag
               v-for="capability in model.enabledCapabilities"
@@ -196,6 +191,9 @@
     buildProjectPlanSummaryModel,
     type ProjectPlanSummaryModel
   } from '@/features/plan/plan-summary-model'
+
+  /** 新单位按4096字节逐报文进位，旧契约单位保持原样。 */
+  const formatUnit = (unit?: string) => (unit === 'MESSAGE_4K' ? '4KiB 单位' : (unit ?? '—'))
 
   const props = defineProps<{
     summary?: ProjectPlanSummaryResponse | null
@@ -241,12 +239,12 @@
       gap: 8px;
 
       > span {
-        font-size: 12px;
+        font-size: 14px;
         color: var(--art-text-gray-500);
       }
 
       small {
-        font-size: 12px;
+        font-size: 14px;
         color: var(--art-text-gray-500);
       }
     }

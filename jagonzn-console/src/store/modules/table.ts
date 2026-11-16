@@ -23,7 +23,7 @@
  * - 用户配置跨页面保持
  *
  * @module store/modules/table
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'

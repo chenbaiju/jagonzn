@@ -13,7 +13,7 @@ import { resolve } from 'node:path'
  *
  * 本用例诚实划定的边界：没有真实设备报告（浏览器栈无法产生），设备准入必然
  * IDENTITY_CHANGED；因此受控准入调度在**本测试后端**按worker自带的测试开关停用
- * （`things-cloud.ota.campaign.runtime-enabled=false`，生产默认仍为true），使人工
+ * （`things-link.ota.campaign.runtime-enabled=false`，生产默认仍为true），使人工
  * 暂停/恢复/取消确定性可验。真实派发（通知、下载、安装、批次推进）由4g与4d-2b-2b
  * 的真实PG/MinIO/EMQX证据覆盖，本用例不声称。
  */
@@ -180,7 +180,7 @@ test.describe('OTA活动生命周期（真实栈，固定夹具+受控signer桩�
     await expect(row.locator('.el-tag')).toContainText('草稿')
 
     // 4) 真实对象上传与复验（真实MinIO，桶已由部署侧版本化）。
-    const artifactText = 'thingscloud-ota-lifecycle-e2e-artifact'
+    const artifactText = 'thingslink-ota-lifecycle-e2e-artifact'
     const artifact = Buffer.from(artifactText, 'utf8')
     const artifactSha256 = await page.evaluate(
       async (input) => {

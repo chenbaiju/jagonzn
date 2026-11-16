@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   isStrictJsonNumber,
   type StrictJsonObject
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 const state = vi.hoisted(() => ({ accessToken: 'test-token', epoch: 1 }))
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => state }))
 vi.mock('@/utils/http/identity-scope', () => ({ currentIdentityEpoch: () => state.epoch }))

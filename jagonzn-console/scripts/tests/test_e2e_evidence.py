@@ -53,7 +53,7 @@ def emqx_v2(**overrides):
         "identityProjectionVersion": 2,
         "image": "emqx/emqx:6.2.3",
         "imageDigest": "sha256:" + "1" * 64,
-        "dataVolume": "thingscloud_emqx-data",
+        "dataVolume": "thingslink_emqx-data",
         "baseSource": "/workspace/deploy/emqx/base.hocon",
         "baseSha256": "2" * 64,
         "clusterSha256": "3" * 64,
@@ -302,12 +302,13 @@ class EvidenceContractTests(unittest.TestCase):
             E.verify_batch(self.batch)
 
     def test_artifact_drift_fails_before_runner(self):
-        self.candidate.update(sourceCommit="commit", files={}, configurationSha256="config", deployEnvSha256="env",
+        self.candidate.update(sourceCommit="commit", files={}, documentationBinding={"sourceCommit": "private", "files": {}}, configurationSha256="config", deployEnvSha256="env",
                               runtime={}, browser={"path": "browser", "sha256": "browser"},
                               artifacts={"bootstrap": {"path": "artifacts/bootstrap.jar", "sha256": "original"}})
         with patch.object(E, "load_candidate", return_value=self.candidate), \
                 patch.object(E, "clean_head", return_value="commit"), \
                 patch.object(E, "tracked_files", return_value={}), \
+                patch.object(E, "documentation_identity", return_value={"sourceCommit": "private", "files": {}}), \
                 patch.object(E, "configuration_digest", return_value="config"), \
                 patch.object(E, "runtime", return_value={}), \
                 patch.object(E, "sha", side_effect=["env", "browser", "modified"]):
@@ -323,12 +324,13 @@ class EvidenceContractTests(unittest.TestCase):
 
     def test_emqx_drift_fails_candidate_check(self):
         frozen = {"schemaVersion": 1, "image": "emqx/emqx:6.2.3", "clusterSha256": "old"}
-        self.candidate.update(sourceCommit="commit", files={}, configurationSha256="config", deployEnvSha256="env",
+        self.candidate.update(sourceCommit="commit", files={}, documentationBinding={"sourceCommit": "private", "files": {}}, configurationSha256="config", deployEnvSha256="env",
                               runtime={}, browser={"path": "browser", "sha256": "browser"}, artifacts={},
                               emqxEnvironment={"fingerprint": E.stable_emqx_environment(frozen)})
         with patch.object(E, "load_candidate", return_value=self.candidate), \
                 patch.object(E, "clean_head", return_value="commit"), \
                 patch.object(E, "tracked_files", return_value={}), \
+                patch.object(E, "documentation_identity", return_value={"sourceCommit": "private", "files": {}}), \
                 patch.object(E, "configuration_digest", return_value="config"), \
                 patch.object(E, "runtime", return_value={}), \
                 patch.object(E, "sha", side_effect=["env", "browser"]), \
@@ -346,12 +348,13 @@ class EvidenceContractTests(unittest.TestCase):
     def test_emqx_v2_effective_configuration_drift_fails_candidate_check(self):
         frozen = emqx_v2()
         current = emqx_v2(clusterIdentitySha256="9" * 64)
-        self.candidate.update(sourceCommit="commit", files={}, configurationSha256="config", deployEnvSha256="env",
+        self.candidate.update(sourceCommit="commit", files={}, documentationBinding={"sourceCommit": "private", "files": {}}, configurationSha256="config", deployEnvSha256="env",
                               runtime={}, browser={"path": "browser", "sha256": "browser"}, artifacts={},
                               emqxEnvironment={"fingerprint": E.stable_emqx_environment(frozen)})
         with patch.object(E, "load_candidate", return_value=self.candidate), \
                 patch.object(E, "clean_head", return_value="commit"), \
                 patch.object(E, "tracked_files", return_value={}), \
+                patch.object(E, "documentation_identity", return_value={"sourceCommit": "private", "files": {}}), \
                 patch.object(E, "configuration_digest", return_value="config"), \
                 patch.object(E, "runtime", return_value={}), \
                 patch.object(E, "sha", side_effect=["env", "browser"]), \
@@ -366,13 +369,72 @@ class EvidenceContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "incomplete"):
             E.stable_emqx_environment(incomplete)
         with self.assertRaisesRegex(ValueError, "unsupported"):
-            E.stable_emqx_environment(emqx_v2(identityProjectionVersion=3))
+            E.stable_emqx_environment(emqx_v2(identityProjectionVersion=4))
         with self.assertRaisesRegex(ValueError, "durable ingress"):
             E.stable_emqx_environment(emqx_v2(durableIngress={"status": "UNKNOWN"}))
         with self.assertRaisesRegex(ValueError, "Runner callback"):
             callbacks = emqx_v2()["runnerCallbackContract"]
             E.stable_emqx_environment(emqx_v2(
                 runnerCallbackContract={**callbacks, "callbackPort": 8081}))
+
+    def test_current_dual_contract_rejects_missing_or_drifted_get_but_preserves_offline_history(self):
+        import copy
+        spec = importlib.util.spec_from_file_location("evidence_dual_rule_fixture", E.SCRIPTS / "verify-emqx-durable-ingress.py")
+        checker = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(checker)
+        historical = emqx_v2()
+        E.stable_emqx_environment(historical)
+        with self.assertRaises(ValueError):
+            E.require_current_durable_ingress(historical)
+        current = copy.deepcopy(historical)
+        current["durableIngress"] = {"status": "PASS", "failures": [], **checker.contract_facts(checker.expected_rules()),
+                                      "legacyRawRuleHttpStatus": 404, "legacyCommandBridgeHttpStatus": 404}
+        E.require_current_durable_ingress(current)
+        E.stable_emqx_environment(current)
+        runtime_rules = checker.expected_rules()
+        for rule in runtime_rules:
+            rule["actions"][0]["args"].update(mqtt_properties={}, user_properties="${user_properties}")
+        runtime_current = copy.deepcopy(current)
+        runtime_current["durableIngress"].update(checker.contract_facts(runtime_rules))
+        E.require_current_durable_ingress(runtime_current)
+        self.assertEqual(E.stable_emqx_environment(current), E.stable_emqx_environment(runtime_current))
+        for key, replacement in [("ruleCount", 1), ("ruleContractSha256", "0" * 64),
+                                 ("propertyGetRule", {}), ("ruleContractVersion", 1)]:
+            changed = copy.deepcopy(current)
+            changed["durableIngress"][key] = replacement
+            with self.assertRaises(ValueError):
+                E.require_current_durable_ingress(changed)
+
+        typed = copy.deepcopy(current)
+        typed["durableIngress"]["propertyGetRule"]["qos"] = True
+        with self.assertRaises(ValueError):
+            E.require_current_durable_ingress(typed)
+        typed = copy.deepcopy(current)
+        typed["durableIngress"]["ruleCount"] = 2.0
+        with self.assertRaises(ValueError):
+            E.require_current_durable_ingress(typed)
+
+    def test_current_packet_bounds_are_required_and_old_offline_projection_stays_valid(self):
+        import copy
+        old = emqx_v2()
+        E.stable_emqx_environment(old)
+        with self.assertRaises(ValueError):
+            E.require_current_device_packet_bounds(old)
+        current = copy.deepcopy(old)
+        enabled = ["tcp:default"]
+        current["mqttIsolation"] = {"status": "PASS", "contract": "ADR0194", "enabledListeners": enabled,
+                                    "devicePacketBounds": {"version": 1, "globalMaxPacketBytes": 2097152,
+                                                           "deviceZone": "tc_device", "deviceMaxPacketBytes": 1048576,
+                                                           "enabledListeners": enabled}}
+        E.require_current_device_packet_bounds(current)
+        self.assertIn("mqttIsolation", E.stable_emqx_environment(current))
+        for key, value in [("globalMaxPacketBytes", 1048576), ("deviceMaxPacketBytes", 2097152),
+                           ("deviceZone", "default"), ("version", True), ("globalMaxPacketBytes", 2097152.0)]:
+            bad = copy.deepcopy(current)
+            bad["mqttIsolation"]["devicePacketBounds"][key] = value
+            with self.assertRaises(ValueError):
+                E.require_current_device_packet_bounds(bad)
+        self.assertNotIn("mqttIsolation", E.stable_emqx_environment(old))
 
     def test_historical_emqx_projection_keeps_raw_cluster_digest(self):
         historical = {"schemaVersion": 1, "image": "emqx/emqx:6.2.3",
@@ -384,12 +446,13 @@ class EvidenceContractTests(unittest.TestCase):
         frozen = {"schemaVersion": 1, "image": "emqx/emqx:6.2.3", "clusterSha256": "same",
                   "durableIngress": {"status": "PASS", "legacyRawRuleHttpStatus": 404}}
         current = {**frozen, "durableIngress": {"status": "FAIL", "legacyRawRuleHttpStatus": 200}}
-        self.candidate.update(sourceCommit="commit", files={}, configurationSha256="config", deployEnvSha256="env",
+        self.candidate.update(sourceCommit="commit", files={}, documentationBinding={"sourceCommit": "private", "files": {}}, configurationSha256="config", deployEnvSha256="env",
                               runtime={}, browser={"path": "browser", "sha256": "browser"}, artifacts={},
                               emqxEnvironment={"fingerprint": E.stable_emqx_environment(frozen)})
         with patch.object(E, "load_candidate", return_value=self.candidate), \
                 patch.object(E, "clean_head", return_value="commit"), \
                 patch.object(E, "tracked_files", return_value={}), \
+                patch.object(E, "documentation_identity", return_value={"sourceCommit": "private", "files": {}}), \
                 patch.object(E, "configuration_digest", return_value="config"), \
                 patch.object(E, "runtime", return_value={}), \
                 patch.object(E, "sha", side_effect=["env", "browser"]), \
@@ -486,7 +549,7 @@ class EvidenceContractTests(unittest.TestCase):
     def test_zip_round_trip_is_independently_verified(self):
         self.passing_batch()
         export_root = self.batch / "repo"
-        (export_root / "docs/delivery/verification").mkdir(parents=True)
+        (export_root / "logs/ci/e2e-evidence-exports").mkdir(parents=True)
         with patch.object(E, "REPO", export_root):
             path = E.export_batch(self.batch)
         self.assertEqual("ALL_SINGLE_SCENARIOS_PASS", E.verify_zip(path)["status"])
@@ -607,7 +670,7 @@ class EvidenceContractTests(unittest.TestCase):
     def test_combination_zip_round_trip_is_independently_verified(self):
         self.passing_combination()
         export_root = self.batch / "repo-combination"
-        (export_root / "docs/delivery/verification").mkdir(parents=True)
+        (export_root / "logs/ci/e2e-evidence-exports").mkdir(parents=True)
         with patch.object(E, "REPO", export_root):
             path = E.export_combination(self.batch)
         self.assertEqual("COMBINATION_PASS", E.verify_combination_zip(path)["status"])

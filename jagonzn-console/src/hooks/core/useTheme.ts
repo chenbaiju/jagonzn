@@ -28,7 +28,7 @@
  * ```
  *
  * @module useTheme
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { useSettingStore } from '@/store/modules/setting'
@@ -129,6 +129,11 @@ export function useTheme() {
 export function initializeTheme() {
   const settingStore = useSettingStore()
   const prefersDark = usePreferredDark()
+
+  // 将旧模板默认蓝迁到官网品牌蓝；保留用户自行选择的其他主题色。
+  if (settingStore.systemThemeColor.toLowerCase() === '#5d87ff') {
+    settingStore.systemThemeColor = AppConfig.systemMainColor[0]
+  }
 
   // 根据系统偏好应用主题
   const applyThemeByMode = () => {

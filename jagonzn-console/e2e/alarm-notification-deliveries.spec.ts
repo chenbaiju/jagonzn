@@ -106,12 +106,12 @@ test('告警详情读取真实评估生成的21条脱敏终态记录并分页', 
   const directory = resolve(process.env.E2E_RUN_DIR || 'logs/014-a-browser')
   await mkdir(directory, { recursive: true })
   const fixtureClasses = resolve(directory, 'fixture-classes')
-  const fixturePackage = 'com/things/cloud/bootstrap/alarm/fixture'
+  const fixturePackage = 'com/things/link/bootstrap/alarm/fixture'
   await mkdir(resolve(fixtureClasses, fixturePackage), { recursive: true })
   // 仅加载当前夹具类，防止其他JUnit配置进入生产Bean装配。
   await copyFile(
     resolve(
-      '../things-cloud/things-cloud-bootstrap/target/test-classes',
+      '../things-link/things-link-bootstrap/target/test-classes',
       fixturePackage,
       'AlarmDeliveryFixtureProcess.class'
     ),
@@ -127,12 +127,12 @@ test('告警详情读取真实评估生成的21条脱敏终态记录并分页', 
     SPRING_DATASOURCE_URL: `jdbc:postgresql://localhost:5547/${runtime.database}`,
     SPRING_DATA_REDIS_DATABASE: '14',
     SPRING_KAFKA_LISTENER_AUTO_STARTUP: 'false',
-    THINGS_CLOUD_INGRESS_HANDOFF_ENABLED: 'false',
-    THINGS_CLOUD_OUTBOX_PUBLISHER_ENABLED: 'false',
-    THINGS_CLOUD_DASHBOARD_HOST_REGISTRY_DIRECTORY: runtime.hostRegistry,
+    THINGS_LINK_INGRESS_HANDOFF_ENABLED: 'false',
+    THINGS_LINK_OUTBOX_PUBLISHER_ENABLED: 'false',
+    THINGS_LINK_DASHBOARD_HOST_REGISTRY_DIRECTORY: runtime.hostRegistry,
     LOG_PATH: resolve(directory, 'evaluation-service'),
     SPRING_APPLICATION_JSON: JSON.stringify({
-      'things-cloud': {
+      'things-link': {
         assistant: {
           credentials: {
             'active-key-id': 'fixture',
@@ -159,8 +159,8 @@ test('告警详情读取真实评估生成的21条脱敏终态记录并分页', 
       })
   )
   Object.assign(env, {
-    THINGS_CLOUD_STORAGE_ACCESS_KEY: values.MINIO_ROOT_USER,
-    THINGS_CLOUD_STORAGE_SECRET_KEY: values.MINIO_ROOT_PASSWORD
+    THINGS_LINK_STORAGE_ACCESS_KEY: values.MINIO_ROOT_USER,
+    THINGS_LINK_STORAGE_SECRET_KEY: values.MINIO_ROOT_PASSWORD
   })
   await new Promise<void>((ok, fail) => {
     const child = spawn(
@@ -170,7 +170,7 @@ test('告警详情读取真实评估生成的21条脱敏终态记录并分页', 
         '-Dhttp.proxyHost=',
         '-Dhttps.proxyHost=',
         `-Dloader.path=${fixtureClasses}`,
-        '-Dloader.main=com.things.cloud.bootstrap.alarm.fixture.AlarmDeliveryFixtureProcess',
+        '-Dloader.main=com.things.link.bootstrap.alarm.fixture.AlarmDeliveryFixtureProcess',
         `-Dtc.alarm.fixture=${fixturePath}`,
         '-cp',
         runtime.frozenJar,

@@ -31,7 +31,7 @@
 </template>
 <script setup lang="ts">
   import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
-  import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+  import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
   import { textPreview, type TextSelections } from '@/features/dashboard/text-preview'
   const props = defineProps<{
     schema: DashboardSchemaV1

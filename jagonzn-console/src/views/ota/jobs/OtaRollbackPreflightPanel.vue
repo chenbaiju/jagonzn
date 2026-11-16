@@ -6,9 +6,7 @@
     data-testid="ota-rollback-preflight"
   >
     <ElDivider content-position="left">回退准备观察与当前评估</ElDivider>
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >这里只读取既有报告，不创建准备查询或触发回退。可准备分类仍不授予执行权；回退必须满足受控原子提交互斥要求。</ElAlert
-    >
+
     <ElButton
       data-testid="ota-rollback-preflight-refresh"
       :disabled="loading || !permitted"
@@ -55,9 +53,9 @@
             {{ rollbackPreflightReasonLabel(snapshot.observedReason) }}</span
           ></ElDescriptionsItem
         >
-        <ElDescriptionsItem label="接纳时间（UTC）"
+        <ElDescriptionsItem label="接纳时间"
           ><span data-testid="ota-rollback-observed-at">{{
-            snapshot.observedAt
+            formatTime(snapshot.observedAt)
           }}</span></ElDescriptionsItem
         >
       </ElDescriptions>
@@ -74,14 +72,14 @@
             {{ rollbackPreflightReasonLabel(snapshot.currentReason) }}</span
           ></ElDescriptionsItem
         >
-        <ElDescriptionsItem label="重验时间（UTC）"
+        <ElDescriptionsItem label="重验时间"
           ><span data-testid="ota-rollback-checked-at">{{
-            snapshot.checkedAt
+            formatTime(snapshot.checkedAt)
           }}</span></ElDescriptionsItem
         >
-        <ElDescriptionsItem label="原查询截止（UTC）"
+        <ElDescriptionsItem label="原查询截止"
           ><span data-testid="ota-rollback-query-expiry">{{
-            snapshot.queryExpiresAt
+            formatTime(snapshot.queryExpiresAt)
           }}</span></ElDescriptionsItem
         >
         <ElDescriptionsItem label="执行授权"
@@ -106,6 +104,7 @@
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { fetchOtaRollbackPreflight, type OtaRollbackPreflightResponse } from '@/api/ota'
   import { fetchProjects } from '@/api/project'

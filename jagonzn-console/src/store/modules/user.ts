@@ -29,7 +29,7 @@
  * - 登出时自动清理
  *
  * @module store/modules/user
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import { clearRecentResources } from '@/utils/workbench-recent'
 import { defineStore } from 'pinia'

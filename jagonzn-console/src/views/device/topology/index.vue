@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page topology console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace topology console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="网关与拓扑"
@@ -14,6 +16,7 @@
     </ConsoleWorkspaceHeader>
 
     <ElCard class="console-table-panel console-page__main-panel" shadow="never">
+      <h2 class="console-panel-title">网关拓扑</h2>
       <ElTable
         v-loading="loading"
         :data="treeData"
@@ -74,11 +77,16 @@
             />
           </template>
         </ElTableColumn>
-        <template #empty><ElEmpty description="还没有网关设备" /></template>
+        <template #empty><ElEmpty :image-size="80" description="还没有网关设备" /></template>
       </ElTable>
     </ElCard>
 
-    <ElDialog class="console-dialog" v-model="bindVisible" title="绑定子设备" width="520px">
+    <ElDialog
+      class="console-dialog console-developer-dialog"
+      v-model="bindVisible"
+      title="绑定子设备"
+      width="520px"
+    >
       <ElForm label-position="top">
         <ElFormItem label="网关">
           <ElSelect
@@ -264,6 +272,7 @@
   }
 
   const openBind = () => {
+    if (!hasAuth('device:update')) return
     bindForm.gatewayId = gateways.value[0]?.id ?? ''
     bindForm.subDeviceId = ''
     bindVisible.value = true
@@ -276,7 +285,7 @@
   }
 
   const submitBind = async () => {
-    if (!projectId.value) return
+    if (!projectId.value || !bindVisible.value || !hasAuth('device:update')) return
     if (!bindForm.gatewayId || !bindForm.subDeviceId) {
       ElMessage.warning('请选择网关和子设备')
       return
@@ -301,6 +310,7 @@
     if (!projectId.value || !node.id) return
     try {
       await ElMessageBox.confirm(`确定解除子设备"${node.label}"的绑定吗？`, '解绑子设备', {
+        customClass: 'console-studio-feedback',
         type: 'warning'
       })
       await fetchUnbindTopology(projectId.value, node.id)
@@ -311,6 +321,14 @@
         console.error('解绑子设备失败:', error)
     }
   }
+
+  watch(
+    () => hasAuth('device:update'),
+    (allowed) => {
+      if (!allowed) bindVisible.value = false
+    },
+    { flush: 'sync' }
+  )
 
   onMounted(load)
 </script>
@@ -326,12 +344,12 @@
     }
     &__device-key {
       font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-text-color-secondary);
     }
     &__binding-time {
       margin-top: 4px;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-text-color-secondary);
     }
   }

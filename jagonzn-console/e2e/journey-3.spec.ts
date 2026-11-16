@@ -137,10 +137,23 @@ test(
       throw new Error(`启动模拟器失败：HTTP ${startResp.status()} ${await startResp.text()}`)
     }
 
-    // 8. 用既有在线事实有界刷新，不以固定 5 秒推测已经发生属性上报。
+    // 8. 在已就绪列表执行真实搜索；整页重载会反复重启路由与表格初始化，不能作为在线轮询。
     await expect(async () => {
-      await page.reload()
-      await expect(deviceRow.getByText('在线')).toBeVisible({ timeout: 3_000 })
+      const [refreshed] = await Promise.all([
+        page.waitForResponse(
+          (response) =>
+            response.request().method() === 'GET' &&
+            new URL(response.url()).pathname ===
+              `/api/v1/projects/${targetHistoryDevice.projectId}/devices/search`,
+          { timeout: 3_000 }
+        ),
+        page
+          .locator('.device-list__filter')
+          .getByRole('button', { name: '查询', exact: true })
+          .click({ timeout: 3_000 })
+      ])
+      expect(refreshed.status()).toBe(200)
+      await expect(deviceRow.getByText('在线', { exact: true })).toBeVisible({ timeout: 3_000 })
     }).toPass({ timeout: 30_000 })
 
     // 9. 详情：影子「上报状态」出现 temperature + 历史至少一个点 + WebSocket 增量更新

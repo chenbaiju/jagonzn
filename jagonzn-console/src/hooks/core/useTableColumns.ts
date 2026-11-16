@@ -29,7 +29,7 @@
  * ```
  *
  * @module useTableColumns
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { ref, computed, watch } from 'vue'

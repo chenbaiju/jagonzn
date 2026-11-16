@@ -38,7 +38,7 @@ export function parseIdentityLink(
   )
     deny()
   if (!Array.isArray(raw) || raw.length > 4) return deny()
-  const subject = kind === 'invitation' ? '项目协作邀请' : '验证你的 ThingsCloud 邮箱'
+  const subject = kind === 'invitation' ? '项目协作邀请' : '验证你的 ThingsLink 邮箱'
   const matches: { body: string }[] = []
   for (const value of raw) {
     if (
@@ -52,7 +52,7 @@ export function parseIdentityLink(
     )
       deny()
     if (value.subject === subject) matches.push(value)
-    else if (!['项目协作邀请', '验证你的 ThingsCloud 邮箱'].includes(value.subject)) deny()
+    else if (!['项目协作邀请', '验证你的 ThingsLink 邮箱'].includes(value.subject)) deny()
   }
   if (matches.length === 0) return undefined
   if (matches.length !== 1) deny()

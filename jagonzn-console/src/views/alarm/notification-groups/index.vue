@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page notification-page console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace notification-page console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="通知组"
@@ -16,14 +18,6 @@
         </ElButton>
       </template>
     </ConsoleWorkspaceHeader>
-
-    <ElAlert
-      class="notification-page__notice"
-      type="info"
-      :closable="false"
-      show-icon
-      title="收件地址由服务端脱敏返回；编辑收件人时不会回填旧地址，必须显式输入完整新地址。"
-    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="groups" row-key="id">
@@ -76,7 +70,7 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-alarm-dialog"
       v-model="groupFormVisible"
       :title="editingGroupId ? '编辑通知组' : '创建通知组'"
       width="520px"
@@ -97,19 +91,13 @@
     </ElDialog>
 
     <ElDrawer
+      class="console-developer-drawer console-execution-drawer console-alarm-drawer"
       v-model="recipientsVisible"
       :title="`${selectedGroup?.name ?? ''} · 收件人`"
       size="720px"
       destroy-on-close
     >
-      <div class="recipient-toolbar">
-        <ElAlert
-          class="recipient-toolbar__notice"
-          title="地址只展示脱敏值，服务端不会向浏览器返回完整目标。"
-          type="info"
-          :closable="false"
-          show-icon
-        />
+      <div class="recipient-toolbar console-alarm-toolbar">
         <ElButton
           v-if="hasAuth('alarm:manage')"
           type="primary"
@@ -159,7 +147,7 @@
     </ElDrawer>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-alarm-dialog"
       v-model="recipientFormVisible"
       :title="editingRecipientId ? '替换收件目标' : '添加收件人'"
       width="580px"
@@ -196,7 +184,7 @@
             :placeholder="
               recipientForm.channel === 'EMAIL'
                 ? 'operator@example.com'
-                : 'https://example.com/thingscloud/alarm'
+                : 'https://example.com/jagonzn/alarm'
             "
           />
           <div class="form-help">
@@ -267,6 +255,16 @@
   const editingRecipientMaskedTarget = ref('')
   const recipientFormRef = ref<FormInstance>()
 
+  watch(
+    () => hasAuth('alarm:manage'),
+    (allowed) => {
+      if (allowed) return
+      groupFormVisible.value = false
+      recipientFormVisible.value = false
+    },
+    { flush: 'sync' }
+  )
+
   const defaultGroupForm = (): SaveAlarmNotificationGroupRequest => ({ name: '', enabled: true })
   const groupForm = reactive<SaveAlarmNotificationGroupRequest>(defaultGroupForm())
   const groupRules: FormRules = {
@@ -325,11 +323,13 @@
   const loadMoreGroups = () => void loadGroups(true)
 
   const openCreateGroup = () => {
+    if (!hasAuth('alarm:manage')) return
     editingGroupId.value = ''
     Object.assign(groupForm, defaultGroupForm())
     groupFormVisible.value = true
   }
   const openEditGroup = (row: AlarmNotificationGroupResponse) => {
+    if (!hasAuth('alarm:manage')) return
     editingGroupId.value = row.id ?? ''
     Object.assign(groupForm, {
       name: row.name ?? '',
@@ -339,7 +339,9 @@
     groupFormVisible.value = true
   }
   const submitGroup = async () => {
-    if (!projectId.value || !(await groupFormRef.value?.validate().catch(() => false))) return
+    if (!hasAuth('alarm:manage') || !projectId.value) return
+    if (!(await groupFormRef.value?.validate().catch(() => false)) || !hasAuth('alarm:manage'))
+      return
     groupSubmitting.value = true
     try {
       const body: SaveAlarmNotificationGroupRequest = { ...groupForm }
@@ -364,7 +366,12 @@
       await ElMessageBox.confirm(
         `确定删除通知组“${row.name ?? ''}”吗？仍被规则绑定时服务端会拒绝删除。`,
         '删除通知组',
-        { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
+        {
+          customClass: 'console-alarm-feedback',
+          type: 'warning',
+          confirmButtonText: '删除',
+          cancelButtonText: '取消'
+        }
       )
       await fetchDeleteAlarmNotificationGroup(projectId.value, row.id, row.version)
       ElMessage.success('通知组已删除')
@@ -396,12 +403,14 @@
     await loadRecipients()
   }
   const openCreateRecipient = () => {
+    if (!hasAuth('alarm:manage')) return
     editingRecipientId.value = ''
     editingRecipientMaskedTarget.value = ''
     Object.assign(recipientForm, defaultRecipientForm())
     recipientFormVisible.value = true
   }
   const openEditRecipient = (row: AlarmNotificationRecipientResponse) => {
+    if (!hasAuth('alarm:manage')) return
     editingRecipientId.value = row.id ?? ''
     editingRecipientMaskedTarget.value = row.target ?? ''
     Object.assign(recipientForm, {
@@ -413,12 +422,14 @@
     recipientFormVisible.value = true
   }
   const submitRecipient = async () => {
+    if (!hasAuth('alarm:manage')) return
     if (
       !projectId.value ||
       !selectedGroup.value?.id ||
       !(await recipientFormRef.value?.validate().catch(() => false))
     )
       return
+    if (!hasAuth('alarm:manage')) return
     recipientSubmitting.value = true
     try {
       const body: SaveAlarmNotificationRecipientRequest = { ...recipientForm }
@@ -441,6 +452,7 @@
     if (!projectId.value || !row.id || row.version == null) return
     try {
       await ElMessageBox.confirm(`确定删除收件目标“${row.target ?? ''}”吗？`, '删除收件人', {
+        customClass: 'console-alarm-feedback',
         type: 'warning',
         confirmButtonText: '删除',
         cancelButtonText: '取消'
@@ -460,12 +472,6 @@
 
 <style scoped lang="scss">
   .notification-page {
-    padding: 10px;
-
-    :deep(.workspace-header > .console-actions) {
-      margin-bottom: 0;
-    }
-
     &__notice {
       margin-bottom: 10px;
     }
@@ -477,27 +483,10 @@
     }
   }
 
-  .recipient-toolbar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    color: var(--el-text-color-secondary);
-
-    > .recipient-toolbar__notice {
-      min-width: 0;
-      margin: 0;
-    }
-    > .el-button {
-      flex-shrink: 0;
-    }
-  }
-
   .notification-page__notice,
   .recipient-toolbar__notice {
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }
@@ -514,7 +503,7 @@
 
   .form-help {
     margin-top: 6px;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.5;
     color: var(--el-text-color-secondary);
   }

@@ -9,7 +9,8 @@ vi.mock('pinia', async (importOriginal) => ({
   storeToRefs: (store: object) => toRefs(store)
 }))
 import UserCenter from '@/views/system/user-center/index.vue'
-import defaultAvatar from '@imgs/user/avatar.webp'
+import SmsRecipientEditor from '@/components/business/SmsRecipientEditor.vue'
+import defaultAvatar from '@imgs/brand/jagonzn-original.png'
 
 let wrapper: ReturnType<typeof shallowMount> | undefined
 afterEach(() => wrapper?.unmount())
@@ -65,4 +66,13 @@ describe('个人中心当前会话资料', () => {
     expect(wrapper.text()).toContain('—')
     expect(wrapper.text()).not.toMatch(/undefined|null|OWNER|ADMIN/)
   })
+})
+
+it('短信接收设置入口在个人中心无项目时仍展示两类租户用途', () => {
+  user.getUserInfo = { userId: 'account-a', tenantId: 'home-tenant', roles: [] }
+  wrapper = mountPage()
+  const panels = wrapper.findAllComponents(SmsRecipientEditor)
+  expect(panels.map((p) => p.props('purpose'))).toEqual(['QUOTA_WARNING', 'SUBSCRIPTION_EXPIRING'])
+  expect(panels.every((p) => p.props('projectId') === undefined)).toBe(true)
+  expect(wrapper.text()).toContain('租户通知接收设置')
 })

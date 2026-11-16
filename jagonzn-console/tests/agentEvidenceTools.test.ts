@@ -133,7 +133,7 @@ it.each(['OWNER', 'ADMIN', 'OPERATOR', 'VIEWER'])(
     )
     expect(vm().history.points.map((p: any) => p.value)).toEqual([0, 9, null])
     expect(vm().history.points[1].sourceModelVersionId).toBe(oldModel)
-    expect(panel.text()).toContain('单位及行业阈值未提供')
+    expect(panel.text()).toContain('2026-10-04 08:00:00 至 2026-10-04 09:00:00')
   }
 )
 it.each(['NO_POINTS', 'OUTSIDE_RETENTION'])(
@@ -227,7 +227,7 @@ it('manual paging replaces twenty items and carries signed cursor exactly', asyn
     'signed+/=cursor'
   )
   expect(vm().alarms.items.map((p: any) => p.id)).toEqual([item(21).id])
-  expect(panel.text()).toContain('事故来源模型未提供')
+  expect(vm().alarms.sourceModelState).toBe('NOT_PROVIDED')
 })
 it.each(['enum', 'cursor', 'duplicates', 'model', 'source', 'oversize', 'time'])(
   'rejects invalid alarm %s and cannot continue its cursor',
@@ -374,7 +374,8 @@ it('labels downsampled value ranges as returned bucket means, not raw extremes o
   expect(overview).toContain('样本计数合计 1001')
   expect(overview).toContain('桶均值范围： 0 至 10')
   expect(overview).toContain('不代表原始采样的最小值或最大值')
-  expect(overview).toContain('不计算完整率、异常或趋势')
+  expect(overview).not.toContain('完整率：')
+  expect(overview).not.toContain('趋势：')
   expect(overview).not.toContain('原始点值范围')
 })
 

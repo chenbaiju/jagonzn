@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const state = vi.hoisted(() => ({ accessToken: 'token', epoch: 1, parsed: vi.fn() }))
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => state }))
 vi.mock('@/utils/http/identity-scope', () => ({ currentIdentityEpoch: () => state.epoch }))
-vi.mock('@things-cloud/client-contracts/dashboard/v1', () => ({
+vi.mock('@things-link/client-contracts/dashboard/v1', () => ({
   parseDashboardRuntimeResponse: (bytes: Uint8Array) => state.parsed(bytes)
 }))
 type Budget = typeof import('@/api/designer-read-scope')

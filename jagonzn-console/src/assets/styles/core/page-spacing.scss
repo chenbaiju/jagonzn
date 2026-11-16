@@ -1,4 +1,4 @@
-// Console 页面间距：外层左右各 10px + 页面内边距 10px = 内容实际左右各 20px。
+// 内容左右各 24px：既有布局外层 10px + 页面内边距 14px，保留菜单及顶栏几何。
 :root {
   --console-page-spacing: 10px;
 }
@@ -7,7 +7,7 @@
   box-sizing: border-box;
   width: 100%;
   min-height: var(--art-full-height);
-  padding: var(--console-page-spacing) !important;
+  padding: 10px 14px 22px !important;
 }
 
 .console-auth-page,

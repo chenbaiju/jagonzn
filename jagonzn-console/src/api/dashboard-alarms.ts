@@ -2,7 +2,7 @@ import {
   decodeAlarmResponse,
   type AlarmQuery,
   type AlarmResult
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import type { DesignerReadScope } from './designer-read-scope'
 /** 同查询由页面计划统一读取，Console不得发送App身份或在客户端过滤全项目页。 */
 export async function fetchDesignerAlarms(

@@ -1,6 +1,7 @@
 <template>
   <ConsoleFilterBar
     class="message-log-filter"
+    label-position="top"
     :items="filterItems"
     :span="8"
     @search="emit('search')"
@@ -44,6 +45,7 @@
     <template #messageType>
       <ElSelect v-model="model.messageType" clearable placeholder="全部类型">
         <ElOption label="属性上报" value="PROPERTY_REPORT" />
+        <ElOption label="事件上报" value="EVENT" />
         <ElOption label="命令下发" value="COMMAND" />
         <ElOption label="命令回复" value="COMMAND_REPLY" />
       </ElSelect>
@@ -69,7 +71,7 @@
   export interface MessageLogFilterModel {
     deviceId: string
     direction: '' | 'UP' | 'DOWN'
-    messageType: '' | 'PROPERTY_REPORT' | 'COMMAND' | 'COMMAND_REPLY'
+    messageType: '' | 'PROPERTY_REPORT' | 'EVENT' | 'COMMAND' | 'COMMAND_REPLY'
     timeRange: [Date, Date]
     traceId: string
   }
@@ -96,15 +98,75 @@
 </script>
 
 <style lang="scss">
-  .message-log-filter.console-filter-bar .el-form-item {
-    .el-form-item__label {
-      justify-content: flex-end;
+  .message-log-filter.console-filter-bar.art-search-bar {
+    container: message-filter / inline-size;
+
+    .el-form > .el-row {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px 16px;
+      align-items: end;
+      margin-inline: 0 !important;
     }
 
-    .el-date-editor.el-range-editor {
+    .el-col {
+      grid-column: span 4;
+      width: auto;
+      max-width: none;
+      padding-inline: 0 !important;
+    }
+
+    .el-col:nth-child(4),
+    .el-col.action-column:nth-child(6) {
+      grid-column: span 3;
+    }
+
+    .el-col:nth-child(5) {
+      grid-column: span 6;
+    }
+
+    .el-form-item .el-form-item__label {
+      justify-content: flex-start;
+      height: auto !important;
+      margin: 0 0 2px;
+      font-size: 14px;
+      line-height: 18px !important;
+    }
+
+    .el-form-item .el-date-editor.el-range-editor {
       flex-grow: 0;
-      width: 400px !important;
+      width: 100% !important;
       max-width: 100%;
+    }
+
+    .action-column .action-buttons-wrapper {
+      justify-content: flex-end;
+      margin: 0 !important;
+    }
+
+    .form-buttons .el-button {
+      min-width: 80px;
+    }
+
+    @container message-filter (max-width: 1000px) {
+      .el-form > .el-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .el-col,
+      .el-col:nth-child(4) {
+        grid-column: span 1;
+      }
+      .el-col:nth-child(5),
+      .el-col.action-column,
+      .el-col.action-column:nth-child(6) {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @container message-filter (max-width: 480px) {
+      .el-form > .el-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
   }
 </style>

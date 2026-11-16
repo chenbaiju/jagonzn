@@ -29,8 +29,35 @@
   type ResourceRow = (typeof workbenchResources)[number] & { count?: number; failed: boolean }
   const rows = ref<ResourceRow[]>([])
   let generation = 0
+  let nextReadAt = 0
+  const delays = new Map<ReturnType<typeof setTimeout>, () => void>()
+  const clearDelays = () => {
+    for (const [timer, resolve] of delays) {
+      clearTimeout(timer)
+      resolve()
+    }
+    delays.clear()
+  }
+  const waitForRead = () => {
+    const scheduledAt = Math.max(Date.now(), nextReadAt)
+    // 后台统计最多每秒四次（含续页），给首屏与用户操作保留读取预算。
+    nextReadAt = scheduledAt + 250
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(
+        () => {
+          delays.delete(timer)
+          resolve()
+        },
+        Math.max(0, scheduledAt - Date.now())
+      )
+      delays.set(timer, resolve)
+    })
+  }
   async function load() {
     const request = ++generation
+    clearDelays()
+    // 等待首屏上下文/摘要读取后再启动非关键统计，不与它们争抢一秒窗口。
+    nextReadAt = Date.now() + 1000
     const projectId = props.projectId
     const epoch = currentIdentityEpoch()
     const current = () => request === generation && epoch === currentIdentityEpoch()
@@ -44,7 +71,7 @@
         while (current() && pending.length) {
           const row = pending.shift()!
           try {
-            const count = await countWorkbenchResource(row, projectId, current)
+            const count = await countWorkbenchResource(row, projectId, current, waitForRead)
             if (current()) row.count = count
           } catch {
             if (current()) row.failed = true
@@ -56,20 +83,23 @@
   watch(() => [props.projectId, props.scopeKey, props.allowedPaths, currentIdentityEpoch()], load, {
     immediate: true
   })
-  onBeforeUnmount(() => generation++)
+  onBeforeUnmount(() => {
+    generation++
+    clearDelays()
+  })
 </script>
 
 <style scoped lang="scss">
   .workbench-resources {
-    padding: 24px;
+    padding: 20px;
     background: var(--el-bg-color);
     border: 1px solid var(--el-border-color-light);
-    border-radius: 10px;
+    border-radius: 4px;
 
     h2 {
       margin: 0 0 20px;
-      font-size: 17px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 500;
     }
 
     ul {
@@ -95,7 +125,7 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    font-size: 20px;
+    font-size: 16px;
     color: var(--el-text-color-secondary);
     background: var(--el-fill-color-light);
     border-radius: 4px;
@@ -104,12 +134,12 @@
   .workbench-resources__count {
     display: block;
     margin-top: 4px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--el-text-color-secondary);
   }
 
   .workbench-resources__empty {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--el-text-color-secondary);
   }
 </style>

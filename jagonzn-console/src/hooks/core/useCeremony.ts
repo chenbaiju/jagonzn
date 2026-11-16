@@ -37,7 +37,7 @@
  * ```
  *
  * @module useCeremony
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { useTimeoutFn, useIntervalFn, useDateFormat } from '@vueuse/core'

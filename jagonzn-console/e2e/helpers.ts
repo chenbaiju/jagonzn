@@ -122,7 +122,7 @@ export async function enterProject(page: Page, projectName: string, clickRow = f
   await expect(row).toBeVisible({ timeout: 15_000 })
   if (clickRow) await row.locator('td').first().click()
   else await row.getByRole('button', { name: '进入', exact: true }).click()
-  // switchProject 成功后 URL 先到 '/'，再经 hash 路由回首页（如 /#/dashboard/overview）
+  // switchProject 成功后 URL 先到 '/'，再经 hash 路由回首页（如 /#/dashboard/workbench）
   await page.waitForURL((url) => url.pathname === '/' && !url.hash.includes('/project/list'), {
     timeout: 20_000
   })

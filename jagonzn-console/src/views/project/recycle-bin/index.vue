@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page project-recycle-page">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-operations-workspace project-recycle-page"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="项目回收站"
@@ -19,14 +21,14 @@
   .project-recycle-page {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     height: var(--art-full-height);
     min-height: 520px;
-    padding: 10px;
 
     :deep(.workspace-header) {
       flex-shrink: 0;
     }
-    .project-recycle-bin {
+    :deep(.project-recycle-bin) {
       flex: 1;
       min-height: 0;
     }

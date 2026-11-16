@@ -14,9 +14,6 @@
         <ElButton size="small" :loading="loading" @click="refresh">刷新</ElButton>
       </div>
     </header>
-    <p v-if="snapshot" class="overview-statistics__caption console-description">
-      {{ windowLabel }} · {{ snapshot.stepHours }} 小时 / 点 · 数量与流量累计，设备状态取时段末值
-    </p>
     <p v-if="error" role="alert" class="overview-statistics__error">{{ error }}</p>
     <ElSkeleton v-if="loading && !snapshot" animated :rows="8" />
     <section
@@ -67,19 +64,6 @@
   const error = ref('')
   let generation = 0
   const times = computed(() => (snapshot.value ? bucketTimes(snapshot.value) : []))
-  const windowLabel = computed(() => {
-    const s = snapshot.value
-    if (!s?.from || !s.to) return ''
-    const formatter = new Intl.DateTimeFormat('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZoneName: 'short'
-    })
-    return `${formatter.format(new Date(s.from))} — ${formatter.format(new Date(s.to))}`
-  })
   const hasValues = (chart: OverviewTrend) =>
     chart.series?.some((s) => s.values?.some((v) => typeof v === 'number'))
   async function refresh() {
@@ -168,20 +152,17 @@
     }
     h3 {
       margin: 0;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 500;
     }
     h4 {
       margin: 0;
       font-size: 14px;
       font-weight: 500;
     }
-    &__caption {
-      margin: 0 0 18px;
-    }
     &__error {
       margin: 12px 0;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-color-danger);
     }
     &__chart {

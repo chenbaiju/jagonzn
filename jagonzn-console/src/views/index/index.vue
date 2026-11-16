@@ -36,7 +36,6 @@
         '/project/list',
         '/project/create',
         '/project/recycle-bin',
-        '/plan-catalog',
         '/system-status',
         '/system/user-center'
       ].includes(route.path)

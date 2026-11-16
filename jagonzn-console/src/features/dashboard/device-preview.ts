@@ -1,3 +1,4 @@
+import { formatTime } from '@/utils/time'
 import {
   validateDashboardSchemaV1,
   isStrictJsonNumber,
@@ -13,7 +14,7 @@ import {
   type HistoryResult,
   type AlarmQuery,
   type AlarmResult
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 export type PreviewSelections = Readonly<Record<string, readonly string[]>>
 export interface PreviewCell {
   text: string
@@ -197,7 +198,7 @@ function decodeCurrentResponse(plan: DesignerCurrentPlan, current: unknown): Cur
         const component = target.component
         const rendered: PreviewCell & Pick<PreviewRow, 'gauge' | 'composite'> = {
           text: '',
-          detail: `上报时间：${value.occurredAt as string}`
+          detail: `上报时间：${formatTime(value.occurredAt as string)}`
         }
         if (
           component.kind === 'JSON_VIEW' ||
@@ -718,7 +719,7 @@ export async function loadDesignerDevicePreview(
         binding.component.props.showLastOnlineAt &&
         typeof entry.lastOnlineAt === 'string'
       )
-        row.detail = `最后在线：${entry.lastOnlineAt}`
+        row.detail = `最后在线：${formatTime(entry.lastOnlineAt)}`
     }
   })
   const expectedModels = new Set(available.map((device) => device.expectedModelVersionId))

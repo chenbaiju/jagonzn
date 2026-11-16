@@ -1,14 +1,23 @@
 <template>
   <section
-    v-loading="loading"
+    v-loading="loading && !loaded"
     class="device-capability console-fragment"
     :class="{ 'device-detail-list': kind === 'ota' }"
   >
+    <div v-if="kind === 'alarms'" class="console-toolbar device-capability__monitor">
+      <ElSwitch v-model="monitoring" active-text="持续监测告警" />
+      <span class="console-description">{{
+        pageIndex > 0 ? '翻页时暂停自动刷新' : '每5秒刷新'
+      }}</span>
+      <span v-if="observedAt" class="console-description"
+        >最近读取：{{ formatTime(observedAt) }}</span
+      >
+      <ElButton :loading="loading" @click="refresh">刷新告警</ElButton>
+    </div>
     <div v-if="$slots.actions" class="device-capability__header">
       <slot name="actions" />
-      <ElAlert type="info" :closable="false" show-icon>{{ descriptions[kind] }}</ElAlert>
     </div>
-    <ElAlert v-else type="info" :closable="false" show-icon>{{ descriptions[kind] }}</ElAlert>
+
     <ElAlert v-if="error" :title="error" type="warning" :closable="false" show-icon />
     <template v-else-if="loaded">
       <template v-if="kind === 'diagnostics' && diagnostics">
@@ -103,17 +112,12 @@
   let cursors: (string | undefined)[] = [undefined]
   const nextCursor = ref<string>()
   const hasMore = ref(false)
+  const monitoring = ref(true)
+  const observedAt = ref('')
+  let monitorTimer: ReturnType<typeof setInterval> | undefined
   let generation = 0
   let readScope: DesignerReadScope | undefined
 
-  const descriptions: Record<DeviceCapability, string> = {
-    credentials: '当前设备的连接凭据（不包含明文密钥）',
-    alarms: '当前设备的活动与历史告警',
-    ota: '当前设备的固件升级作业',
-    topology: '当前设备的网关与子设备关系',
-    modbus: '当前网关的 Modbus 点位配置',
-    diagnostics: '当前设备的接入与会话诊断'
-  }
   const emptyTexts: Record<DeviceCapability, string> = {
     credentials: '当前设备没有凭据',
     alarms: '当前设备没有告警记录',
@@ -133,7 +137,7 @@
       { prop: 'severity', label: '严重度' },
       { prop: 'conditionState', label: '条件状态' },
       { prop: 'ackState', label: '确认状态' },
-      { prop: 'activatedAt', label: '激活时间', time: true },
+      { prop: 'lastReceivedAt', label: '最近报警时间', time: true },
       { prop: 'clearedAt', label: '清除时间', time: true }
     ],
     ota: [
@@ -207,7 +211,7 @@
       return jobStatusLabel(value)
     return labels[String(value)] ?? String(value)
   }
-  const load = async (index: number) => {
+  const load = async (index: number, background = false) => {
     const cursor = cursors[index]
     pageIndex.value = index
     const token = ++generation
@@ -222,9 +226,11 @@
       project === props.projectId &&
       device === props.device.id
     loading.value = true
-    loaded.value = false
     error.value = ''
-    rows.value = []
+    if (!background) {
+      loaded.value = false
+      rows.value = []
+    }
     diagnostics.value = undefined
     nextCursor.value = undefined
     hasMore.value = false
@@ -275,6 +281,7 @@
       }
       if (current()) {
         loaded.value = true
+        observedAt.value = new Date().toISOString()
       }
     } catch (cause) {
       if (current()) error.value = cause instanceof Error ? cause.message : '读取失败，请重试'
@@ -296,7 +303,20 @@
     if (!loading.value && pageIndex.value > 0) void load(pageIndex.value - 1)
   }
   watch(() => [props.projectId, props.device.id, props.kind], refresh, { immediate: true })
+  onMounted(() => {
+    monitorTimer = setInterval(() => {
+      if (
+        props.kind === 'alarms' &&
+        monitoring.value &&
+        pageIndex.value === 0 &&
+        !loading.value &&
+        document.visibilityState === 'visible'
+      )
+        void load(0, true)
+    }, 5000)
+  })
   onUnmounted(() => {
+    clearInterval(monitorTimer)
     generation += 1
     readScope?.close()
   })
@@ -305,14 +325,27 @@
 <style scoped>
   .device-capability__header {
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 12px;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
   }
-
-  .device-capability__header :deep(.el-alert) {
-    flex: 1;
-    min-width: 0;
-    margin-bottom: 0;
+  .device-capability .device-capability__monitor {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .device-capability__monitor > .console-description {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .device-capability__monitor > .el-button {
+    margin: 0;
   }
 </style>

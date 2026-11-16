@@ -46,7 +46,7 @@
  * ```
  *
  * @module useChart
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { echarts, type EChartsOption } from '@/plugins/echarts'

@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
   import { Icon } from '@iconify/vue'
+  import '@/utils/ui/console-icons'
 
   defineOptions({ name: 'ArtSvgIcon', inheritAttrs: false })
 

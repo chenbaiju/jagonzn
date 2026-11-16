@@ -105,7 +105,7 @@ describe('设备任务', () => {
     await click('执行历史')
     await click('当前任务')
     expect(wrapper.text()).toContain('第 1 页')
-    expect(wrapper.text()).toContain('当前目标包含该设备的任务')
+    expect(wrapper.findComponent(table).props('data')).toEqual([item])
   })
   it('换设备取消旧请求，旧响应不能落到新设备详情', async () => {
     let finish!: (v: unknown) => void
@@ -183,7 +183,7 @@ describe('设备任务', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('execution-1')
     expect(wrapper.text()).not.toContain('任务一')
-    expect(wrapper.text()).toContain('整体执行状态与该设备结果分别展示')
+    expect(wrapper.findComponent(table).props('data')).toEqual([history])
     api.fetchDeviceTasks.mockResolvedValue({ items: [] })
     await click('当前任务')
     expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)

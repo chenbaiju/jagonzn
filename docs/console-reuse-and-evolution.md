@@ -182,3 +182,59 @@ JT808原独立工程的4个文件及全部空目录已从ThingsLink的`things-li
 ```
 
 本次没有运行独立PG/Redis上下文、历史数据库升级、全service回归、Console/cloud更新、JT808真机或公网部署。静态复查将上下文测试的旧bean名称断言同步为现行`orderedMigrationStrategy`；这项上下文测试仍未运行。改名后的同版本SQL可能影响旧库Flyway校验和，必须取得实际旧库备份并做隔离兼容验证后才允许启动升级；不能仅把355与548的差值当成可直接追加的迁移。未连接、修复或修改旧库，未关闭许可/配额/安全守卫。两仓改动分别保留本地，未提交、推送或更改独立仓库关系。
+
+## 2026-11-16 Console共享合同包切换至ThingsLink命名
+
+`jagonzn-console`是继续开发的独立前端副本，不是已暂停的ThingsLink Console。复制时仍沿用ThingsCloud时代的共享包路径和包名；在本机`thingslink/jagonzn/jagonzn-console`的目录关系下，`pnpm dev`的`contracts:build`解析`thingslink/things-cloud-client-contracts`失败。`pnpm install`不校验`link:`目标，断链在启动时才暴露。
+
+本次只改构建依赖标识，不改品牌、页面、API合同和业务逻辑：`package.json`的`contracts:build`与依赖链接指向`../../things-link-client-contracts`，依赖键改为`@things-link/client-contracts`；`src`、`tests`、`e2e`中共47个文件的导入同步改名为`@things-link/client-contracts/dashboard/v1`；锁文件由`pnpm install`重新生成，README启动命令同步更新。ThingsLink平台源码、数据库和表未改动。
+
+验证：`pnpm install`链接到`things-link-client-contracts 0.1.0`；`pnpm contracts:build`通过；`pnpm build`（Vite构建及`vue-tsc`）通过；受改名影响的17个合同相关测试文件129项全部通过；`pnpm exec vite --port 13006`启动后`http://127.0.0.1:13006/`返回HTTP 200，标题为“jagonzn”。验证用开发服务器已停止。真实登录、jagonzn-service联调、全量测试和部署未在本轮运行；本次改动保留本地，未提交、推送或部署。
+
+同日后继按负责人要求，将`.env.development`的`VITE_API_PROXY_URL`临时改为本机ThingsLink平台后端`http://127.0.0.1:8080`，暂不启动jagonzn-service；恢复独立service时改回`18080`。Vite代理实测`GET /api/v1/system/health`返回ThingsLink统一401 JSON，页面返回HTTP 200。登录页与业务接口沿用复制时的上游合同，与当前ThingsLink后端的接口版本兼容性未逐项核对；真实账号登录和业务联调未运行。
+
+### 删除“套餐与权益”页面
+
+负责人要求删除套餐与权益前端界面。本次删除页面本体`src/views/plan-catalog/`、前端兜底路由`src/router/modules/plan-catalog.ts`、域注册`src/domains/plan-catalog/`、仅该页使用的`features/plan/comparison-model.ts`及其测试和`e2e/plan-catalog.spec.ts`，并移除`zh.json`的`planCatalog`文案段。
+
+`MenuCatalog.planCatalog()`仍由ThingsLink后端下发，故在`MenuProcessor`装配期按稳定菜单身份`PlanCatalog`递归过滤，前端与后端两种准入模式都不再出现该入口；不改ThingsLink平台源码。同期移除添加项目页、项目设置页、工作台套餐概况、项目标题栏和项目列表导航中指向`/plan-catalog`的入口；工作台“套餐概况”数据面板保留，不再显示“了解详情”跳转。菜单契约测试按本地删除项排除`PlanCatalog`，上游目录基线原件不改写。
+
+验证：`pnpm typecheck`、`pnpm build`及改动文件ESLint通过；全量194个测试文件2387项全部通过。全量测试首轮发现个人中心默认头像断言仍指向上游`avatar.webp`，与既有品牌约定（默认头像使用`jagonzn-original.png`）不符，属本次删除前已存在的陈旧断言，已同步修正后全绿。构建产物中不再包含`plan-catalog`或“套餐与权益”文案；开发服务器重启后页面HTTP 200，`/api`仍代理到ThingsLink并返回统一401。真实登录后的菜单渲染未在本轮复验；改动保留本地，未提交、推送或部署。
+
+## 2026-11-16 与 things-link-console 源码同步
+
+负责人要求：除登录页图片、登录后左上角 Logo、右上角头像、套餐与权益菜单删除外，jagonzn-console 其余源码与 `things-link-console` 保持一致。本次以主仓 `things-link-console` 工作树（HEAD `eea85d47d`，该目录无受跟踪修改）为源，覆盖 `jagonzn-console` 的源码、测试、E2E 与脚本；品牌/端口/合同路径/文档等本地定制不复制，覆盖后逐项恢复。
+
+同步结果：工作区 425 项变更（359 修改、58 新增、8 删除）。新增上游能力包括租户安全治理、设备绑定模型/图片/用途码/运行日志、项目告警通知策略、短信接收人、消息单元额度、规则目录扩展、工作台内嵌项目概况（`ProjectOverviewContent`/`ProjectDeviceCountCards`/`DeviceActivityChart`）、设备创建/详情组件、工作台应用与文档入口、developer console 样式，以及对应测试/E2E/脚本。随上游移除本地独立 `/dashboard/overview` 页面及其路由、`workbenchTabs` 与 `planComparisonModel` 旧测试；概要按照上游嵌入工作台。
+
+保留的本地定制：
+
+- 登录页左侧 JAGONZN 插画、公司名和备案号（`LoginLeftView`、`company-building.jpg`、`AuthTopBar`、`art-logo`）。
+- 登录后左上角与侧栏横向 Logo（`ArtLogo` 尺寸；`header-bar`/`sidebar` 仅改 Logo 用法）。
+- 右上角头像与个人中心默认头像（`ArtUserMenu`、`user-center`）。
+- 新上游工作台组件中的可见品牌文字改为 `JAGONZN App`，示例 URL 的 `thingslink` 路径改为 `jagonzn`。
+- 套餐与权益删除：页面/路由/域/对比模型/E2E 文件不再复制；`MenuProcessor` 过滤 `PlanCatalog`；各入口链接与文案保持移除。
+- 端口/代理（13006、当前 8080）、package 合同路径与包名、vite/vitest 本地适配、config 系统名与主题色、JPF-005 `useAuth`、刷新锁与最近访问命名空间、帮助链接、ThingsCloud Cereal 字体、终端欢迎语、Excel 导出作者，以及 docs/README/AGENTS/pnpm-workspace。
+- 上游新增的 route-meta 权限生命周期测试按本地 JPF-005 改为会话 `buttons` 语义；该差异属已登记的本地权限修复，不采用上游 `useAuth` 的路由授权实现。
+
+合同快照同步：`docs/upstream/console-openapi.json` 与 `docs/upstream/console-menu-catalog-baseline.json` 更新为主仓当前 `docs/openapi.json` 与 `docs/delivery/verification/menu-catalog-baseline.json`；`pnpm api:check` 通过。`docs/console-upstream.json` 保留初次复制的 ThingsCloud 身份，并新增 `localSync` 记录本次来源和保留项。
+
+验证：`pnpm install --frozen-lockfile`、`pnpm typecheck`、`pnpm build`、`pnpm api:check` 通过；全量 217 个测试文件 2665 项通过。本机 13006 登录页实页加载，标题“登录 - 安智云”，无页面或控制台错误，JAGONZN 登录插画、公司名和备案号保留。未使用有效账号登录，首页 Logo/头像和删除后的菜单仅以源码、单测和构建产物核对；新上游页面依赖的租户治理、短信接收人、设备图片/运行日志、概览统计等后端接口未在 jagonzn-service 上验证；E2E 脚本的后端路径仍偏主仓 `things-link`，未改造为 jagonzn-service。改动保留本地，未提交、推送或部署。
+
+## 2026-11-16 jagonzn-console-v1 从 ThingsLink Console V1 复制
+
+负责人要求把主仓 `things-link-console-v1` 全部复制到 `jagonzn/jagonzn-console-v1`，并保留 jagonzn 包名前缀。以主仓当前工作树（HEAD `eea85d47d`，目录仍有其他窗口的在途修改）为源，复制 1219 个源码、测试、配置和资源文件；未复制 `node_modules`、`dist`、`docs`、`AGENTS.md`、`.analysis`、`experiments` 等私有或外置链接。
+
+包名与路径适配：
+
+- `package.json` 包名改为 `@jagonzn/console-v1`；共享合同依赖仍为真实包名 `@things-link/client-contracts`，链接改为 `../../things-link-client-contracts`。
+- 副本比源工程深一层，跨主仓的相对引用各加一级：`src/core/contracts.ts`、`src/core/http.ts`、`src/features/ota/*`、`tests/ota/*` 以及 `tests/device-types/things-cloud-tsl.test.ts` 的 TSL 夹具路径。
+- `pnpm-workspace.yaml` 移除主控的 `modulesDir`/`storeDir`，依赖装在本工程 `node_modules`；Vite/Vitest 缓存与构建输出改到 `/Volumes/Samsung/Jagonzn/data/.private/workspaces/console-v1/main/runtime`；`vite.config.ts` 增加 `server.fs.allow`，允许读取主仓 `things-link-console`。
+- `README.md` 改写为本副本的启动说明；`index.html` 标题改为“Jagonzn 控制台 V1”。产品页面文案和接口目标仍沿用复制时的 ThingsLink Console V1。
+
+验证：`pnpm install` 成功，`pnpm typecheck` 通过，`pnpm build` 通过，构建输出在 Jagonzn 外置 runtime；全量测试 439 个文件、4474 项全部通过。
+
+- **端口**：源工程 `things-link-console-v1` 的 dev 服务自 2026-11-12 起占用 3016；副本首次 `pnpm dev` 因 `--strictPort` 报端口占用，与测试失败无关。副本 `dev` 改为 13016，实页 `http://127.0.0.1:13016/` 返回 200，标题“Jagonzn 控制台 V1”，仅登录前的 `/auth/refresh` 401 属预期。
+- **测试适配**：源工程同一时刻正在给 task-debug 增加“来源”列。副本同步新行为后，旧断言仍按五列/旧字段检查：补了 `tests/rules/task-debug-state.test.ts` 夹具的 `sourceLabel:'—'`，并把正式日志表列数、来源列、设备数/方式列索引和 HTTP 行投影更新为六列语义。副本因此全绿；源工程自身的 2 个 `vue-tsc` 错误和 4 个 task-debug 测试失败保持原样，不冒充源工程通过。
+
+依赖边界：副本仍直接引用主仓 `things-link-console` 的 schema、刷新协调器和 OTA 模型，并依赖主仓 `things-link-client-contracts`；单独克隆 jagonzn 不能独立构建，必须保留与主仓的相对目录关系。源工程仍在被其他窗口修改，本副本是当前时间点快照，不声称固定候选。未提交、推送或部署。

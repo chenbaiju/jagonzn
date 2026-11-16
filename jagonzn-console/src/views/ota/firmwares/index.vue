@@ -11,7 +11,9 @@
   从各自的只读集合读取，不把展示信息当作当前设备升级资格。
 -->
 <template>
-  <div class="console-page ota-firmwares console-page--single-panel ota-firmware-feedback">
+  <div
+    class="console-page console-developer-page console-developer-workspace ota-firmwares console-page--single-panel ota-firmware-feedback"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="固件与发布"
@@ -42,15 +44,8 @@
       </template>
     </ConsoleWorkspaceHeader>
 
-    <ElAlert
-      class="ota-firmwares__notice"
-      title="固件发布需要签名服务；未配置时会拒绝发布，不生成就绪或已发布版本。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
-
     <ElCard class="console-page__main-panel" shadow="never">
+      <h2 class="console-panel-title">固件列表</h2>
       <ElTable v-loading="loading" :data="firmwares" row-key="id">
         <ElTableColumn
           prop="firmwareVersion"
@@ -65,12 +60,12 @@
             }}</ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn label="设备类型" min-width="290" show-overflow-tooltip>
+        <ElTableColumn label="设备类型" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="ota-firmwares__mono">{{ row.deviceTypeId || '—' }}</span>
           </template>
         </ElTableColumn>
-        <ElTableColumn label="物模型版本" min-width="290" show-overflow-tooltip>
+        <ElTableColumn label="物模型版本" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="ota-firmwares__mono">{{ row.thingModelVersionId || '—' }}</span>
           </template>
@@ -158,7 +153,7 @@
           </template>
         </ElTableColumn>
         <template #empty>
-          <ElEmpty description="还没有固件草稿">
+          <ElEmpty :image-size="80" description="还没有固件草稿">
             <ElButton v-if="hasAuth('ota:deploy')" type="primary" @click="openCreate">
               创建第一个固件草稿
             </ElButton>
@@ -171,7 +166,7 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog ota-firmware-feedback"
+      class="console-dialog console-developer-dialog ota-firmware-feedback"
       v-model="createVisible"
       title="创建固件草稿"
       width="560px"
@@ -245,15 +240,12 @@
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="uploadVisible"
       title="上传固件对象"
       width="620px"
       destroy-on-close
     >
-      <ElAlert type="info" :closable="false" show-icon class="ota-firmwares__form-error">
-        上传只证明字节与承诺一致；签名、硬件资格与安全版本由发布与设备侧证据决定。
-      </ElAlert>
       <ElForm label-width="120px">
         <ElFormItem label="固件版本">
           <span>{{ uploading?.firmwareVersion || '—' }}</span>
@@ -316,7 +308,7 @@
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="publishVisible"
       title="提交发布尝试"
       width="720px"
@@ -367,6 +359,7 @@
     </ElDialog>
 
     <ElDrawer
+      class="console-developer-drawer"
       v-model="detailVisible"
       :title="`固件 ${detail?.firmwareVersion ?? ''}`"
       size="680px"
@@ -457,7 +450,7 @@
           <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
         </ElTableColumn>
         <template #empty>
-          <ElEmpty description="该固件还没有上传会话" />
+          <ElEmpty :image-size="80" description="该固件还没有上传会话" />
         </template>
       </ElTable>
       <div v-if="uploadHistory.hasMore" class="ota-firmwares__more">
@@ -496,7 +489,7 @@
           <template #default="{ row }">{{ formatTime(row.updatedAt) }}</template>
         </ElTableColumn>
         <template #empty>
-          <ElEmpty description="该固件还没有发布尝试" />
+          <ElEmpty :image-size="80" description="该固件还没有发布尝试" />
         </template>
       </ElTable>
       <div v-if="publicationHistory.hasMore" class="ota-firmwares__more">
@@ -666,8 +659,20 @@
   const publishKeys = new IdempotentSubmission()
   const actionKeys = new IdempotentSubmission()
 
+  watch(
+    () => hasAuth('ota:deploy'),
+    (allowed) => {
+      if (allowed) return
+      createVisible.value = false
+      uploadVisible.value = false
+      publishVisible.value = false
+    },
+    { flush: 'sync' }
+  )
+
   const canSubmitCreate = computed(
     () =>
+      hasAuth('ota:deploy') &&
       createForm.deviceTypeId !== '' &&
       createForm.firmwareVersion.trim() !== '' &&
       modelVersion.value !== undefined
@@ -758,6 +763,7 @@
   }
 
   async function openCreate() {
+    if (!hasAuth('ota:deploy')) return
     createError.value = ''
     createForm.deviceTypeId = ''
     createForm.firmwareVersion = ''
@@ -835,6 +841,7 @@
   }
 
   function openUpload(row: OtaFirmwareResponse) {
+    if (!hasAuth('ota:deploy')) return
     uploading.value = row
     selectedFile.value = undefined
     artifactSha256.value = ''
@@ -869,6 +876,7 @@
   }
 
   async function submitUpload() {
+    if (!hasAuth('ota:deploy')) return
     const row = uploading.value
     const file = selectedFile.value
     if (!row?.id || !file || artifactSha256.value === '') return
@@ -896,12 +904,10 @@
         uploadError.value = '上传会话缺少标识，请刷新会话状态。'
         return
       }
-      const verified = await uploadOtaContent(
-        projectId.value,
-        row.id,
-        session.id,
-        await file.arrayBuffer()
-      )
+      if (!hasAuth('ota:deploy')) return
+      const content = await file.arrayBuffer()
+      if (!hasAuth('ota:deploy')) return
+      const verified = await uploadOtaContent(projectId.value, row.id, session.id, content)
       uploadSession.value = verified
       uploadSessions[row.id] = verified
       reloadDetailHistory(row.id)
@@ -929,6 +935,7 @@
   }
 
   async function cancelUpload() {
+    if (!hasAuth('ota:deploy')) return
     const row = uploading.value
     const session = uploadSession.value
     if (!row?.id || !session?.id || !session.revision) return
@@ -953,6 +960,7 @@
   }
 
   function openPublish(row: OtaFirmwareResponse) {
+    if (!hasAuth('ota:deploy')) return
     publishing.value = row
     publishForm.uploadSessionId = row.id ? (uploadSessions[row.id]?.id ?? '') : ''
     publishForm.expectedRevision = row.revision ?? ''
@@ -963,6 +971,7 @@
   }
 
   async function submitPublish() {
+    if (!hasAuth('ota:deploy')) return
     const row = publishing.value
     if (!row?.id) return
     const parsed = parseManifestInput(publishForm.manifestText)
@@ -1047,7 +1056,12 @@
         await ElMessageBox.confirm(
           `取消草稿 ${row.firmwareVersion ?? ''} 后不能再次上传或发布；已上传对象的回收由后台完成。`,
           '取消固件草稿',
-          { confirmButtonText: '取消草稿', cancelButtonText: '返回', type: 'warning' }
+          {
+            customClass: 'console-studio-feedback',
+            confirmButtonText: '取消草稿',
+            cancelButtonText: '返回',
+            type: 'warning'
+          }
         )
       } catch {
         return
@@ -1075,7 +1089,12 @@
       const result = await ElMessageBox.prompt(
         `请输入${label}固件 ${version} 的原因（会写入生命周期记录）。`,
         `${label}固件`,
-        { inputPattern: /\S+/, inputErrorMessage: '原因不能为空', confirmButtonText: label }
+        {
+          customClass: 'console-studio-feedback',
+          inputPattern: /\S+/,
+          inputErrorMessage: '原因不能为空',
+          confirmButtonText: label
+        }
       )
       return result.value
     } catch {
@@ -1129,18 +1148,20 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      min-width: 0;
       line-height: 1.5;
+      overflow-wrap: anywhere;
     }
 
     &__mono {
       font-family: var(--art-font-mono, monospace);
-      font-size: 12px;
+      font-size: 14px;
       word-break: break-all;
     }
 
     &__hint {
       margin-left: 8px;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--art-text-gray-600);
     }
 
@@ -1154,6 +1175,8 @@
 
     &__file {
       width: 100%;
+      max-width: 100%;
+      font: inherit;
     }
   }
 </style>

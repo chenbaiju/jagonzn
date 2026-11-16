@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   validateDashboardSchemaV1,
   parseDashboardRuntimeResponse
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import {
   loadDesignerDevicePreview,
   refreshDesignerCurrent,

@@ -1,108 +1,112 @@
 <template>
   <section class="agent-evidence" data-testid="agent-evidence" @click.capture="clearPreviousError">
-    <ElDivider content-position="left">诊断证据</ElDivider>
-    <ElAlert type="info" :closable="false" show-icon
-      >查看设备事实与来源状态。读取证据不会调用外部模型；模型分析需另行确认。</ElAlert
-    >
-    <ElAlert
-      v-if="!readable"
-      type="info"
-      :closable="false"
-      title="请选择当前可访问项目内的设备"
-      show-icon
-    />
-    <template v-else>
-      <div class="console-toolbar">
-        <ElButton :disabled="busy" @click="loadCatalog">加载属性目录</ElButton>
-        <ElSelect
-          v-model="selected"
-          multiple
-          :multiple-limit="10"
-          :disabled="busy || !metadata"
-          placeholder="选择 1 至 10 个属性"
-          aria-label="证据属性"
-        >
-          <ElOption v-for="key in keys" :key="key" :value="key" :label="key" />
-        </ElSelect>
-        <ElButton :disabled="!canRead" :loading="busy" @click="read">读取证据</ElButton>
-      </div>
-      <ElAlert v-if="error" type="error" :closable="false" :title="error" show-icon />
-      <p v-if="metadata && !keys.length">当前物模型没有可读取的属性。</p>
-      <template v-if="snapshot">
-        <ElDescriptions :column="1" border>
-          <ElDescriptionsItem label="采集区间"
-            >{{ snapshot.collectionStartedAt }} 至
-            {{ snapshot.collectionFinishedAt }}</ElDescriptionsItem
+    <DeviceDetailCard title="诊断证据">
+      <ElAlert
+        v-if="!readable"
+        type="info"
+        :closable="false"
+        title="请选择当前可访问项目内的设备"
+        show-icon
+      />
+      <template v-else>
+        <div class="console-toolbar">
+          <ElButton :disabled="busy" @click="loadCatalog">加载属性目录</ElButton>
+          <ElSelect
+            v-model="selected"
+            multiple
+            :multiple-limit="10"
+            :disabled="busy || !metadata"
+            placeholder="选择 1 至 10 个属性"
+            aria-label="证据属性"
           >
-          <ElDescriptionsItem label="物模型版本">{{ snapshot.modelVersionId }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="设备状态">{{
-            deviceStatusLabel(snapshot.device.status)
-          }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="最后上线">{{
-            snapshot.device.lastOnlineAt ?? '从未上线'
-          }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="设备读取时间">{{ snapshot.device.readAt }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="告警状态">{{
-            snapshot.alarmSummary.state === 'ACTIVE' ? '有活动告警' : '无活动告警'
-          }}</ElDescriptionsItem>
-          <ElDescriptionsItem label="告警观测时间">{{
-            snapshot.alarmSummary.observedAt
-          }}</ElDescriptionsItem>
-        </ElDescriptions>
-        <ElAlert type="info" :closable="false" show-icon
-          >各来源读取时间可能不同；属性值仅供浏览器展示，不能代替实时观测或模型分析输入。</ElAlert
-        >
-        <ElTable :data="snapshot.properties" row-key="key">
-          <ElTableColumn prop="key" label="属性键" min-width="140" />
-          <ElTableColumn label="来源状态" min-width="130">
-            <template #default="{ row }">{{ availability[row.availability] }}</template>
-          </ElTableColumn>
-          <ElTableColumn label="值" min-width="160">
-            <template #default="{ row }"
-              ><span class="agent-evidence__value">{{ displayValue(row) }}</span></template
+            <ElOption v-for="key in keys" :key="key" :value="key" :label="key" />
+          </ElSelect>
+          <ElButton :disabled="!canRead" :loading="busy" @click="read">读取证据</ElButton>
+        </div>
+        <ElAlert v-if="error" type="error" :closable="false" :title="error" show-icon />
+        <p v-if="metadata && !keys.length">当前物模型没有可读取的属性。</p>
+        <template v-if="snapshot">
+          <ElDescriptions :column="1" border>
+            <ElDescriptionsItem label="采集区间"
+              >{{ formatTime(snapshot.collectionStartedAt) }} 至
+              {{ formatTime(snapshot.collectionFinishedAt) }}</ElDescriptionsItem
             >
-          </ElTableColumn>
-          <ElTableColumn label="上报时间" min-width="210">
-            <template #default="{ row }">{{ row.occurredAt ?? '未提供' }}</template>
-          </ElTableColumn>
-          <ElTableColumn label="上报修订" min-width="140">
-            <template #default="{ row }">{{ row.reportedRevision ?? '未提供' }}</template>
-          </ElTableColumn>
-          <ElTableColumn label="来源模型版本" min-width="240">
-            <template #default="{ row }">{{ row.sourceModelVersionId ?? '未提供' }}</template>
-          </ElTableColumn>
-          <ElTableColumn prop="readAt" label="属性读取时间" min-width="210" />
-        </ElTable>
+            <ElDescriptionsItem label="物模型版本">{{
+              snapshot.modelVersionId
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="设备状态">{{
+              deviceStatusLabel(snapshot.device.status)
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="最后上线">{{
+              formatTime(snapshot.device.lastOnlineAt, '从未上线')
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="设备读取时间">{{
+              formatTime(snapshot.device.readAt)
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="告警状态">{{
+              snapshot.alarmSummary.state === 'ACTIVE' ? '有活动告警' : '无活动告警'
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="告警观测时间">{{
+              formatTime(snapshot.alarmSummary.observedAt)
+            }}</ElDescriptionsItem>
+          </ElDescriptions>
+
+          <ElTable :data="snapshot.properties" row-key="key">
+            <ElTableColumn prop="key" label="属性键" min-width="140" />
+            <ElTableColumn label="来源状态" min-width="130">
+              <template #default="{ row }">{{ availability[row.availability] }}</template>
+            </ElTableColumn>
+            <ElTableColumn label="值" min-width="160">
+              <template #default="{ row }"
+                ><span class="agent-evidence__value">{{ displayValue(row) }}</span></template
+              >
+            </ElTableColumn>
+            <ElTableColumn label="上报时间" min-width="210">
+              <template #default="{ row }">{{ formatTime(row.occurredAt, '未提供') }}</template>
+            </ElTableColumn>
+            <ElTableColumn label="上报修订" min-width="140">
+              <template #default="{ row }">{{ row.reportedRevision ?? '未提供' }}</template>
+            </ElTableColumn>
+            <ElTableColumn label="来源模型版本" min-width="240">
+              <template #default="{ row }">{{ row.sourceModelVersionId ?? '未提供' }}</template>
+            </ElTableColumn>
+            <ElTableColumn prop="readAt" label="属性读取时间" min-width="210">
+              <template #default="{ row }">{{ formatTime(row.readAt) }}</template>
+            </ElTableColumn>
+          </ElTable>
+        </template>
+        <p v-else-if="busy && !error">正在读取…</p>
       </template>
-      <p v-else-if="busy && !error">正在读取…</p>
-    </template>
-    <DeviceAgentAnalysis
-      :project-id="projectId"
-      :device-id="deviceId"
-      :model-version-id="metadata?.model.versionId ?? ''"
-      :property-keys="selected"
-      :parent-busy="busy"
-    />
-    <DevicePersonalRecords
-      :project-id="projectId"
-      :device-id="deviceId"
-      :model-version-id="metadata?.model.versionId ?? ''"
-      :property-keys="selected"
-      :parent-busy="busy"
-    />
-    <DeviceEvidenceTools
-      :project-id="projectId"
-      :device-id="deviceId"
-      :model-version-id="metadata?.model.versionId ?? ''"
-      :property-keys="
-        metadata?.properties.filter((p) => p.dataType === 'NUMBER').map((p) => p.key) ?? []
-      "
-      :parent-busy="busy"
-    />
+      <DeviceAgentAnalysis
+        :project-id="projectId"
+        :device-id="deviceId"
+        :model-version-id="metadata?.model.versionId ?? ''"
+        :property-keys="selected"
+        :parent-busy="busy"
+      />
+      <DevicePersonalRecords
+        :project-id="projectId"
+        :device-id="deviceId"
+        :model-version-id="metadata?.model.versionId ?? ''"
+        :property-keys="selected"
+        :parent-busy="busy"
+      />
+      <DeviceEvidenceTools
+        :project-id="projectId"
+        :device-id="deviceId"
+        :model-version-id="metadata?.model.versionId ?? ''"
+        :property-keys="
+          metadata?.properties.filter((p) => p.dataType === 'NUMBER').map((p) => p.key) ?? []
+        "
+        :parent-busy="busy"
+      />
+    </DeviceDetailCard>
   </section>
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
+  import DeviceDetailCard from './DeviceDetailCard.vue'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import DevicePersonalRecords from './DevicePersonalRecords.vue'
   import DeviceEvidenceTools from './DeviceEvidenceTools.vue'
@@ -307,8 +311,11 @@
 
 <style scoped lang="scss">
   .agent-evidence {
-    display: grid;
-    gap: 12px;
+    min-width: 0;
+    :deep(> .device-detail-card > .el-card__body) {
+      display: grid;
+      gap: 12px;
+    }
     .el-select {
       width: min(100%, 380px);
     }

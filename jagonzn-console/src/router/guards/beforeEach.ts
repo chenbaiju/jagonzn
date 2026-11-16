@@ -33,7 +33,7 @@
  * 6. 未匹配路由跳转到 404 页面
  *
  * @module router/guards/beforeEach
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import type { Router, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import { nextTick } from 'vue'

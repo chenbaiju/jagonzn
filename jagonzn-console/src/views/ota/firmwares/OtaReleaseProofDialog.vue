@@ -1,15 +1,12 @@
 <template>
   <ElDialog
-    class="console-dialog"
+    class="console-dialog console-developer-dialog"
     v-model="visible"
     title="公开发布证明"
     width="min(760px, 94vw)"
     destroy-on-close
     data-testid="ota-release-proof-dialog"
   >
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >材料由服务端复核当前管理读取资格后提供。公钥本身不是设备信任来源，展示不代表设备验签通过或获得升级资格。</ElAlert
-    >
     <p v-if="busy" role="status">正在读取当前资格与发布证明…</p>
     <ElAlert
       v-if="notice"
@@ -22,16 +19,15 @@
     <div v-if="proof" class="release-proof" data-testid="ota-release-proof-content">
       <dl class="release-proof__summary">
         <dt>固件 ID</dt><dd>{{ proof.firmwareId }}</dd> <dt>发布 ID</dt
-        ><dd>{{ proof.publicationId }}</dd> <dt>发布时间</dt><dd>{{ proof.releaseCreatedAt }}</dd>
-        <dt>制品大小</dt><dd>{{ proof.artifactSize }} 字节</dd> <dt>制品 SHA-256</dt
+        ><dd>{{ proof.publicationId }}</dd> <dt>发布时间</dt
+        ><dd>{{ formatTime(proof.releaseCreatedAt) }}</dd> <dt>制品大小</dt
+        ><dd>{{ proof.artifactSize }} 字节</dd> <dt>制品 SHA-256</dt
         ><dd>{{ proof.artifactSha256 }}</dd> <dt>签名协议</dt><dd>{{ proof.signatureProfile }}</dd>
         <dt>公钥指纹</dt><dd>{{ proof.keyFingerprint }}</dd>
       </dl>
       <details class="release-proof__raw">
         <summary>查看原始公开材料（Base64）</summary>
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >保留服务端返回的精确编码。Manifest 为规范 UTF-8 字节，未重新排版或签名。</ElAlert
-        >
+
         <label
           >Manifest<textarea readonly :value="proof.manifestBase64" aria-label="Manifest Base64" />
         </label>
@@ -65,6 +61,7 @@
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { fetchOtaRelease, fetchOtaFirmwareLifecycle, type OtaReleaseResponse } from '@/api/ota'
   import { fetchProjects } from '@/api/project'

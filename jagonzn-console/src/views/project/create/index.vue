@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page project-create">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace project-create"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="添加项目"
@@ -74,7 +76,6 @@
                 ><strong>{{ quota.value.toLocaleString() }}{{ quotaUnit(quota.unit) }}</strong>
               </li>
             </ul>
-            <ElButton @click="router.push('/plan-catalog')">了解套餐详情</ElButton>
           </article>
         </div>
       </section>
@@ -212,18 +213,31 @@
 
 <style scoped lang="scss">
   .project-create {
-    padding: 10px;
+    > .el-form {
+      padding: var(--console-page-spacing);
+      background: var(--el-bg-color);
+      border: 1px solid var(--el-border-color-lighter);
+      border-radius: 4px;
+    }
     :deep(.el-form-item) {
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
     :deep(.el-form-item__content) {
       display: block;
     }
     :deep(.el-form-item__label) {
+      height: auto !important;
+      margin-bottom: 6px;
       font-weight: 500;
+      line-height: 20px !important;
     }
     .console-description {
-      margin: 0 0 10px;
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 20px;
+    }
+    > .el-form > .el-button {
+      margin: 0;
     }
     &__name,
     &__description {
@@ -265,7 +279,7 @@
       padding: 18px;
       background: var(--default-box-color);
       border: 1px solid var(--console-line);
-      border-radius: 6px;
+      border-radius: 4px;
     }
     &__plan-title {
       display: flex;
@@ -274,7 +288,7 @@
       justify-content: space-between;
       h3 {
         margin: 0;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 500;
       }
     }
@@ -283,7 +297,7 @@
       font-size: 24px;
       color: var(--el-color-primary);
       small {
-        font-size: 12px;
+        font-size: 14px;
         color: var(--el-text-color-secondary);
       }
     }
@@ -298,7 +312,7 @@
       gap: 10px;
       justify-content: space-between;
       margin-bottom: 12px;
-      font-size: 12px;
+      font-size: 14px;
       strong {
         font-weight: 400;
       }
@@ -310,6 +324,17 @@
     }
   }
   @media (width <= 640px) {
+    .project-create__options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .project-create__options :deep(.el-button),
+    .project-create__options :deep(.el-button:first-child),
+    .project-create__options :deep(.el-button:last-child) {
+      width: 100%;
+      border-radius: 4px;
+    }
     .project-create__plan-grid {
       grid-template-columns: 1fr;
     }

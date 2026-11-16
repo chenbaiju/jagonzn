@@ -1,7 +1,7 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { emptyDashboard } from '../src/features/dashboard/designer-model'
-import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
 const api = vi.hoisted(() => ({ catalog: vi.fn(), metadata: vi.fn(), close: vi.fn() }))
 vi.mock('@/api/dashboard-binding', () => ({
   fetchDesignerDeviceCatalog: api.catalog,

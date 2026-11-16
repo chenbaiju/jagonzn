@@ -266,7 +266,7 @@ describe('Console「我的套餐」面板（S14-4c 展示面）', () => {
       summary({ capabilities: [{ code: 'OTA', enabled: false, enforcement: 'CATALOG_ONLY' }] })
     )
     expect(current.text()).toContain('OTA 升级 · 目录未包含')
-    expect(current.text()).toContain('目录标记不代表当前账号权限')
+    expect(current.get('.plan-summary__capabilities').find('button').exists()).toBe(false)
     expect(current.text()).not.toContain('OTA 升级（未交付）')
     const legacy = panel(summary({ capabilities: [{ code: 'OTA', enabled: false }] }))
     expect(legacy.text()).toContain('OTA 升级 · 语义未确认')

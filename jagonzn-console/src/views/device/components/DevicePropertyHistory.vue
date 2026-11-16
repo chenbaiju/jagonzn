@@ -4,9 +4,6 @@
     aria-label="原始属性历史"
     data-testid="device-property-history"
   >
-    <ElAlert type="info" :closable="false" show-icon
-      >按上报时的类型、物模型版本和采集时刻展示原始属性值，数值曲线仍可在设备属性页查看。</ElAlert
-    >
     <ElForm inline class="device-history-filter" @submit.prevent="model.refresh()">
       <ElFormItem label="属性键"
         ><ElInput v-model="model.filters.propertyKey" aria-label="历史属性键"
@@ -46,7 +43,9 @@
       <ElTableColumn label="原始值" min-width="260"
         ><template #default="{ row }"><pre v-text="row.valueText" /></template
       ></ElTableColumn>
-      <ElTableColumn prop="ts" label="采集时刻 UTC" min-width="240" />
+      <ElTableColumn prop="ts" label="采集时刻" min-width="240">
+        <template #default="{ row }">{{ formatTime(row.ts) }}</template>
+      </ElTableColumn>
       <ElTableColumn prop="modelVersion" label="原模型版本" min-width="160" />
       <ElTableColumn label="原模型版本 ID" min-width="250"
         ><template #default="{ row }">{{
@@ -79,6 +78,7 @@
   </section>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import DeviceDetailPagination from './DeviceDetailPagination.vue'
   import { onBeforeUnmount, reactive, watch } from 'vue'
   import { fetchDevicePropertyHistory } from '@/api/device-property-history'

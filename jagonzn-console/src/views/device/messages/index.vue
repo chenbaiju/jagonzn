@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page message-logs console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace message-logs console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="消息调试"
@@ -27,13 +29,6 @@
       type="info"
       :closable="false"
     />
-    <ElAlert
-      class="message-logs__hint"
-      title="日志仅保留报文摘要，最多 256 字符；不提供原始报文，原始长度见“字节数”。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
 
     <ElCard class="console-list-filter" shadow="never">
       <MessageLogFilterForm
@@ -47,7 +42,55 @@
       />
     </ElCard>
 
+    <ElCard class="message-logs__stream" shadow="never" data-testid="message-debug-stream">
+      <div class="message-logs__stream-actions">
+        <h2 class="console-panel-title">实时消息：{{ streamStatusText }}</h2>
+        <ElButton
+          v-if="!streamActive"
+          :disabled="!canRead() || !filter.deviceId"
+          @click="startStream"
+          >连接实时消息</ElButton
+        >
+        <ElButton v-else @click="stopStream">停止订阅</ElButton>
+        <ElButton :disabled="!canRead() || loading" @click="repairHistory">补拉历史</ElButton>
+      </div>
+      <p class="message-logs__stream-description"
+        >选择一个设备后连接，显示该设备最新上下行摘要；其他筛选条件仅作用于下方历史列表。</p
+      >
+      <ElAlert
+        v-if="streamGap"
+        title="实时消息可能有缺口，请补拉历史并按需加载更多；实时窗口最多保留200条。"
+        type="warning"
+        :closable="false"
+      />
+      <ElTable :data="streamItems" row-key="id" max-height="320">
+        <ElTableColumn label="发生时间" width="180"
+          ><template #default="{ row }">{{ formatTime(row.ts) }}</template></ElTableColumn
+        >
+        <ElTableColumn label="方向" width="80"
+          ><template #default="{ row }">{{
+            row.direction === 'UP' ? '上行' : '下行'
+          }}</template></ElTableColumn
+        >
+        <ElTableColumn label="消息类型" prop="messageType" width="150" />
+        <ElTableColumn label="报文摘要" min-width="220" show-overflow-tooltip
+          ><template #default="{ row }"
+            ><ElButton link type="primary" @click="openDetail(row)">{{
+              row.payloadSummary || (row.sampled ? '已采样，查看事实' : '查看详情')
+            }}</ElButton></template
+          ></ElTableColumn
+        >
+        <ElTableColumn label="处理错误" prop="errorCode" width="150" />
+        <template #empty>
+          <div class="message-logs__stream-empty">
+            {{ streamActive ? '等待该设备的新消息' : '实时窗口暂无消息' }}
+          </div>
+        </template>
+      </ElTable>
+    </ElCard>
+
     <ElCard class="console-list-data console-page__main-panel" shadow="never">
+      <h2 class="console-panel-title">历史消息</h2>
       <ElTable v-loading="loading" :data="items" row-key="id">
         <ElTableColumn label="发生时间" width="180">
           <template #default="{ row }">{{ formatTime(row.ts) }}</template>
@@ -109,7 +152,7 @@
         </ElTableColumn>
         <ElTableColumn label="Trace ID" min-width="160" prop="traceId" show-overflow-tooltip />
         <template #empty>
-          <ElEmpty description="当前筛选条件下没有消息日志" />
+          <ElEmpty :image-size="80" description="当前筛选条件下没有消息日志" />
         </template>
       </ElTable>
 
@@ -119,15 +162,12 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="detailVisible"
       title="消息详情"
       width="760px"
       destroy-on-close
     >
-      <ElAlert class="message-logs__hint" type="info" :closable="false" show-icon>
-        凭据类字段由服务端整字段移除；截断与采样标记如实呈现，摘要不代表完整报文。
-      </ElAlert>
       <ElRadioGroup v-model="detailFormat" class="message-logs__format" @change="reloadDetail">
         <ElRadioButton value="JSON">JSON</ElRadioButton>
         <ElRadioButton value="HEX">HEX</ElRadioButton>
@@ -161,7 +201,7 @@
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="diagnosticsVisible"
       title="接入连接诊断"
       width="620px"
@@ -212,6 +252,7 @@
   import { usePagedDeviceCatalog } from '@/composables/usePagedDeviceCatalog'
   import { useUserStore } from '@/store/modules/user'
   import { HttpError } from '@/utils/http/error'
+  import { MessageDebugStream, type MessageDebugStatus } from '@/utils/message-debug-stream'
   import MessageLogFilterForm, { type MessageLogFilterModel } from './MessageLogFilterForm.vue'
 
   defineOptions({ name: 'DeviceMessages' })
@@ -271,6 +312,52 @@
     timeRange: defaultRange(),
     traceId: ''
   })
+  const streamItems = ref<MessageLogResponse[]>([])
+  const streamStatus = ref<MessageDebugStatus>('stopped')
+  const streamGap = ref(false)
+  const streamActive = computed(() => ['connecting', 'connected'].includes(streamStatus.value))
+  const streamStatusText = computed(
+    () =>
+      ({
+        stopped: '未连接',
+        connecting: '连接中',
+        connected: '已连接',
+        disconnected: '已断开，可重新连接',
+        denied: '权限已失效，请刷新身份',
+        busy: '连接额度或服务容量不足'
+      })[streamStatus.value]
+  )
+  const repairHistory = () => {
+    if (!canRead()) return
+    // 只刷新历史查询截止，不把一页结果称为完整补齐；原始时间起点和其他筛选保持。
+    filter.value.timeRange = [filter.value.timeRange[0], new Date()]
+    void loadMessages()
+  }
+  const stream = new MessageDebugStream({
+    token: () => userStore.accessToken,
+    onStatus: (status) => {
+      streamStatus.value = status
+    },
+    onItems: (rows) => {
+      streamItems.value = rows
+    },
+    onGap: () => {
+      streamGap.value = true
+    },
+    onConnected: () => {
+      streamGap.value = true
+      repairHistory()
+    }
+  })
+  const stopStream = () => {
+    stream.close()
+    streamGap.value = false
+  }
+  const startStream = () => {
+    if (canRead()) stream.connect(projectId.value, filter.value.deviceId)
+  }
+  watch(() => [filter.value.deviceId, userStore.accessToken], stopStream, { flush: 'sync' })
+
   const deviceOptions = computed(() =>
     devices.value
       .filter((device): device is DeviceResponse & { id: string } => Boolean(device.id))
@@ -378,6 +465,7 @@
   const stateText = (state?: string) =>
     state === 'CONNECTED' ? '连接在线' : state === 'LAST_ACTIVITY' ? '最近活动内' : '离线'
   const clearResults = () => {
+    stopStream()
     listGeneration++
     detailGeneration++
     diagnosticsGeneration++
@@ -450,6 +538,36 @@
       margin-bottom: 0;
     }
 
+    &__stream-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: flex-end;
+
+      .console-panel-title {
+        margin: 0 auto 0 0;
+      }
+
+      :deep(.el-button) {
+        margin: 0;
+      }
+    }
+
+    &__stream-description {
+      margin: 10px 0 16px;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--el-text-color-secondary);
+    }
+
+    &__stream-empty {
+      padding-block: 24px;
+      font-size: 14px;
+      line-height: 22px;
+      color: var(--el-text-color-secondary);
+    }
+
     &__more {
       display: flex;
       justify-content: center;
@@ -479,12 +597,12 @@
 
   .message-logs__hint {
     margin-bottom: 10px;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 20px;
 
     :deep(.el-alert__title),
     :deep(.el-alert__description) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }

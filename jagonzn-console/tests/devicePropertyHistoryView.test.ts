@@ -68,6 +68,9 @@ it('原始值按纯文本保真展示，关闭宿主清旧内容；空态与错�
   expect(wrapper.get('pre').text()).toContain('12345678901234567890123456789012345678')
   expect(wrapper.get('pre').text()).toContain('<script>bad</script>')
   expect(wrapper.find('script').exists()).toBe(false)
+  expect(wrapper.text()).toContain('2026-10-07 08:00:00')
+  expect(wrapper.text()).not.toContain('UTC')
+  expect(item.ts).toBe('2026-10-07T00:00:00Z')
   await wrapper.setProps({ active: false })
   expect(wrapper.find('pre').exists()).toBe(false)
   api.fetchDevicePropertyHistory.mockResolvedValue({

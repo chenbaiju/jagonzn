@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { readFileSync, realpathSync, statSync } from 'node:fs'
-import { isAbsolute, relative, resolve } from 'node:path'
+import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseDashboardRuntimeResponse } from '@things-cloud/client-contracts/dashboard/v1'
+import { parseDashboardRuntimeResponse } from '@things-link/client-contracts/dashboard/v1'
 import { executeDatabaseFixture, parseOwnedDatabaseRuntime } from './database-fixture'
 
 const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
@@ -46,7 +46,8 @@ function within(root: string, path: string, io: OwnedRuntimeIO) {
   if (!isAbsolute(path)) throw fail()
   const actual = io.realpath(path),
     suffix = relative(io.realpath(root), actual)
-  if (!suffix || isAbsolute(suffix) || suffix === '..' || suffix.startsWith('../')) throw fail()
+  if (!suffix || isAbsolute(suffix) || suffix === '..' || suffix.startsWith(`..${sep}`))
+    throw fail()
   return actual
 }
 function material(path: string, expected: string, io: OwnedRuntimeIO, maximum = 512 * 1024 * 1024) {
@@ -182,9 +183,9 @@ export function verifyOwnedRuntime(env = process.env, io = defaultIO) {
     const snapshotPaths = verifySources(snapshot.files, io)
     for (const path of paths) if (!snapshotPaths.has(path)) throw fail()
     for (const path of [
-      'things-cloud-console/e2e/owned-runtime-setup.ts',
-      'things-cloud-console/playwright.config.ts',
-      'things-cloud-console/vite.config.ts'
+      'jagonzn-console/e2e/owned-runtime-setup.ts',
+      'jagonzn-console/playwright.config.ts',
+      'jagonzn-console/vite.config.ts'
     ]) {
       if (!paths.has(path)) throw fail()
     }
@@ -205,7 +206,7 @@ export function verifyOwnedRuntime(env = process.env, io = defaultIO) {
     )
     for (const [role, port, directory] of [
       ['vite', 3019, consoleRoot],
-      ['webapp', 4018, resolve(repoRoot, 'things-cloud-webapp')]
+      ['webapp', 4018, resolve(repoRoot, 'things-link-webapp')]
     ] as const) {
       const descriptor = runtime[role]
       if (
@@ -258,7 +259,7 @@ export function verifyOwnedRuntime(env = process.env, io = defaultIO) {
         !hex(expected.Id) ||
         !/^sha256:[0-9a-f]{64}$/.test(expected.Image ?? '') ||
         typeof expected.ConfigImage !== 'string' ||
-        expected.Labels?.['thingscloud.owner'] !== 'console-wp03'
+        expected.Labels?.['thingslink.owner'] !== 'console-wp03'
       )
         throw fail()
       const actual = JSON.parse(io.command('docker', ['inspect', '--format', inspectFormat, name]))

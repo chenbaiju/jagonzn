@@ -2,7 +2,7 @@
  * 路由和导航相关工具函数统一导出
  *
  * @module utils/navigation/index
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 export * from './jump'

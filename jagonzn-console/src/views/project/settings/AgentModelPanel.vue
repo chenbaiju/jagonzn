@@ -1,12 +1,7 @@
 <template>
   <ElCard v-if="allowed" shadow="never" class="agent-model-panel" data-testid="agent-model-panel">
     <template #header><h4 class="console-heading">Agent 模型配置</h4></template>
-    <ElAlert
-      type="info"
-      show-icon
-      :closable="false"
-      title="使用本项目的 DeepSeek Key，费用由供应商账号承担，平台不设置模型金额上限。新 Key 保存后自动启用，可随时停用；保存和启用不会发起模型请求，诊断功能尚未开放。"
-    />
+
     <ElAlert v-if="error" :title="error" type="warning" :closable="false" show-icon />
     <div v-if="configuration" class="agent-model-panel__status" aria-live="polite">
       <span data-testid="model-status">{{
@@ -177,7 +172,7 @@
       await ElMessageBox.confirm(
         '移除本项目保存的模型 Key？之后需要重新配置才能启用。',
         '移除 Key',
-        { type: 'warning' }
+        { type: 'warning', customClass: 'console-studio-feedback' }
       )
     } catch {
       return

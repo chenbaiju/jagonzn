@@ -1,11 +1,7 @@
 <template>
   <div class="device-tags console-fragment" v-loading="loading">
     <div class="device-tags__header console-page-header">
-      <div>
-        <ElAlert type="info" :closable="false" show-icon
-          >标签键在单台设备内唯一，动态设备组会按这里的最新键值实时筛选。</ElAlert
-        >
-      </div>
+      <div> </div>
     </div>
 
     <ElForm
@@ -156,6 +152,7 @@
     if (!props.projectId || !props.deviceId || !tag.key) return
     try {
       await ElMessageBox.confirm(`确定删除标签“${tag.key}”吗？`, '删除设备标签', {
+        customClass: 'console-studio-feedback',
         type: 'warning'
       })
       await fetchDeleteDeviceTag(props.projectId, props.deviceId, tag.key)

@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { validateDashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+import { validateDashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
 import { textPreview } from '@/features/dashboard/text-preview'
 import DesignerTextPreview from '@/views/dashboard/designer/components/DesignerTextPreview.vue'
 function schema(defaultValue?: string, required = true) {

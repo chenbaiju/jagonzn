@@ -278,7 +278,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   if (mode !== undefined) {
     if (
       mode !== '1' ||
-      !existsSync('/.thingscloud-local-ci') ||
+      !existsSync('/.thingslink-local-ci') ||
       process.env.E2E_SPEC !== 'invitation-registration-smtp.spec.ts'
     )
       throw new Error('Private identity receiver requires exact isolated selection')

@@ -3,7 +3,7 @@ import {
   parseDashboardRuntimeResponse,
   type StrictJsonObject,
   type StrictJsonValue
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import type {
   PropertyHistoryFilters,
   PropertyHistoryItem,

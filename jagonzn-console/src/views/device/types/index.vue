@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page device-types console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace device-types console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="设备类型与物模型"
@@ -23,7 +25,8 @@
       v-loading="workspaceLoading"
     >
       <div class="stream-toolbar"
-        ><h3>物模型工作区</h3><ElButton text @click="closeWorkspace">关闭</ElButton></div
+        ><h2 class="console-panel-title">物模型工作区</h2
+        ><ElButton text @click="closeWorkspace">关闭</ElButton></div
       >
       <ElAlert
         v-if="workspaceError"
@@ -72,6 +75,7 @@
     </ElCard>
 
     <ElCard shadow="never" class="console-table-panel console-page__main-panel">
+      <h2 class="console-panel-title">设备类型列表</h2>
       <ElTable v-loading="loading" :data="items" row-key="id">
         <ElTableColumn label="名称" min-width="160" fixed="left">
           <template #default="{ row }"
@@ -154,7 +158,7 @@
             />
           </template>
         </ElTableColumn>
-        <template #empty><ElEmpty description="还没有设备类型" /></template>
+        <template #empty><ElEmpty :image-size="80" description="还没有设备类型" /></template>
       </ElTable>
     </ElCard>
     <div v-if="typeHasMore" class="device-types__more">
@@ -169,7 +173,7 @@
     />
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="typeVisible"
       :title="editingTypeId ? '编辑设备类型' : '创建设备类型'"
       width="560px"
@@ -225,15 +229,12 @@
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="propertiesVisible"
       :title="`${selectedType?.name ?? ''} · 属性定义`"
       width="940px"
     >
       <div class="stream-toolbar">
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >属性定义用于校验设备上报、云端下发和云端私有数据。</ElAlert
-        >
         <ElButton
           v-if="hasAuth('device:update') && selectedType?.status === 'DRAFT'"
           type="primary"
@@ -279,12 +280,12 @@
             />
           </template>
         </ElTableColumn>
-        <template #empty><ElEmpty description="还没有属性定义" /></template>
+        <template #empty><ElEmpty :image-size="80" description="还没有属性定义" /></template>
       </ElTable>
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="propertyFormVisible"
       :title="editingPropertyId ? '编辑属性' : '添加属性'"
       width="620px"
@@ -361,15 +362,12 @@
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="eventsVisible"
       :title="`${selectedType?.name ?? ''} · 事件定义`"
       width="940px"
     >
       <div class="stream-toolbar">
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >事件由设备主动上报，可携带经过 Schema 校验的参数。</ElAlert
-        >
         <ElButton
           v-if="hasAuth('device:update') && selectedType?.status === 'DRAFT'"
           type="primary"
@@ -411,12 +409,12 @@
             />
           </template>
         </ElTableColumn>
-        <template #empty><ElEmpty description="还没有事件定义" /></template>
+        <template #empty><ElEmpty :image-size="80" description="还没有事件定义" /></template>
       </ElTable>
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="eventFormVisible"
       :title="editingEventId ? '编辑事件' : '添加事件'"
       width="760px"
@@ -479,15 +477,12 @@
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="commandsVisible"
       :title="`${selectedType?.name ?? ''} · 命令定义`"
       width="940px"
     >
       <div class="stream-toolbar">
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >命令是云端向设备发起的 RPC 动作，可定义输入/输出 JSON Schema 与超时。</ElAlert
-        >
         <ElButton
           v-if="hasAuth('device:update') && selectedType?.status === 'DRAFT'"
           type="primary"
@@ -530,12 +525,12 @@
             />
           </template>
         </ElTableColumn>
-        <template #empty><ElEmpty description="还没有命令定义" /></template>
+        <template #empty><ElEmpty :image-size="80" description="还没有命令定义" /></template>
       </ElTable>
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="commandFormVisible"
       :title="editingCommandId ? '编辑命令' : '添加命令'"
       width="620px"
@@ -853,6 +848,7 @@
     typeForm.payloadProtocol = protocolsByKind[typeForm.deviceKind][0]
   }
   const openCreateType = () => {
+    if (!hasAuth('device:create')) return
     editingTypeId.value = ''
     Object.assign(typeForm, {
       name: '',
@@ -864,7 +860,7 @@
     typeVisible.value = true
   }
   const openEditType = (row: DeviceTypeResponse) => {
-    if (!row.id) return
+    if (!row.id || !hasAuth('device:update')) return
     editingTypeId.value = row.id
     Object.assign(typeForm, {
       name: row.name,
@@ -876,9 +872,11 @@
     typeVisible.value = true
   }
   const submitType = async () => {
-    if (!typeFormRef.value || !projectId.value) return
+    const permission = editingTypeId.value ? 'device:update' : 'device:create'
+    if (!typeFormRef.value || !projectId.value || !typeVisible.value || !hasAuth(permission)) return
     try {
       await typeFormRef.value.validate()
+      if (!typeVisible.value || !hasAuth(permission)) return
       submitting.value = true
       if (editingTypeId.value) {
         await fetchUpdateDeviceType(projectId.value, editingTypeId.value, {
@@ -902,6 +900,7 @@
     if (!projectId.value || !row.id) return
     try {
       await ElMessageBox.confirm(`确定删除设备类型”${row.name}”吗？`, '删除设备类型', {
+        customClass: 'console-studio-feedback',
         type: 'warning'
       })
       await fetchDeleteDeviceType(projectId.value, row.id)
@@ -918,7 +917,7 @@
       await ElMessageBox.confirm(
         `发布”${row.name}”后，物模型（属性/事件/命令）将全部冻结，只能通过创建新版本演进。确定发布吗？`,
         '发布设备类型',
-        { type: 'warning', confirmButtonText: '确定发布' }
+        { customClass: 'console-studio-feedback', type: 'warning', confirmButtonText: '确定发布' }
       )
       await fetchPublishDeviceType(projectId.value, row.id)
       ElMessage.success('设备类型已发布')
@@ -958,6 +957,7 @@
     })
   }
   const openCreateProperty = () => {
+    if (!hasAuth('device:update')) return
     editingPropertyId.value = ''
     Object.assign(propertyForm, {
       name: '',
@@ -976,7 +976,7 @@
     propertyFormVisible.value = true
   }
   const openEditProperty = (row: DevicePropertyDefinitionResponse) => {
-    if (!row.id) return
+    if (!row.id || !hasAuth('device:update')) return
     editingPropertyId.value = row.id
     Object.assign(propertyForm, {
       name: row.name,
@@ -995,9 +995,17 @@
     propertyFormVisible.value = true
   }
   const submitProperty = async () => {
-    if (!propertyFormRef.value || !projectId.value || !selectedType.value?.id) return
+    if (
+      !propertyFormRef.value ||
+      !projectId.value ||
+      !selectedType.value?.id ||
+      !propertyFormVisible.value ||
+      !hasAuth('device:update')
+    )
+      return
     try {
       await propertyFormRef.value.validate()
+      if (!propertyFormVisible.value || !hasAuth('device:update')) return
       submitting.value = true
       const body = {
         propertyKey: propertyForm.propertyKey,
@@ -1040,7 +1048,10 @@
   const removeProperty = async (row: DevicePropertyDefinitionResponse) => {
     if (!projectId.value || !selectedType.value?.id || !row.id) return
     try {
-      await ElMessageBox.confirm(`确定删除属性“${row.name}”吗？`, '删除属性', { type: 'warning' })
+      await ElMessageBox.confirm(`确定删除属性“${row.name}”吗？`, '删除属性', {
+        customClass: 'console-studio-feedback',
+        type: 'warning'
+      })
       await fetchDeleteDevicePropertyDefinition(projectId.value, selectedType.value.id, row.id)
       ElMessage.success('属性已删除')
       await loadProperties()
@@ -1076,6 +1087,7 @@
     await loadEvents()
   }
   const openCreateEvent = () => {
+    if (!hasAuth('device:update')) return
     editingEventId.value = ''
     Object.assign(eventForm, {
       name: '',
@@ -1088,7 +1100,7 @@
     eventFormVisible.value = true
   }
   const openEditEvent = (row: DeviceEventDefinitionResponse) => {
-    if (!row.id) return
+    if (!row.id || !hasAuth('device:update')) return
     editingEventId.value = row.id
     Object.assign(eventForm, {
       name: row.name,
@@ -1111,9 +1123,17 @@
     eventForm.parameters.push(createEventParameter())
   }
   const submitEvent = async () => {
-    if (!eventFormRef.value || !projectId.value || !selectedType.value?.id) return
+    if (
+      !eventFormRef.value ||
+      !projectId.value ||
+      !selectedType.value?.id ||
+      !eventFormVisible.value ||
+      !hasAuth('device:update')
+    )
+      return
     try {
       await eventFormRef.value.validate()
+      if (!eventFormVisible.value || !hasAuth('device:update')) return
       const invalidParameter = eventForm.parameters.find(
         (parameter) =>
           !parameter.name.trim() ||
@@ -1171,7 +1191,10 @@
   const removeEvent = async (row: DeviceEventDefinitionResponse) => {
     if (!projectId.value || !selectedType.value?.id || !row.id) return
     try {
-      await ElMessageBox.confirm(`确定删除事件“${row.name}”吗？`, '删除事件', { type: 'warning' })
+      await ElMessageBox.confirm(`确定删除事件“${row.name}”吗？`, '删除事件', {
+        customClass: 'console-studio-feedback',
+        type: 'warning'
+      })
       await fetchDeleteDeviceEventDefinition(projectId.value, selectedType.value.id, row.id)
       ElMessage.success('事件已删除')
       await loadEvents()
@@ -1208,6 +1231,7 @@
     await loadCommands()
   }
   const openCreateCommand = () => {
+    if (!hasAuth('device:update')) return
     editingCommandId.value = ''
     Object.assign(commandForm, {
       name: '',
@@ -1221,7 +1245,7 @@
     commandFormVisible.value = true
   }
   const openEditCommand = (row: DeviceCommandDefinitionResponse) => {
-    if (!row.id) return
+    if (!row.id || !hasAuth('device:update')) return
     editingCommandId.value = row.id
     Object.assign(commandForm, {
       name: row.name,
@@ -1235,9 +1259,17 @@
     commandFormVisible.value = true
   }
   const submitCommand = async () => {
-    if (!commandFormRef.value || !projectId.value || !selectedType.value?.id) return
+    if (
+      !commandFormRef.value ||
+      !projectId.value ||
+      !selectedType.value?.id ||
+      !commandFormVisible.value ||
+      !hasAuth('device:update')
+    )
+      return
     try {
       await commandFormRef.value.validate()
+      if (!commandFormVisible.value || !hasAuth('device:update')) return
       if (commandForm.inputSchema) {
         try {
           JSON.parse(commandForm.inputSchema)
@@ -1284,7 +1316,10 @@
   const removeCommand = async (row: DeviceCommandDefinitionResponse) => {
     if (!projectId.value || !selectedType.value?.id || !row.id) return
     try {
-      await ElMessageBox.confirm(`确定删除命令"${row.name}"吗？`, '删除命令', { type: 'warning' })
+      await ElMessageBox.confirm(`确定删除命令"${row.name}"吗？`, '删除命令', {
+        customClass: 'console-studio-feedback',
+        type: 'warning'
+      })
       await fetchDeleteDeviceCommandDefinition(projectId.value, selectedType.value.id, row.id)
       ElMessage.success('命令已删除')
       await loadCommands()
@@ -1293,6 +1328,25 @@
         console.error('删除命令定义失败:', error)
     }
   }
+  watch(
+    () => hasAuth(editingTypeId.value ? 'device:update' : 'device:create'),
+    (allowed) => {
+      if (!allowed) typeVisible.value = false
+    },
+    { flush: 'sync' }
+  )
+  watch(
+    () => hasAuth('device:update'),
+    (allowed) => {
+      if (!allowed) {
+        propertyFormVisible.value = false
+        eventFormVisible.value = false
+        commandFormVisible.value = false
+        productCredentialVisible.value = false
+      }
+    },
+    { flush: 'sync' }
+  )
   watch(
     [projectId, () => userStore.info.userId, () => userStore.info.tenantId, currentIdentityEpoch],
     () => {
@@ -1366,7 +1420,7 @@
   }
   .form-help {
     width: 100%;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 20px;
     color: var(--art-text-gray-600);
   }
@@ -1377,12 +1431,20 @@
   }
   .event-parameter {
     display: grid;
-    grid-template-columns: 1fr 1fr 150px 70px 45px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 150px 70px 45px;
     gap: 8px;
     align-items: center;
     margin-bottom: 10px;
     &__enum {
       grid-column: 1 / -1;
+    }
+  }
+  @media (width <= 640px) {
+    .range-fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .event-parameter {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
   .stream-toolbar {
@@ -1393,6 +1455,9 @@
     justify-content: space-between;
     margin-bottom: 10px;
     color: var(--art-text-gray-600);
+    .console-panel-title {
+      margin: 0;
+    }
     :deep(.console-hint) {
       flex: 1 1 280px;
       margin-bottom: 0;

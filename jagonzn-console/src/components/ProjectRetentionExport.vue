@@ -1,8 +1,5 @@
 <template>
   <section class="project-retention-export" aria-label="删除项目留存导出">
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >导出删除时冻结项目的留存数据，不包含所有历史遥测。下载会重新核验资格，短时地址请勿转发。</ElAlert
-    >
     <ElAlert v-if="notice" type="warning" :title="notice" :closable="false" show-icon />
     <div class="console-toolbar">
       <ElButton :disabled="busy" @click="loadLatest">刷新最新任务</ElButton>
@@ -27,9 +24,9 @@
       >
       <p>申请时间：{{ formatTime(job.requestedAt) }}；快照时间：{{ formatTime(job.snapshotAt) }}</p>
       <p v-if="job.status === 'SUCCEEDED'"
-        >对象到期：{{ formatTime(job.expiresAt) }}（浏览器本地时间）；大小：{{
-          job.objectSize
-        }}字节；SHA256：{{ job.objectSha256 }}</p
+        >对象到期：{{ formatTime(job.expiresAt) }}；大小：{{ job.objectSize }}字节；SHA256：{{
+          job.objectSha256
+        }}</p
       >
     </template>
   </section>

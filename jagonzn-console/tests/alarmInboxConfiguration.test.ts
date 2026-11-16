@@ -31,6 +31,21 @@ afterEach(() => {
 })
 
 describe('dedicated alarm inbox identities', () => {
+  it('accepts isolated ordinary-run identities without claiming owned runtime qualification', () => {
+    const env = owned()
+    delete env.E2E_OWNED_RUNTIME
+    const config = alarmInboxConfiguration(env)
+    expect(config.owned).toBe(false)
+    expect(config.dedicated).toBe(true)
+    expect(config.owner.email).toBe('wp03-inbox-owner@example.com')
+    expect(config.member.projectKey).toBe('inbox002')
+  })
+  it.each(fields)('rejects partial ordinary dedicated configuration: %s', (field) => {
+    const env = owned()
+    delete env.E2E_OWNED_RUNTIME
+    delete env[field]
+    expect(() => alarmInboxConfiguration(env)).toThrow('ALARM_INBOX_DEDICATED_IDENTITIES_REQUIRED')
+  })
   it('returns the same dedicated identity scope for database selection and browser login', () => {
     const config = alarmInboxConfiguration(owned())
     expect(config.owned).toBe(true)
@@ -136,8 +151,9 @@ describe('dedicated alarm inbox identities', () => {
 })
 
 describe('alarm fixture isolation before any fact mutation', () => {
-  function fixture(existingMemberships = '0', existingEvents = '0') {
+  function fixture(existingMemberships = '0', existingEvents = '0', ordinary = false) {
     for (const [key, value] of Object.entries(owned())) vi.stubEnv(key, value)
+    if (ordinary) vi.stubEnv('E2E_OWNED_RUNTIME', undefined)
     const rows = [
       {
         accountId: 'owner-account',
@@ -200,6 +216,22 @@ describe('alarm fixture isolation before any fact mutation', () => {
         .mocked(executeDatabaseFixture)
         .mock.calls.some(([q]) => q.statement.includes('INSERT INTO'))
     ).toBe(false)
+  })
+  it('ordinary dedicated mode retains collision and existing-event guards', () => {
+    for (const [memberships, events, message] of [
+      ['1', '0', '通知E2E存在历史交叉成员，拒绝覆盖或复用'],
+      ['0', '1', '专用通知项目已有告警事实，拒绝混用']
+    ]) {
+      vi.resetAllMocks()
+      const f = fixture(memberships, events, true)
+      expect(f.configuration.owned).toBe(false)
+      expect(() => f.create()).toThrow(message)
+      expect(
+        vi
+          .mocked(executeDatabaseFixture)
+          .mock.calls.some(([q]) => /INSERT|DELETE/.test(q.statement))
+      ).toBe(false)
+    }
   })
   it('only inserts new fixture UUIDs then cleans those IDs without deleting accounts or projects', () => {
     const f = fixture()

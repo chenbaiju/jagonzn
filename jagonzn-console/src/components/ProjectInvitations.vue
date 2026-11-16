@@ -6,15 +6,9 @@
         <ElButton :loading="loading" @click="load()">刷新</ElButton>
       </div>
     </template>
-    <ElAlert
-      class="project-invitations__notice"
-      type="info"
-      show-icon
-      :closable="false"
-      title="邀请不会立即添加成员。收件人完成邮箱验证并明确接受后才会加入项目。"
-    />
+
     <ElAlert v-if="failed" type="error" :closable="false" title="邀请读取失败，请刷新重试" />
-    <ElTable v-loading="loading" :data="rows" row-key="id" :height="tableHeight">
+    <ElTable v-loading="loading" :data="rows" row-key="id" :max-height="tableHeight">
       <ElTableColumn prop="projectName" label="项目" min-width="150" />
       <ElTableColumn prop="targetEmail" label="收件邮箱" min-width="210" />
       <ElTableColumn prop="role" label="角色" width="110" />
@@ -140,7 +134,8 @@
           : action === 'revoke'
             ? '撤回后原邀请链接将失效。'
             : '重发后旧码失效，邀请有效期重新计算；每次重发至少间隔60秒。',
-        '确认操作'
+        '确认操作',
+        { customClass: 'console-studio-feedback' }
       )
       if (run !== epoch) return
       if (action === 'accept' && row.code) {

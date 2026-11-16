@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   validateDashboardSchemaV1,
   type AlarmResult
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 const mocks = vi.hoisted(() => ({ load: vi.fn(), alarms: vi.fn(), close: vi.fn() }))
 vi.mock('@/api/dashboard-binding', () => ({
   createDesignerReadScope: () => ({ close: mocks.close }),

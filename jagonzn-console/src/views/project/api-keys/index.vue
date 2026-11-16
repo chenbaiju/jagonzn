@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page api-keys-page console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace api-keys-page"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="API Key"
@@ -33,7 +35,9 @@
           <ElTableColumn label="来源 IP"
             ><template #default="{ row }">{{ row.ipCidrs?.join(', ') }}</template></ElTableColumn
           >
-          <ElTableColumn show-overflow-tooltip prop="expiresAt" label="到期时间" min-width="180" />
+          <ElTableColumn show-overflow-tooltip prop="expiresAt" label="到期时间" min-width="180"
+            ><template #default="{ row }">{{ formatTime(row.expiresAt) }}</template></ElTableColumn
+          >
           <ElTableColumn class-name="console-table-actions-cell" label="操作" width="104"
             ><template #default="{ row }">
               <ConsoleTableAction
@@ -55,17 +59,11 @@
         <ElButton v-if="next" :disabled="busy" @click="load(true)">加载更多</ElButton>
         <section class="recovery">
           <ElDivider content-position="left">查询原操作</ElDivider>
-          <ElAlert
-            class="recovery__notice"
-            type="info"
-            show-icon
-            :closable="false"
-            title="响应丢失时先查询原操作，避免重复发钥。查询只返回元数据；秘密丢失后请明确轮换或撤销。"
-          />
+
           <p class="console-description" v-if="pending"
             >待确认操作：<code data-testid="pending-operation">{{ pending }}</code></p
           >
-          <div class="console-toolbar">
+          <div class="console-toolbar api-key-recovery">
             <ElInput
               v-model="recoveryId"
               aria-label="原操作 ID"
@@ -88,7 +86,7 @@
       </template>
     </ElCard>
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-rule-dialog console-studio-dialog console-integration-dialog api-key-dialog"
       v-model="formVisible"
       :title="target ? '轮换 API Key' : '签发 API Key'"
       :close-on-click-modal="false"
@@ -141,7 +139,7 @@
       </template>
     </ElDialog>
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-rule-dialog console-studio-dialog console-integration-dialog api-key-dialog"
       v-model="secretVisible"
       title="仅本次展示完整 Key"
       :close-on-click-modal="false"
@@ -156,6 +154,7 @@
   </div>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
   import { Plus } from '@element-plus/icons-vue'
@@ -307,7 +306,11 @@
   function revoke(row: api.ApiKey) {
     return run(async (current, pid) => {
       if (pending.value || !row.id) return
-      await ElMessageBox.confirm('撤销后所有使用此 Key 的新请求将失败，是否继续？', '撤销 API Key')
+      await ElMessageBox.confirm(
+        '撤销后所有使用此 Key 的新请求将失败，是否继续？',
+        '撤销 API Key',
+        { customClass: 'console-studio-feedback' }
+      )
       if (!current()) return
       const operationId = crypto.randomUUID()
       pending.value = operationId
@@ -324,7 +327,8 @@
     return run(async (current) => {
       await ElMessageBox.confirm(
         '结束本地尝试不会取消已受理的操作。请保留操作ID，查询列表并处理可能已签发的 Key。',
-        '结束本地尝试'
+        '结束本地尝试',
+        { customClass: 'console-studio-feedback' }
       )
       if (current()) {
         pending.value = ''
@@ -342,24 +346,54 @@
   )
   onBeforeUnmount(clear)
 </script>
-<style scoped>
+<style scoped lang="scss">
+  .api-keys-page :deep(.el-card__body) {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+
+    > .el-alert {
+      margin: 0;
+    }
+  }
   .recovery {
-    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+
+    > .el-divider {
+      margin: 8px 0;
+    }
+    > .el-alert,
+    > .console-description {
+      margin: 0;
+    }
   }
-  .recovery__notice {
-    margin-bottom: 10px;
+  .api-key-recovery.console-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: 0;
+
+    > .el-input {
+      flex: 1 1 240px;
+      max-width: 400px;
+      margin: 0;
+    }
+    > .el-button {
+      flex-shrink: 0;
+      margin: 0;
+    }
   }
-  .recovery__notice :deep(.el-alert__title) {
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 20px;
-  }
-  .recovery__notice :deep(.el-alert__icon) {
-    width: 14px;
-    font-size: 14px;
-  }
-  .recovery .el-input {
-    max-width: 400px;
-    margin-right: 12px;
+  @media (width <= 640px) {
+    .api-key-recovery.console-toolbar > .el-input {
+      flex-basis: 100%;
+      max-width: none;
+    }
   }
 </style>

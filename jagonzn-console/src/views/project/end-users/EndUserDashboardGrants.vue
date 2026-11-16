@@ -1,13 +1,11 @@
 <template>
   <section
     v-if="canManage"
-    class="end-user-dashboard-grants"
+    class="end-user-dashboard-grants console-end-user-section"
     :aria-busy="loading || catalogLoading"
   >
     <ElDivider content-position="left">{{ account.username }}的看板读取授权</ElDivider>
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >目录包含有效与已撤销记录。项目角色不代表看板读取授权；历史看板以稳定ID识别。</ElAlert
-    >
+
     <ElAlert
       v-if="failed"
       title="授权目录读取失败，请重新进入页面；不能据此判断没有授权。"
@@ -69,9 +67,7 @@
       <ElButton :disabled="loading || failed || !nextCursor" @click="next">下一页授权</ElButton>
     </div>
     <ElDivider content-position="left">选择当前项目看板</ElDivider>
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >从服务端目录选择后，可显式查看或授予读取权限。未发布、已删除或角色无效等边界仍由服务端核验。</ElAlert
-    >
+
     <ElAlert
       v-if="catalogFailed"
       title="可选看板读取失败，请重新进入页面。"
@@ -337,7 +333,7 @@
     }
     p {
       margin: 0;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-text-color-secondary);
     }
   }
@@ -357,7 +353,7 @@
     }
   }
   .end-user-dashboard-grants__meta {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--el-text-color-secondary);
     overflow-wrap: anywhere;
   }
@@ -367,29 +363,33 @@
     gap: 10px;
     align-items: center;
     justify-content: flex-end;
-    padding-block: 5px;
-    margin-top: 5px;
+    padding: 0;
+    margin: 0;
     > .el-button {
       margin: 0;
     }
   }
   .end-user-dashboard-grants__table-wrap {
     max-width: 100%;
-    margin-top: 12px;
+    margin: 0;
     overflow-x: auto;
   }
   .end-user-dashboard-grants__table {
     width: 100%;
-    font-size: 13px;
+    font-size: 14px;
+    line-height: 22px;
     text-align: left;
     border-collapse: collapse;
     th,
     td {
-      padding: 12px;
+      box-sizing: border-box;
+      padding: 5px 12px;
       white-space: nowrap;
       border-bottom: 1px solid var(--el-border-color-lighter);
     }
     th {
+      height: 32px;
+      padding-block: 6px;
       font-weight: 500;
       color: var(--el-text-color-secondary);
       background: var(--el-fill-color-light);
@@ -402,10 +402,6 @@
     }
   }
   .end-user-dashboard-grants__table--catalog {
-    th,
-    td {
-      padding-block: 8px;
-    }
     td:last-child {
       width: 1%;
       text-align: right;
@@ -414,7 +410,7 @@
   .end-user-dashboard-grants__id {
     max-width: 280px;
     overflow: hidden;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--el-text-color-secondary);
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -424,11 +420,12 @@
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     gap: 16px;
     padding: 12px 16px;
-    margin: 0 0 12px;
+    margin: 0 0 16px;
     background: var(--el-fill-color-light);
+    border-radius: 4px;
     dt {
       margin-bottom: 6px;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-text-color-secondary);
     }
     dd {
@@ -442,7 +439,7 @@
       font-weight: 500;
     }
   }
-  @media (width <= 680px) {
+  @media (width <= 640px) {
     .end-user-dashboard-grants__selection {
       grid-template-columns: minmax(0, 1fr);
     }

@@ -1,14 +1,11 @@
 <template>
   <ElDialog
-    class="console-dialog app-project-entry"
+    class="console-dialog console-developer-dialog console-alarm-dialog app-project-entry"
     :model-value="!!project"
     title="ThingsX App 接入"
     width="min(680px, 94vw)"
     @update:model-value="(value: boolean) => !value && emit('close')"
   >
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >使用 Console 分配的 App 账号登录。二维码只配置项目入口，不包含密码或授权。</ElAlert
-    >
     <ElForm label-position="top" @submit.prevent>
       <ElFormItem label="平台地址">
         <ElInput
@@ -18,12 +15,12 @@
         />
       </ElFormItem>
       <ElFormItem label="项目标识">
-        <ElInput :model-value="project?.projectKey || ''" readonly />
+        <ElInput :model-value="project?.projectCode || ''" readonly />
       </ElFormItem>
     </ElForm>
     <ElAlert v-if="localDevelopment" class="console-hint" type="info" show-icon :closable="false">
-      本机地址 http://127.0.0.1:18080 仅适用于 Debug
-      App。iOS模拟器直接连接；Android模拟器需先映射18080端口。
+      本机地址 http://127.0.0.1:8080 仅适用于 Debug
+      App。iOS模拟器直接连接；Android模拟器需先映射8080端口。
     </ElAlert>
     <ElAlert v-else class="console-hint" type="info" show-icon :closable="false"
       >请填写手机可访问的 HTTPS 后端地址。真机上的 localhost 不指向开发机。</ElAlert
@@ -113,9 +110,32 @@
 </script>
 
 <style scoped>
+  :global(.el-dialog.app-project-entry .el-dialog__body) {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  :global(.el-dialog.app-project-entry .console-hint) {
+    margin: 0;
+  }
+  :global(.el-dialog.app-project-entry .el-textarea__inner) {
+    font-size: 14px;
+    line-height: 22px;
+  }
+  :global(.el-dialog.app-project-entry .el-form-item:last-child) {
+    margin-bottom: 0;
+  }
+  .app-project-entry__result {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .app-project-entry__result :deep(.el-divider) {
+    margin-block: 12px;
+  }
   .app-project-entry__content {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     align-items: center;
   }
   .app-project-entry__qr {
@@ -124,7 +144,7 @@
     justify-content: center;
     background: white;
     border: 1px solid var(--el-border-color-lighter);
-    border-radius: var(--el-border-radius-base);
+    border-radius: 4px;
   }
   .app-project-entry__qr :deep(svg) {
     max-width: 100%;
@@ -145,11 +165,11 @@
   }
   .app-project-entry__caption {
     margin: 8px 0 0;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 20px;
     color: var(--el-text-color-secondary);
   }
-  @media (width <= 600px) {
+  @media (width <= 640px) {
     .app-project-entry__content {
       flex-direction: column;
       align-items: stretch;

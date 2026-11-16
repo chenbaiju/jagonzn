@@ -138,7 +138,10 @@ it('进入只读取资格，显式点击重新读取ACTIVE/READY并单次申领�
   expect(wrapper!.find('a').exists()).toBe(false)
   expect(local).not.toHaveBeenCalled()
   expect(session).not.toHaveBeenCalled()
-  expect(wrapper!.text()).toContain('不代表设备升级资格')
+  expect(wrapper!.get('[data-testid="ota-release-download-expiry"]').text()).toContain(
+    '2026-10-07 04:01:00'
+  )
+  expect(wrapper!.text()).not.toContain('不代表设备升级资格')
   expect(button().text()).toBe('重新申领并下载')
 })
 

@@ -4,7 +4,7 @@ import {
   parseDashboardRuntimeResponse,
   type HistoryQuery,
   type HistoryResult
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import {
   loadDesignerDevicePreview,
   refreshDesignerCurrent,

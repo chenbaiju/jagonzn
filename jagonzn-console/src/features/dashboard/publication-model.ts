@@ -1,7 +1,7 @@
 import {
   validateDashboardSchemaV1,
   type DashboardSchemaV1
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 
 export interface PublicationCatalog {
   id: string

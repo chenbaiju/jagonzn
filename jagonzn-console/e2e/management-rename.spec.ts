@@ -69,10 +69,7 @@ test('目录重命名保持应用未保存草稿、远端修订与发布状态�
   expect(after.catalog.managementName).toBe(renamed)
   expect(after.catalog.currentVersionId).toBe(before.catalog.currentVersionId)
   expect(after.catalog.publicationRevision).toBe(before.catalog.publicationRevision)
-  await page
-    .getByRole('navigation', { name: '应用管理关联入口' })
-    .getByRole('button', { name: '看板开发', exact: true })
-    .click()
+  await page.getByRole('menuitem', { name: '看板设计器', exact: true }).click()
   await page
     .getByRole('dialog', { name: '离开应用编辑' })
     .getByRole('button', { name: '确定', exact: true })

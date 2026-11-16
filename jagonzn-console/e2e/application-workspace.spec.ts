@@ -3,7 +3,7 @@ import { enterProject, login } from './helpers'
 
 test.use({ trace: 'off', video: 'off', screenshot: 'off' })
 
-test('应用草稿经工作区入口离开保留取消确认，最近访问重新读取真实远端', async ({ page }) => {
+test('应用草稿经侧栏导航离开保留取消确认，最近访问重新读取真实远端', async ({ page }) => {
   test.skip(!process.env.E2E_OWNER_EMAIL || !process.env.E2E_OWNER_PASSWORD, '需要独占测试账号')
   await login(page, process.env.E2E_OWNER_EMAIL!, process.env.E2E_OWNER_PASSWORD!)
   await enterProject(page, 'E2E项目')
@@ -37,9 +37,7 @@ test('应用草稿经工作区入口离开保留取消确认，最近访问重�
   const unsaved = `${name}-尚未保存`
   await page.getByLabel('公开展示名', { exact: true }).fill(unsaved)
   await expect(draft).toContainText('未保存')
-  const dashboardLink = page
-    .getByRole('navigation', { name: '应用管理关联入口', exact: true })
-    .getByRole('button', { name: '看板开发', exact: true })
+  const dashboardLink = page.getByRole('menuitem', { name: '看板设计器', exact: true })
   await dashboardLink.click()
   const confirmation = page.getByRole('dialog', { name: '离开应用编辑', exact: true })
   await expect(confirmation).toBeVisible()

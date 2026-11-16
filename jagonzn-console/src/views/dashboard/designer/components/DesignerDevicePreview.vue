@@ -1,9 +1,7 @@
 <template>
   <section class="console-fragment console-editor-section" aria-label="草稿设备数据预览">
     <ElDivider content-position="left">草稿数据预览</ElDivider>
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >文字选择即时预览；设备数据可刷新，不代表已发布内容。</ElAlert
-    >
+
     <DesignerTextPreview
       :schema="schema"
       :page-id="pageId"
@@ -113,6 +111,7 @@
   </section>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, provide, ref, shallowRef, watch } from 'vue'
   import DesignerJsonTree from './DesignerJsonTree.vue'
   import DesignerListSnapshot from './DesignerListSnapshot.vue'
@@ -124,7 +123,7 @@
   import { useUserStore } from '@/store/modules/user'
   import { fetchDesignerAlarms } from '@/api/dashboard-alarms'
   import { fetchDesignerHistory } from '@/api/dashboard-history'
-  import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+  import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
   import {
     fetchPreviewSnapshots,
     fetchPreviewCurrent,
@@ -307,7 +306,7 @@
       ? '等待在途读取释放额度'
       : waitingUntil.value === undefined
         ? ''
-        : `读取额度预计在 ${new Date(Date.now() + Math.max(0, waitingUntil.value - performance.now())).toLocaleTimeString()} 可用`
+        : `读取额度预计在 ${formatTime(new Date(Date.now() + Math.max(0, waitingUntil.value - performance.now())).toISOString())} 可用`
   )
   provide(previewInteractionKey, {
     run: (key, work) =>
@@ -669,7 +668,7 @@
     height: 12px;
     overflow: hidden;
     border: 1px solid currentcolor;
-    border-radius: 6px;
+    border-radius: 4px;
   }
   .gauge-fill {
     height: 100%;

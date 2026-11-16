@@ -1,13 +1,11 @@
 <template>
   <section
-    class="console-fragment console-editor-section"
+    class="console-fragment console-editor-section console-studio-section console-studio-form"
     v-if="canManage"
     aria-label="匿名只读分享管理"
   >
     <ElDivider content-position="left">匿名只读分享</ElDivider>
-    <ElAlert class="console-hint" type="warning" show-icon :closable="false"
-      >持有完整链接的人可查看选定版本的全部页面、静态内容、默认值及下列全部候选设备；无需登录，可转发链接。</ElAlert
-    >
+
     <el-alert
       v-if="state.error || versions.error || pickerError"
       :title="state.error || versions.error || pickerError"
@@ -45,9 +43,7 @@
         >已选择版本 {{ state.versionNumber }}：包含全部
         {{ state.pageCount }} 个页面。分享不会随以后的草稿编辑或发布自动改变。</p
       >
-      <ElAlert class="console-hint" type="info" show-icon :closable="false"
-        >期限范围5分钟～24小时；来源限制使用平台宿主，不允许嵌入其他网站。分享只能读取，不能控制设备或处理告警。</ElAlert
-      >
+
       <el-form-item label="有效秒数">
         <el-input-number
           v-model="expiresInSeconds"
@@ -68,9 +64,7 @@
       >
       <div v-for="variable in state.variables" :key="variable.variableKey">
         <ElDivider content-position="left">{{ variable.title }}</ElDivider>
-        <ElAlert class="console-hint" type="warning" show-icon :closable="false"
-          >以下全部设备均获授权；不只限运行时当前选中的设备。默认设备必须保留。</ElAlert
-        >
+
         <ul
           ><li v-for="id in variable.deviceIds" :key="id">
             {{ deviceNames[id] ?? id }}
@@ -87,9 +81,6 @@
         >
       </div>
       <div v-if="pickerVariable">
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >选择候选设备；创建时会复核每台设备的权限及精确物模型。</ElAlert
-        >
         <div class="console-toolbar">
           <el-select
             v-model="pickerId"
@@ -124,7 +115,9 @@
       >
     </div>
     <div v-if="state.hasSecret" data-testid="sharing-created" :data-share-id="state.createdShareId">
-      <p class="console-description">创建成功，到期时间：{{ state.createdExpiresAt }}</p>
+      <p class="console-description"
+        >创建成功，到期时间：{{ formatTime(state.createdExpiresAt) }}</p
+      >
       <p class="console-description">{{ state.maskedLink }}</p>
       <ElAlert class="console-hint" type="warning" show-icon :closable="false"
         >完整链接不会显示在页面。请立即复制；隐藏、离线或离开此页会清除本次复制能力。</ElAlert
@@ -178,7 +171,7 @@
         :data-status="item.status"
       >
         版本 {{ item.dashboardVersionNumber }} · {{ statusLabel[item.status] }} · 到期
-        {{ item.expiresAt }}
+        {{ formatTime(item.expiresAt) }}
         <el-button
           :disabled="
             busy || !usable || !!state.pending || !!state.revokePending || item.status === 'REVOKED'
@@ -194,6 +187,7 @@
   </section>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
@@ -441,7 +435,12 @@
       await ElMessageBox.confirm(
         '确认向持有链接的人开放选定版本的全部页面、静态内容及所有候选设备？该链接只读，但可被转发。',
         '创建只读分享',
-        { confirmButtonText: '创建分享', cancelButtonText: '取消', type: 'warning' }
+        {
+          confirmButtonText: '创建分享',
+          cancelButtonText: '取消',
+          type: 'warning',
+          customClass: 'console-studio-feedback'
+        }
       )
       if (
         epoch !== localEpoch ||
@@ -471,7 +470,8 @@
       await ElMessageBox.confirm('撤销后该分享链接将永久失效，无法恢复。', '撤销只读分享', {
         confirmButtonText: '撤销分享',
         cancelButtonText: '取消',
-        type: 'warning'
+        type: 'warning',
+        customClass: 'console-studio-feedback'
       })
       if (epoch === localEpoch && usable.value) await sharing.revoke(id)
     } catch {

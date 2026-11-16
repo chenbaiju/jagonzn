@@ -4,9 +4,6 @@
     v-loading="loading"
     data-testid="device-location-point"
   >
-    <ElAlert type="info" :closable="false" show-icon
-      >WGS84 当前坐标，与安装位置说明分别保存。经度在前，纬度在后。</ElAlert
-    >
     <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" show-icon />
     <template v-if="current">
       <p

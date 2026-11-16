@@ -1,0 +1,1256 @@
+// Compact enterprise presentation shared by workbench and developer workspaces.
+// Brand comes from the existing theme system; dark mode uses Element Plus surfaces.
+.console-developer-page,
+.el-dialog.console-developer-dialog,
+.el-drawer.console-developer-drawer {
+  --console-page-spacing: 20px;
+  --console-line: var(--el-border-color-lighter);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--el-text-color-regular);
+
+  .el-card {
+    border-radius: 4px;
+  }
+  .el-button:not(.is-circle, .is-text, .is-link) {
+    min-height: 32px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+  .el-button.is-text,
+  .el-button.is-link,
+  .el-table .el-button.is-link {
+    font-size: 14px;
+  }
+  .el-input,
+  .el-select,
+  .el-input__inner,
+  .el-select__placeholder,
+  .el-form-item__label {
+    font-size: 14px;
+  }
+  .el-input__wrapper,
+  .el-select__wrapper {
+    min-height: 32px;
+    border-radius: 4px;
+  }
+  .el-table {
+    font-size: 14px;
+  }
+  .el-table th.el-table__cell {
+    height: 36px;
+    padding-block: 6px;
+    font-weight: 500;
+    background: var(--el-fill-color-light);
+  }
+  .el-table td.el-table__cell {
+    height: auto;
+    padding-block: 11px;
+  }
+  .el-table .cell {
+    line-height: 22px;
+  }
+  .el-tag {
+    font-size: 14px;
+    border-radius: 4px;
+  }
+  .el-descriptions__label,
+  .el-descriptions__content {
+    font-size: 14px;
+    line-height: 22px;
+  }
+  .art-svg-icon {
+    width: 1em;
+    height: 1em;
+    font-size: 16px;
+    vertical-align: middle;
+  }
+  .el-button > span {
+    gap: 6px;
+  }
+
+  @media (width <= 640px) {
+    --console-page-spacing: 12px;
+  }
+}
+
+// Alarm forms and teleported overlays share the compact Console presentation.
+.el-message-box.console-alarm-feedback,
+.el-message-box.console-studio-feedback {
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 16px 20px !important;
+
+  .el-message-box__title {
+    font-size: 18px;
+    line-height: 26px;
+  }
+
+  .el-message-box__message {
+    font-size: 14px;
+    line-height: 22px;
+    overflow-wrap: anywhere;
+  }
+
+  .el-message-box__btns {
+    gap: 10px;
+    padding-top: 16px;
+  }
+
+  .el-button {
+    min-width: 80px;
+    min-height: 32px;
+    margin: 0;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+}
+
+.el-dialog.console-alarm-dialog {
+  .el-form--label-top .el-form-item__label {
+    display: block;
+    max-width: 100%;
+    height: auto !important;
+    margin-bottom: 6px;
+    line-height: 20px !important;
+  }
+
+  .el-divider {
+    margin-block: 8px 20px;
+  }
+
+  .el-form > .el-alert + .el-divider {
+    margin-top: 28px;
+  }
+
+  .el-divider__text {
+    max-width: calc(100% - 40px);
+    padding-inline: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 24px;
+    white-space: normal;
+  }
+
+  .el-radio-button__inner {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    font-size: 14px;
+  }
+
+  .el-switch {
+    height: 32px;
+  }
+}
+
+.el-drawer.console-alarm-drawer {
+  .el-drawer__title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .el-alert__title {
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 20px;
+  }
+
+  .el-alert__icon {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+  }
+
+  .console-alarm-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    color: var(--el-text-color-secondary);
+
+    > .el-alert,
+    > span {
+      flex: 1 1 280px;
+      min-width: 0;
+      margin: 0;
+      font-size: 14px;
+      line-height: 20px;
+    }
+
+    > .el-button {
+      flex-shrink: 0;
+      margin: 0;
+    }
+  }
+
+  .alarm-notification-deliveries {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+
+    > * {
+      margin: 0;
+    }
+
+    > .console-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+
+      h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 24px;
+        color: var(--el-text-color-primary);
+      }
+
+      .el-button {
+        margin: 0;
+      }
+    }
+  }
+}
+
+// Task scheduling and all execution sources use the same compact workspace geometry.
+.console-page.console-developer-workspace.console-operations-workspace {
+  .console-filter-bar .el-row {
+    align-items: flex-end;
+  }
+
+  .console-filter-bar .el-form-item {
+    align-items: stretch;
+  }
+
+  .console-filter-bar .el-form-item__label {
+    justify-content: flex-start;
+    height: auto !important;
+    padding: 0;
+    margin-bottom: 6px;
+    line-height: 20px !important;
+  }
+
+  .console-execution-fragment {
+    display: flex;
+    flex-direction: column;
+    gap: inherit;
+    min-width: 0;
+
+    > .el-card {
+      margin: 0;
+    }
+  }
+
+  @media (width <= 640px) {
+    .console-filter-bar .el-row > .el-col {
+      flex-basis: 100%;
+      max-width: 100%;
+    }
+  }
+}
+
+:is(.console-operations-workspace, .el-drawer.console-execution-drawer) {
+  .el-empty__image {
+    width: 80px;
+  }
+
+  .el-empty__description {
+    margin-top: 12px;
+  }
+
+  .el-empty__description p {
+    font-size: 14px;
+    line-height: 22px;
+  }
+}
+
+.el-drawer.console-execution-drawer {
+  .el-descriptions {
+    margin-bottom: 16px;
+  }
+
+  .el-descriptions__table {
+    overflow-wrap: anywhere;
+    table-layout: fixed;
+  }
+
+  .el-timeline {
+    padding-left: 8px;
+    margin-top: 16px;
+  }
+
+  .el-timeline__timestamp {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .el-timeline-item {
+    padding-bottom: 16px;
+  }
+
+  .el-timeline-item:last-child {
+    padding-bottom: 0;
+  }
+
+  .el-timeline .el-card__body {
+    padding: 16px;
+  }
+
+  .el-empty {
+    padding-block: 24px;
+  }
+}
+
+.el-dialog.console-execution-dialog pre {
+  padding: 12px;
+  margin: 0;
+  font-family: var(--art-font-family-mono, monospace);
+  font-size: 14px;
+  line-height: 22px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--console-line);
+  border-radius: 4px;
+}
+
+.el-popper.console-operations-date-picker {
+  max-width: calc(100vw - 24px);
+
+  @media (width <= 640px) {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    transform: translate(-50%, -50%) !important;
+
+    .el-popper__arrow {
+      display: none;
+    }
+
+    .el-date-range-picker {
+      width: calc(100vw - 24px);
+      max-width: 100%;
+    }
+
+    .el-date-range-picker .el-picker-panel__body-wrapper {
+      max-height: 65dvh;
+      overflow-y: auto;
+    }
+
+    .el-date-range-picker .el-picker-panel__body {
+      min-width: 0;
+    }
+
+    .el-date-range-picker__content {
+      display: block;
+      width: 100%;
+      padding: 12px;
+    }
+
+    .el-date-range-picker__content.is-left {
+      border-right: 0;
+    }
+
+    .el-date-range-picker__content.is-right {
+      border-top: 1px solid var(--el-border-color-light);
+    }
+
+    .el-date-range-picker__time-header {
+      display: grid;
+      gap: 6px;
+    }
+
+    .el-date-range-picker__editors-wrap {
+      display: flex;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .el-date-range-picker__time-picker-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .el-date-range-picker__time-header > .el-icon {
+      display: none;
+    }
+  }
+}
+
+// Secondary actions remain neutral; blue is reserved for primary and linked actions.
+:is(
+    .console-developer-page,
+    .el-dialog.console-developer-dialog,
+    .el-drawer.console-developer-drawer
+  )
+  .el-button:not(
+    .el-button--primary,
+    .el-button--danger,
+    .el-button--success,
+    .el-button--warning,
+    .el-button--info,
+    .is-text,
+    .is-link,
+    .is-circle
+  ) {
+  --el-button-text-color: var(--el-text-color-regular);
+  --el-button-bg-color: var(--el-bg-color);
+  --el-button-border-color: var(--el-border-color);
+  --el-button-hover-text-color: var(--el-color-primary);
+  --el-button-hover-bg-color: var(--el-color-primary-light-9);
+  --el-button-hover-border-color: var(--el-color-primary-light-5);
+  --el-button-disabled-text-color: var(--el-text-color-placeholder);
+  --el-button-disabled-bg-color: var(--el-bg-color);
+  --el-button-disabled-border-color: var(--el-border-color-lighter);
+}
+
+html:not(.dark) .console-developer-page {
+  --console-line: #eaeef6;
+  --el-text-color-primary: #272e3b;
+  --el-text-color-regular: #272e3b;
+  --el-text-color-secondary: #576175;
+  --el-border-color: #c9cdd4;
+  --el-border-color-lighter: #ebecf0;
+  --el-border-color-light: #eaeef6;
+  --el-fill-color-light: #f7f8fa;
+  background-color: var(--el-bg-color);
+}
+
+// 管理页面沿用设备列表的平铺标题区；详情内容保留独立分区。
+.console-page.console-developer-workspace {
+  gap: 20px;
+
+  > .workspace-header,
+  > .el-card,
+  > .el-alert {
+    margin: 0;
+  }
+
+  .workspace-header--project {
+    gap: 12px 20px;
+    padding: 0 0 16px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--console-line);
+    border-radius: 0;
+
+    .console-heading {
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 28px;
+    }
+
+    .console-description {
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .console-actions {
+      gap: 10px;
+      margin: 0;
+    }
+
+    .el-button {
+      margin: 0;
+    }
+  }
+
+  .console-list-filter > .el-card__body {
+    padding-block: 15px;
+  }
+
+  .el-empty {
+    padding-block: 24px;
+  }
+
+  @media (width <= 640px) {
+    gap: 12px;
+
+    .workspace-header--project {
+      padding: 0 0 16px;
+    }
+
+    .workspace-header > div:first-child {
+      flex-basis: 100%;
+    }
+
+    .workspace-header > .console-actions {
+      flex-wrap: wrap;
+    }
+  }
+}
+
+.console-page.console-developer-workspace,
+.el-dialog.console-developer-dialog,
+.el-drawer.console-developer-drawer {
+  .el-table th.el-table__cell {
+    height: 32px;
+    padding-block: 6px;
+  }
+
+  .el-table td.el-table__cell {
+    height: auto;
+    padding-block: 11px;
+  }
+}
+
+.console-page.console-developer-workspace.console-rule-workspace {
+  display: flex;
+  flex-direction: column;
+
+  > * {
+    flex-shrink: 0;
+  }
+
+  > .console-editor-section {
+    margin: 0;
+  }
+
+  .console-filter-bar .el-form-item__label {
+    font-size: 14px;
+  }
+
+  @media (width <= 640px) {
+    .console-filter-bar .el-form-item__label {
+      height: auto !important;
+      margin-bottom: 6px;
+      line-height: 20px !important;
+    }
+  }
+}
+
+// Rule editors share presentation only; each page retains its own version and execution state.
+.el-dialog.console-rule-dialog {
+  .console-description {
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--el-text-color-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  .rule-version-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+
+    > * {
+      grid-column: 1 / -1;
+      min-width: 0;
+      margin: 0;
+    }
+
+    > .rule-form-field--half {
+      grid-column: span 1;
+    }
+
+    > .el-button {
+      justify-self: start;
+    }
+
+    > .el-divider {
+      margin-block: 8px;
+    }
+  }
+
+  .el-form-item__label {
+    display: block;
+    max-width: 100%;
+    height: auto !important;
+    margin-bottom: 6px;
+    line-height: 20px !important;
+    overflow-wrap: anywhere;
+  }
+
+  .el-textarea__inner {
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .el-divider__text {
+    max-width: calc(100% - 40px);
+    padding-inline: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 24px;
+    white-space: normal;
+  }
+
+  .console-fragment {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+
+    > .el-alert,
+    > .console-toolbar,
+    > .node-card {
+      margin: 0;
+    }
+  }
+
+  .console-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 240px) auto;
+    justify-content: start;
+
+    > .el-select {
+      width: 100%;
+    }
+  }
+
+  .node-card .el-card__header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+
+    .console-actions {
+      margin: 0;
+    }
+  }
+
+  .node-card .el-card__body {
+    padding: 16px;
+
+    .el-form-item:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .rule-device-picker {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+    margin-bottom: 16px;
+
+    > * {
+      min-width: 0;
+      margin: 0;
+    }
+
+    > .el-select {
+      grid-column: 3 / -1;
+      width: 100%;
+    }
+
+    &:has(> .el-button:last-child) > .el-select {
+      grid-column: auto;
+    }
+  }
+
+  .rule-version-form > .rule-device-picker {
+    margin: 0;
+  }
+
+  .el-dialog__body > .console-actions {
+    margin-block: 16px;
+  }
+
+  [data-testid='script-health'] {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: var(--el-fill-color-light);
+    border: 1px solid var(--console-line);
+    border-radius: 4px;
+
+    > * {
+      min-width: 0;
+      margin: 0;
+    }
+
+    strong {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .el-descriptions__table {
+      overflow-wrap: anywhere;
+      table-layout: fixed;
+    }
+  }
+
+  @media (width <= 640px) {
+    .rule-version-form {
+      grid-template-columns: minmax(0, 1fr);
+
+      > .rule-form-field--half {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .console-toolbar,
+    .rule-device-picker {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .rule-device-picker > .el-select {
+      grid-column: 1 / -1;
+    }
+
+    .node-card .console-actions > .el-button {
+      flex: 0 0 auto;
+      min-width: 0;
+      padding-inline: 12px;
+    }
+
+    [data-testid='script-health'] {
+      padding: 12px;
+    }
+  }
+}
+
+.console-developer-workspace .console-panel-title {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 24px;
+  color: var(--el-text-color-primary);
+}
+
+// Drawers opt into the same typography and controls without changing their state or content.
+.el-drawer.console-developer-drawer {
+  max-width: 100vw;
+
+  .el-drawer__header {
+    padding: 16px 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  .el-drawer__title {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 26px;
+    color: var(--el-text-color-primary);
+  }
+
+  .el-drawer__body {
+    min-width: 0;
+    padding: 20px;
+    overflow-wrap: anywhere;
+  }
+
+  .el-drawer__footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--el-border-color-lighter);
+  }
+
+  .el-divider__text {
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+// Application and dashboard management opt in without changing saved canvas presentation.
+.console-studio-workspace,
+.el-dialog.console-studio-dialog {
+  .console-studio-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    padding: var(--console-page-spacing);
+    margin: 0;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px;
+
+    > p,
+    > .console-actions,
+    > .console-toolbar,
+    > .el-alert {
+      margin: 0;
+    }
+
+    > section {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+  }
+
+  .el-divider {
+    margin-block: 12px;
+  }
+
+  .el-divider__text {
+    max-width: calc(100% - 40px);
+    padding-inline: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 24px;
+    white-space: normal;
+  }
+
+  .console-studio-section ul,
+  .console-studio-section ol,
+  .el-dialog__body ul {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    > li {
+      min-width: 0;
+      padding: 12px;
+      margin: 0;
+      overflow-wrap: anywhere;
+      background: var(--el-fill-color-light);
+      border: 1px solid var(--el-border-color-lighter);
+      border-radius: 4px;
+    }
+  }
+
+  .console-studio-section .console-description {
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .console-studio-section small {
+    font-size: 14px;
+    line-height: 20px;
+    overflow-wrap: anywhere;
+  }
+
+  .console-studio-section pre {
+    max-height: 360px;
+    overflow: auto;
+    font-size: 14px;
+    line-height: 20px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  @media (width <= 640px) {
+    .console-studio-section {
+      gap: 12px;
+    }
+  }
+}
+
+:is(.console-studio-workspace, .console-studio-dialog) .console-studio-form,
+.el-dialog.console-studio-form {
+  label:not(.el-form-item__label, .el-checkbox, .el-radio) {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  label > input:not([type='checkbox'], [type='radio']),
+  select:not(.el-select),
+  textarea {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 32px;
+    padding: 4px 10px;
+    margin: 0;
+    font: inherit;
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--el-text-color-primary);
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+
+    &:focus-visible {
+      border-color: var(--el-color-primary);
+      outline: 2px solid var(--el-color-primary-light-7);
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      color: var(--el-text-color-disabled);
+      cursor: not-allowed;
+      background: var(--el-disabled-bg-color);
+    }
+  }
+
+  label:has(> input[type='checkbox'], > input[type='radio']) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  fieldset {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    padding: 16px;
+    margin: 0;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px;
+  }
+
+  legend {
+    padding-inline: 6px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+}
+
+// Project integrations share compact teleported forms; secret lifecycles stay in their owners.
+.el-dialog.console-integration-dialog {
+  --el-dialog-width: min(720px, calc(100vw - 32px));
+
+  .el-dialog__body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    font-size: 14px;
+    line-height: 22px;
+
+    > .el-alert,
+    > .console-description {
+      margin: 0;
+    }
+  }
+
+  .el-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .el-form-item {
+    min-width: 0;
+    margin: 0;
+  }
+
+  .el-form-item__label {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .el-form-item__content > .form-help {
+    width: 100%;
+    margin: 6px 0 0;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .el-checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    max-width: 100%;
+    line-height: 22px;
+  }
+
+  .el-checkbox {
+    height: auto;
+    min-height: 22px;
+    margin: 0;
+  }
+
+  .el-checkbox__label {
+    font-size: 14px;
+    line-height: 22px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .project-retention-export {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0;
+    font-size: 14px;
+    line-height: 22px;
+    background: none;
+
+    > p,
+    > .el-alert,
+    > .console-toolbar {
+      margin: 0;
+    }
+
+    > .console-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0;
+      background: none;
+      border: 0;
+    }
+
+    .el-button {
+      margin: 0;
+    }
+  }
+}
+
+// 设备列表及详情已确认的视觉语言，统一到内容区域，不触及菜单、顶栏或保存的看板画布。
+:is(.console-page, .console-auth-page, .console-exception-page),
+.el-dialog.console-dialog,
+.el-drawer.console-developer-drawer,
+.el-message-box[class*='console-'] {
+  --el-component-custom-height: 32px;
+  --el-font-size-extra-small: 14px;
+  --el-font-size-small: 14px;
+  --el-font-size-base: 14px;
+  --el-border-radius-base: 4px;
+  --el-border-radius-small: 4px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+
+  .el-button:not(.is-text, .is-link, .is-circle),
+  .el-radio-button__inner {
+    min-height: 32px;
+    padding: 4px 16px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    border-radius: 4px;
+  }
+
+  .el-input__wrapper,
+  .el-select__wrapper {
+    min-height: 32px;
+    padding-block: 4px;
+    border-radius: 4px;
+  }
+
+  .el-input__inner {
+    height: 22px;
+    line-height: 22px;
+  }
+
+  .el-form-item__label,
+  .el-form-item__error,
+  .el-input__inner,
+  .el-select__placeholder,
+  .el-textarea__inner,
+  .el-tag,
+  .el-empty__description p,
+  .el-pagination,
+  .el-descriptions__label,
+  .el-descriptions__content {
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .el-tag {
+    min-height: 24px;
+    border-radius: 4px;
+  }
+
+  .el-table {
+    --el-table-header-text-color: var(--el-text-color-primary);
+    --el-table-header-bg-color: var(--el-fill-color-light);
+    --el-table-row-hover-bg-color: var(--el-fill-color-light);
+    font-size: 14px;
+
+    th.el-table__cell {
+      height: 36px;
+      padding: 6px 0;
+      font-weight: 500;
+    }
+
+    td.el-table__cell {
+      height: auto;
+      padding: 11px 0;
+    }
+
+    .cell {
+      padding-inline: 16px;
+      line-height: 22px;
+    }
+  }
+}
+
+#app-main:has(.console-page) {
+  background: var(--el-bg-color);
+}
+
+.console-page {
+  background: var(--el-bg-color);
+
+  > .workspace-header {
+    padding: 0 0 16px;
+    margin-bottom: 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--console-line);
+    border-radius: 0;
+  }
+
+  > .workspace-header .console-heading {
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 28px;
+  }
+
+  > .workspace-header .console-description {
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  > .workspace-header .console-actions {
+    margin: 0;
+  }
+
+  > .workspace-header nav .el-button {
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    color: var(--el-color-primary);
+    background: transparent;
+    border: 0;
+  }
+
+  .el-card {
+    border-radius: 4px;
+    box-shadow: none;
+  }
+
+  .el-card__header {
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 22px;
+    background: var(--el-fill-color-light);
+  }
+
+  .el-card__header :is(h2, h3, h4, .console-heading) {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 22px;
+  }
+
+  // 只移除管理列表外壳，功能分组、详情和画布内的卡片继续保留。
+  :is(.console-list-filter, .console-list-data, .console-table-panel),
+  > .console-page__main-panel:has(> .el-card__body > .el-table),
+  > .el-card:has(> .el-card__body > .el-table):not(:has(> .el-card__header)) {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+
+    > .el-card__body {
+      padding: 0;
+    }
+  }
+
+  .console-filter-bar .el-row {
+    row-gap: 12px;
+    align-items: flex-end;
+  }
+
+  .console-filter-bar .el-form-item {
+    align-items: stretch;
+  }
+
+  .console-filter-bar .el-form-item__label {
+    justify-content: flex-start;
+    height: auto !important;
+    padding: 0;
+    margin-bottom: 6px;
+    font-size: 14px;
+    line-height: 22px !important;
+    color: var(--el-text-color-secondary);
+  }
+
+  .console-filter-bar .el-input__wrapper,
+  .console-filter-bar .el-select__wrapper {
+    min-height: 32px;
+  }
+
+  .console-filter-bar .form-buttons .el-button {
+    min-width: 62px;
+    height: 32px;
+  }
+
+  .el-tabs:not(.el-tabs--card, .el-tabs--border-card) > .el-tabs__header {
+    padding: 0;
+    margin-bottom: 24px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+
+    .el-tabs__nav {
+      gap: 40px;
+    }
+
+    .el-tabs__item {
+      height: 28px;
+      padding: 0 0 6px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px;
+      transition: color 0.3s;
+    }
+
+    .el-tabs__active-bar {
+      height: 2px;
+      transition:
+        width 0.3s,
+        transform 0.3s;
+    }
+
+    .el-tabs__nav-wrap::after {
+      height: 1px;
+      background: var(--console-line);
+    }
+  }
+}
+
+.el-dialog.console-dialog,
+.el-drawer.console-developer-drawer,
+.el-message-box[class*='console-'] {
+  border-radius: 4px;
+
+  :is(.el-dialog__title, .el-drawer__title, .el-message-box__title) {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 26px;
+  }
+
+  :is(.console-description, .console-heading, .form-help, .el-alert__title, .el-divider__text) {
+    font-size: 14px;
+    line-height: 22px;
+  }
+}
+
+@media (width <= 640px) {
+  .console-page > .workspace-header {
+    gap: 12px;
+  }
+
+  .console-page > .workspace-header > div:first-child {
+    flex-basis: 100%;
+  }
+
+  .console-page > .workspace-header .console-actions {
+    flex-wrap: wrap;
+  }
+}

@@ -25,7 +25,7 @@
  * - 图表事件处理
  *
  * @module types/component/chart
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import type { EChartsOption } from '@/plugins/echarts'
 
@@ -198,6 +198,10 @@ export interface PieDataItem {
 
 // 环形图 Props 接口 - 统一环形图配置
 export interface RingChartProps extends BaseChartProps, InteractionProps {
+  /** 图例同时显示各分类占比 */
+  showLegendPercent?: boolean
+  /** 图例同时显示数量与百分比；默认关闭。 */
+  showLegendValue?: boolean
   /** 图表数据 */
   data: PieDataItem[]
   /** 内外半径 */
@@ -206,6 +210,8 @@ export interface RingChartProps extends BaseChartProps, InteractionProps {
   borderRadius?: number
   /** 中心文本 */
   centerText?: string
+  /** 圆环按卡片水平居中，窄屏图例移到底部 */
+  centered?: boolean
   /** 是否显示标签 */
   showLabel?: boolean
 }

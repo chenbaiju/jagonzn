@@ -20,7 +20,7 @@
  * - 使用 localStorage 作为存储介质
  *
  * @module store/index
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import type { App } from 'vue'
 import { createPinia } from 'pinia'

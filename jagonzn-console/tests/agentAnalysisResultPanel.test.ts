@@ -16,7 +16,7 @@ function run() {
     category: 'SUCCEEDED',
     result: {
       model: 'deepseek-flash',
-      promptVersion: 'thingscloud-agent-single-analysis-v1',
+      promptVersion: 'thingslink-agent-single-analysis-v1',
       summary: '<script>secret</script> **plain** [link](https://example.test)',
       findings: ['FACT', 'HYPOTHESIS', 'RECOMMENDATION'].map((kind) => ({
         kind,
@@ -45,7 +45,7 @@ it('纯文本展示类别、引用与零用量，不执行HTML/Markdown且不声
     'e-device、e-alarm',
     '输出 0',
     '缓存命中 0',
-    '不证明结论正确',
+    '结构校验不代表诊断质量验收',
     '不等于费用结算'
   ])
     expect(panel.text()).toContain(text)

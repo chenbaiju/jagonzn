@@ -16,7 +16,7 @@
  * 语言切换器同时被该配置关掉（顶部栏与登录页两处）。
  *
  * @module locales
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { createI18n } from 'vue-i18n'

@@ -109,7 +109,7 @@ describe('设备消息规则', () => {
     await click('执行尝试')
     await click('项目消息规则候选')
     expect(wrapper.text()).toContain('第 1 页')
-    expect(wrapper.text()).toContain('项目规则候选未绑定此设备')
+    expect(wrapper.findComponent(table).props('data')).toEqual([item])
   })
   it('换设备取消旧请求，旧响应不能落到新设备详情', async () => {
     let finish!: (v: unknown) => void
@@ -196,7 +196,7 @@ describe('设备消息规则', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('execution-1')
     expect(wrapper.text()).not.toContain('消息规则一')
-    expect(wrapper.text()).toContain('旧日志设备未知，不推测回填')
+    expect(wrapper.findComponent(table).props('data')).toEqual([history])
     api.fetchDeviceMessageRules.mockResolvedValue({ items: [] })
     await click('项目消息规则候选')
     expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)
@@ -255,11 +255,23 @@ describe('设备消息规则', () => {
       undefined
     ])
     expect(wrapper.text()).toContain('action-1')
-    expect(wrapper.text()).toContain('投递终态不代替物理设备验收')
+    expect(wrapper.findComponent(table).props('data')).toEqual([
+      {
+        id: 'action-1',
+        ruleId: 'rule-1',
+        ruleVersionId: 'version-1',
+        messageId: 'message-1',
+        operationType: 'COMMAND',
+        status: 'REJECTED',
+        commandId: null,
+        createdAt: item.createdAt
+      }
+    ])
     api.fetchDeviceMessageRules.mockResolvedValue({ items: [] })
     await click('执行尝试')
     expect(wrapper.text()).toContain('暂无已知设备身份的执行尝试')
-    expect(wrapper.text()).toContain('旧日志设备未知')
+    expect(wrapper.findComponent(table).props('data')).toEqual([])
+    expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)
   })
 })
 

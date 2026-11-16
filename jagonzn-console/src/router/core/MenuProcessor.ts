@@ -4,7 +4,7 @@
  * 负责菜单数据的获取、过滤和处理
  *
  * @module router/core/MenuProcessor
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import type { AppRouteRecord } from '@/types/router'
@@ -15,6 +15,14 @@ import { asyncRoutes } from '../routes/asyncRoutes'
 import { filterPlatformPermissions } from './platformPermissionFilter'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
+
+/**
+ * jagonzn 本地删除的菜单。
+ *
+ * 后端 MenuCatalog 仍会下发这些节点，但本副本已删除对应页面；
+ * 不过滤会留下指向不存在组件的入口。按稳定菜单名而非展示标题匹配。
+ */
+const LOCALLY_REMOVED_MENU_NAMES = new Set(['PlanCatalog'])
 
 export class MenuProcessor {
   /**
@@ -34,7 +42,16 @@ export class MenuProcessor {
     this.validateMenuPaths(menuList)
 
     // 规范化路径（将相对路径转换为完整路径）
-    return this.normalizeMenuPaths(menuList)
+    return this.removeLocallyRemovedMenus(this.normalizeMenuPaths(menuList))
+  }
+
+  /** 递归移除本副本已删除页面的菜单节点。 */
+  private removeLocallyRemovedMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
+    return menuList
+      .filter((item) => !LOCALLY_REMOVED_MENU_NAMES.has(String(item.name)))
+      .map((item) =>
+        item.children ? { ...item, children: this.removeLocallyRemovedMenus(item.children) } : item
+      )
   }
 
   /**
@@ -85,37 +102,41 @@ export class MenuProcessor {
    * 递归过滤空菜单项
    */
   private filterEmptyMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
-    return menuList
-      .map((item) => {
-        // 如果有子菜单，先递归过滤子菜单
-        if (item.children && item.children.length > 0) {
-          const filteredChildren = this.filterEmptyMenus(item.children)
-          return {
-            ...item,
-            children: filteredChildren
+    return (
+      menuList
+        // 兼容尚未更新的服务端菜单；退役页面不再注册路由或显示入口。
+        .filter((item) => item.component !== '/dashboard/overview')
+        .map((item) => {
+          // 如果有子菜单，先递归过滤子菜单
+          if (item.children && item.children.length > 0) {
+            const filteredChildren = this.filterEmptyMenus(item.children)
+            return {
+              ...item,
+              children: filteredChildren
+            }
           }
-        }
-        return item
-      })
-      .filter((item) => {
-        // 如果定义了 children 属性（即使是空数组），说明这是一个目录菜单，应该保留
-        if ('children' in item) {
-          return true
-        }
+          return item
+        })
+        .filter((item) => {
+          // 如果定义了 children 属性（即使是空数组），说明这是一个目录菜单，应该保留
+          if ('children' in item) {
+            return true
+          }
 
-        // 如果有外链或 iframe，保留
-        if (item.meta?.isIframe === true || item.meta?.link) {
-          return true
-        }
+          // 如果有外链或 iframe，保留
+          if (item.meta?.isIframe === true || item.meta?.link) {
+            return true
+          }
 
-        // 如果有有效的 component，保留
-        if (item.component && item.component !== '' && item.component !== RoutesAlias.Layout) {
-          return true
-        }
+          // 如果有有效的 component，保留
+          if (item.component && item.component !== '' && item.component !== RoutesAlias.Layout) {
+            return true
+          }
 
-        // 其他情况过滤掉
-        return false
-      })
+          // 其他情况过滤掉
+          return false
+        })
+    )
   }
 
   /**

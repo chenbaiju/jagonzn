@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 // 使用系统临时目录而不是硬编码 /tmp；后者在 Windows 会被解析成非法 file URL。
-const generated = join(tmpdir(), `things-cloud-api-${process.pid}.d.ts`)
+const generated = join(tmpdir(), `things-link-api-${process.pid}.d.ts`)
 const specification = resolve('../docs/upstream/console-openapi.json')
 const committed = resolve('src/types/api/schema.d.ts')
 const generatorCli = resolve('node_modules/openapi-typescript/bin/cli.js')
@@ -17,7 +17,7 @@ try {
   if (result.status !== 0) process.exit(result.status ?? 1)
 
   if (readFileSync(generated).equals(readFileSync(committed))) {
-    console.log('OpenAPI TypeScript 契约与 docs/upstream/console-openapi.json 一致')
+    console.log('OpenAPI TypeScript 契约与 docs/openapi.json 一致')
   } else {
     console.error('API 类型已过期：请执行 pnpm api:generate 并提交生成结果')
     process.exitCode = 1

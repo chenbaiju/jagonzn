@@ -6,6 +6,7 @@ export interface AlarmInboxIdentity {
 }
 export interface AlarmInboxConfiguration {
   owned: boolean
+  dedicated?: boolean
   owner: AlarmInboxIdentity
   member: AlarmInboxIdentity
 }
@@ -17,8 +18,15 @@ export function alarmInboxConfiguration(
 ): AlarmInboxConfiguration {
   const ordinaryOwner = env.E2E_OWNER_EMAIL ?? 'e2e-owner@example.com'
   const ordinaryMember = env.E2E_MEMBER_EMAIL ?? 'e2e-member@example.com'
-  if (!env.E2E_OWNED_RUNTIME) {
-    if (env.E2E_OWNED_RUNTIME_SHA256 || env.E2E_PG_DB?.startsWith('tc_console_wp03_')) throw fail()
+  if (
+    !env.E2E_OWNED_RUNTIME &&
+    (env.E2E_OWNED_RUNTIME_SHA256 || env.E2E_PG_DB?.startsWith('tc_console_wp03_'))
+  )
+    throw fail()
+  const dedicated = Object.keys(env).some(
+    (key) => key.startsWith('E2E_ALARM_INBOX_') && env[key] !== undefined
+  )
+  if (!env.E2E_OWNED_RUNTIME && !dedicated) {
     return {
       owned: false,
       owner: {
@@ -63,5 +71,5 @@ export function alarmInboxConfiguration(
     [owner.projectKey, member.projectKey].includes(env.E2E_PROJECT_KEY ?? '')
   )
     throw fail()
-  return { owned: true, owner, member }
+  return { owned: !!env.E2E_OWNED_RUNTIME, dedicated: true, owner, member }
 }

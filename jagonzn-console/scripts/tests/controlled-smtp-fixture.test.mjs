@@ -90,21 +90,18 @@ test('MIME receiver decodes production UTF-8 encodings and rejects unsupported c
   assert.throws(() => parseMime('Subject: bad\r\nContent-Type: text/html\r\n\r\nbody'))
 })
 
-test('production JavaMail folded encoded words do not insert spaces inside verification subject', () => {
+test('JavaMail-style folded encoded words do not insert spaces inside verification subject', () => {
   const parsed = (subject) =>
     parseIdentityMime(
       `Subject: ${subject}\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nSynthetic body`
     ).subject
-  // Header produced by the real EmailVerificationMailer -> SmtpMailSender/JavaMail pipeline.
+  // 固定折叠编码夹具与当前邮件主题一致，保留跨行编码词之间的空白反例。
   const javaMailSubject =
     '=?UTF-8?Q?=E9=AA=8C=E8=AF=81=E4=BD=A0=E7=9A=84_Thin?=\r\n' +
-    ' =?UTF-8?Q?gsCloud_=E9=82=AE=E7=AE=B1?='
-  assert.equal(parsed(javaMailSubject), '验证你的 ThingsCloud 邮箱')
+    ' =?UTF-8?Q?gsLink_=E9=82=AE=E7=AE=B1?='
+  assert.equal(parsed(javaMailSubject), '验证你的 ThingsLink 邮箱')
   const b = (text) => `=?UTF-8?B?${Buffer.from(text).toString('base64')}?=`
-  assert.equal(
-    parsed(b('验证你的 Thin') + '\r\n\t' + b('gsCloud 邮箱')),
-    '验证你的 ThingsCloud 邮箱'
-  )
+  assert.equal(parsed(b('验证你的 Thin') + '\r\n\t' + b('gsLink 邮箱')), '验证你的 ThingsLink 邮箱')
   assert.equal(parsed(b('a') + '   ' + b('b') + '\r\n ' + b('c')), 'abc')
   // Only separator whitespace between encoded words disappears, not actual subject spaces.
   assert.equal(parsed(b('a ') + '\r\n ' + b(' b')), 'a  b')

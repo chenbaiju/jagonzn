@@ -7,7 +7,7 @@ let wrapper: VueWrapper
 afterEach(() => wrapper?.unmount())
 function render(overview?: ProjectQuotaOverviewResponse, failed = false) {
   wrapper = mount(PlanOverview, {
-    props: { overview, loading: false, failed, showDetails: true },
+    props: { overview, loading: false, failed },
     global: {
       stubs: {
         ElButton: { template: '<button><slot/></button>' },
@@ -62,7 +62,7 @@ it('does not invent a plan, zero usage, a member limit or percentages for missin
   expect(wrapper.text()).not.toContain('免费版')
   expect(wrapper.text()).not.toMatch(/短信|邮件|电话/)
 })
-it('exposes retry on failure and links to resource and catalog pages only through emitted actions', async () => {
+it('exposes retry on failure and resource navigation only through emitted actions', async () => {
   render(undefined, true)
   expect(wrapper.text()).toContain('套餐概况暂不可用')
   expect(wrapper.find('.workbench-plan__usage').exists()).toBe(false)
@@ -71,13 +71,7 @@ it('exposes retry on failure and links to resource and catalog pages only throug
     .findAll('button')
     .find((button) => button.text() === '重新读取')!
     .trigger('click')
-  await wrapper
-    .findAll('button')
-    .find((button) => button.text() === '了解详情')!
-    .trigger('click')
   expect(wrapper.emitted('resources')).toHaveLength(1)
   expect(wrapper.emitted('retry')).toHaveLength(1)
-  expect(wrapper.emitted('details')).toHaveLength(1)
-  await wrapper.setProps({ showDetails: false })
   expect(wrapper.text()).not.toContain('了解详情')
 })

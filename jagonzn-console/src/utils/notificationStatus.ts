@@ -22,6 +22,7 @@ export const NOTIFICATION_STATUS_LABELS: Record<NotificationDeliveryStatus, stri
   RETRY_SCHEDULED: '待重试',
   DEAD_LETTER: '永久失败',
   SUPPRESSED_QUOTA: '配额抑制',
+  SUPPRESSED_POLICY: '项目通知已静默',
   TEMPLATE_INVALID: '模板非法',
   SKIPPED_AUTHORIZATION: '授权已失效'
 }
@@ -37,6 +38,7 @@ export const NOTIFICATION_STATUS_TAGS: Record<
   RETRY_SCHEDULED: 'warning',
   DEAD_LETTER: 'danger',
   SUPPRESSED_QUOTA: 'warning',
+  SUPPRESSED_POLICY: 'info',
   TEMPLATE_INVALID: 'danger',
   SKIPPED_AUTHORIZATION: 'info'
 }

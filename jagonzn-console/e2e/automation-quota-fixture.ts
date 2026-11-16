@@ -30,7 +30,7 @@ export function validateScope(s: QuotaFixtureScope) {
 async function query(sql: string, readonly = false): Promise<unknown> {
   if (
     !['property-smtp', 'time-smtp'].includes(process.env.E2E_AUTOMATION_FIXTURE ?? '') ||
-    !existsSync('/.thingscloud-local-ci')
+    !existsSync('/.thingslink-local-ci')
   )
     throw new Error('Quota fixture requires isolated selected runner')
   const user = process.env.E2E_AUTOMATION_ADMIN_USER,
@@ -87,7 +87,7 @@ export function installQuotaSql(s: QuotaFixtureScope): string {
   END $$;
   CREATE ROLE ${s.role} NOLOGIN;
   COMMENT ON ROLE ${s.role} IS 'owned-automation:${s.projectId}:${s.policyId}';
-  GRANT thingscloud_quota_operator TO ${s.role};
+  GRANT thingslink_quota_operator TO ${s.role};
   INSERT INTO sys_quota_policy SELECT (jsonb_populate_record(NULL::sys_quota_policy, to_jsonb(q) || jsonb_build_object('id','${s.policyId}','code','AQ${s.policyId.replaceAll('-', '').slice(0, 28)}','version',1,'automation_execution_daily_limit',0,'created_at',clock_timestamp(),'updated_at',clock_timestamp()))).* FROM sys_quota_policy q WHERE q.id='${s.originalPolicyId}';
   UPDATE sys_tenant SET quota_policy_id='${s.policyId}',quota_policy_assignment_version=quota_policy_assignment_version+1 WHERE id='${s.tenantId}' AND quota_policy_id='${s.originalPolicyId}';
   COMMIT;`

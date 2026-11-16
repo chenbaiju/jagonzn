@@ -35,7 +35,8 @@ describe('device alarm status presentation', () => {
     await wrapper.get('button').trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('有告警')
-    expect(wrapper.attributes('title')).toContain('2026-09-30T12:00:00Z')
+    expect(wrapper.attributes('title')).toBe('观测时间：2026-09-30 20:00:00')
+    expect(wrapper.attributes('title')).not.toContain('UTC')
     expect(f.request).toHaveBeenCalledTimes(2)
   })
   it('cancels hidden rows and refuses late successful responses', async () => {

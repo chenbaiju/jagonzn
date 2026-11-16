@@ -4,6 +4,7 @@
     trigger="click"
     popper-class="project-switcher-popper"
     @command="handleCommand"
+    @visible-change="dropdownOpen = $event"
   >
     <button class="project-switcher" type="button">
       <ArtSvgIcon icon="ri:folder-3-line" class="project-switcher__icon" />
@@ -11,11 +12,12 @@
         <span class="project-switcher__name">
           {{ currentProject?.name ?? $t('project.select') }}
         </span>
-        <span class="project-switcher__region">
-          {{ currentProject ? regionLabel(currentProject.region) : $t('project.noCurrent') }}
-        </span>
       </span>
-      <ArtSvgIcon icon="ri:arrow-down-s-line" class="project-switcher__arrow" />
+      <ArtSvgIcon
+        icon="ri:arrow-down-s-line"
+        class="project-switcher__arrow"
+        :class="{ 'is-open': dropdownOpen }"
+      />
     </button>
     <template #dropdown>
       <ElDropdownMenu>
@@ -49,6 +51,7 @@
 
   const userStore = useUserStore()
   const projects = ref<ProjectResponse[]>([])
+  const dropdownOpen = ref(false)
   const { switchingId, switchProject } = useProjectSwitch()
   const { loadProjectRegions, regionName: regionLabel } = useProjectRegionCatalog()
 
@@ -114,22 +117,20 @@
       text-align: left;
     }
 
-    &__name,
-    &__region {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    &__arrow {
+      transition: transform 0.16s ease;
+
+      &.is-open {
+        transform: rotate(180deg);
+      }
     }
 
     &__name {
+      overflow: hidden;
       font-size: 13px;
       font-weight: 500;
-    }
-
-    &__region {
-      margin-top: 2px;
-      font-size: 11px;
-      color: var(--art-text-gray-500);
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 

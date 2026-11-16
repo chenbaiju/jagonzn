@@ -1,0 +1,64 @@
+import {api,ApiError} from '@/core/http'
+import type {Schema} from '@/core/contracts'
+import {typeDeviceUuid} from './type-devices-api'
+import {referenceVersion} from '../devices/reference-profile'
+import {checkTemplatePackage,decodePrivateTemplateVersion,type PrivateTemplateVersion} from './private-template-api'
+export type SharedTypeProduct=Readonly<Required<Schema<'DeviceTypeProductResponse'>>>
+export type SharedProductSummary=Readonly<Required<Schema<'DeviceTypeProductSummary'>>>
+type ProductSource<S extends {sourceTemplateVersionId?:unknown;sourceKind?:unknown;sourceCaptureId?:unknown}>=(Required<Pick<S,'sourceTemplateVersionId'>>&{sourceKind?:never;sourceCaptureId?:never})|(Required<Pick<S,'sourceKind'|'sourceCaptureId'>>&{sourceTemplateVersionId?:never})
+export type OwnedProduct=Readonly<Omit<Required<Schema<'DeviceTypeProductPublicationItem'>>,'product'|'sourceTemplateVersionId'|'sourceKind'|'sourceCaptureId'>&ProductSource<Schema<'DeviceTypeProductPublicationItem'>>&{product:SharedProductSummary}>
+export type OwnedProducts=Readonly<Omit<Required<Schema<'DeviceTypeProductPublicationsResponse'>>,'items'>&{items:readonly OwnedProduct[]}>
+export type ProductPublication=Readonly<ProductSource<Schema<'DeviceTypeProductPublicationResponse'>>&{product:SharedTypeProduct}>
+export type ProductImportReceipt=Readonly<Required<Schema<'DeviceTypeProductImportReceiptResponse'>>>
+export type ProductWithdrawal=Readonly<Required<Schema<'DeviceTypeProductWithdrawalResponse'>>>
+export type ProductPublishIntent=Readonly<{kind:'publish';project:string;key:string;source:PrivateTemplateVersion;previous:OwnedProduct|null;body:Readonly<Required<Schema<'PublishDeviceTypeProductRequest'>>>}>
+export type ProductImportIntent=Readonly<{kind:'import';project:string;key:string;source:SharedTypeProduct;body:Readonly<Required<Schema<'CreateDeviceTypeFromProductRequest'>>>}>
+export type ProductWithdrawIntent=Readonly<{kind:'withdraw';project:string;key:string;source:OwnedProduct;body:Readonly<Required<Schema<'WithdrawDeviceTypeProductRequest'>>>}>
+export type ProductTransport={
+ lookup:(project:string,id:string,signal:AbortSignal)=>Promise<SharedTypeProduct>
+ owned:(project:string,signal:AbortSignal)=>Promise<OwnedProducts>
+ current:(project:string,id:string,signal:AbortSignal)=>Promise<ProductPublication>
+ publish:(intent:ProductPublishIntent,signal:AbortSignal)=>Promise<ProductPublication>
+ published:(intent:ProductPublishIntent,signal:AbortSignal)=>Promise<ProductPublication>
+ withdraw:(intent:ProductWithdrawIntent,signal:AbortSignal)=>Promise<ProductWithdrawal>
+ create:(intent:ProductImportIntent,signal:AbortSignal)=>Promise<ProductImportReceipt>
+ imported:(intent:ProductImportIntent,signal:AbortSignal)=>Promise<ProductImportReceipt>
+}
+const digest=/^[a-f0-9]{64}$/
+function invalid():never{throw new Error('产品分享原件、版本或范围不符合合同，请重新读取')}
+function object(value:unknown,fields:readonly string[]):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))invalid();const raw=value as Record<string,unknown>;if(Object.keys(raw).length!==fields.length||fields.some(key=>!Object.hasOwn(raw,key)))invalid();return raw}
+function uuid(value:unknown):value is string{return typeof value==='string'&&typeDeviceUuid.test(value)}
+function text(value:unknown,max:number):value is string{return typeof value==='string'&&!!value.trim()&&value.length<=max&&!value.includes('\0')&&![...value].some(c=>{const n=c.codePointAt(0)!;return n>=0xd800&&n<=0xdfff})}
+function time(value:unknown){return typeof value==='string'&&/(Z|[+-][0-9]{2}:?[0-9]{2})$/.test(value)&&Number.isFinite(Date.parse(value))}
+function sequence(value:unknown){return typeof value==='number'&&Number.isInteger(value)&&value>=1&&value<=20}
+function state(raw:Record<string,unknown>){return referenceVersion(raw.revision)&&BigInt(raw.revision)>0n&&((raw.state==='PUBLISHED'&&raw.withdrawnAt===null)||(raw.state==='WITHDRAWN'&&time(raw.withdrawnAt)))}
+function productId(value:string){const id=value.trim().toLowerCase();if(!uuid(id))throw new Error('请输入分享者提供的有效产品ID');return id}
+function project(value:string){if(!uuid(value))invalid();return value}
+export function decodeSharedProduct(value:unknown,id:string,currentOnly=false):SharedTypeProduct{
+ const raw=object(value,['productId','versionId','sequence','name','publisherLabel','sourceMode','packageJson','packageDigest','modelDigest','publishedAt','currentVersionId','revision','state','withdrawnAt'])
+ if(raw.productId!==id||!uuid(id)||!uuid(raw.versionId)||!uuid(raw.currentVersionId)||!sequence(raw.sequence)||!text(raw.name,128)||!text(raw.publisherLabel,80)||!['DRAFT_TEMPLATE_CAPTURE','FIXED_TEMPLATE_VERSION','CURRENT_TYPE_CAPTURE'].includes(String(raw.sourceMode))||typeof raw.packageDigest!=='string'||!digest.test(raw.packageDigest)||typeof raw.modelDigest!=='string'||!digest.test(raw.modelDigest)||!time(raw.publishedAt)||!state(raw)||currentOnly&&(raw.versionId!==raw.currentVersionId||raw.state!=='PUBLISHED'))invalid()
+ checkTemplatePackage(raw.packageJson);return value as SharedTypeProduct
+}
+function decodeSummary(value:unknown):SharedProductSummary{const raw=object(value,['productId','versionId','sequence','name','publisherLabel','packageDigest','publishedAt','withdrawnAt','revision','state']);if(!uuid(raw.productId)||!uuid(raw.versionId)||!sequence(raw.sequence)||!text(raw.name,128)||!text(raw.publisherLabel,80)||typeof raw.packageDigest!=='string'||!digest.test(raw.packageDigest)||!time(raw.publishedAt)||!state(raw))invalid();return value as SharedProductSummary}
+export function decodeOwnedProducts(value:unknown):OwnedProducts{const raw=object(value,['items','total','available']);if(!Array.isArray(raw.items)||raw.items.length>200||raw.total!==String(raw.items.length)||typeof raw.available!=='boolean')invalid();const ids=new Set<string>(),sources=new Set<string>();for(const row of raw.items){const captured=!!row&&typeof row==='object'&&(row as Record<string,unknown>).sourceKind==='CURRENT_TYPE_CAPTURE',item=object(row,captured?['product','sourceKind','sourceCaptureId','sourceDeviceTypeId']:['product','sourceTemplateVersionId','sourceDeviceTypeId']),summary=decodeSummary(item.product);if(!(captured?uuid(item.sourceCaptureId):uuid(item.sourceTemplateVersionId))||!uuid(item.sourceDeviceTypeId)||ids.has(summary.productId)||sources.has(item.sourceDeviceTypeId))invalid();ids.add(summary.productId);sources.add(item.sourceDeviceTypeId)}return value as OwnedProducts}
+export function decodeProductPublication(value:unknown,id?:string):ProductPublication{const captured=!!value&&typeof value==='object'&&(value as Record<string,unknown>).sourceKind==='CURRENT_TYPE_CAPTURE',raw=object(value,captured?['product','sourceKind','sourceCaptureId']:['product','sourceTemplateVersionId']),product=raw.product as Record<string,unknown>;if(!(captured?uuid(raw.sourceCaptureId):uuid(raw.sourceTemplateVersionId))||!product||!uuid(product.productId)||id!==undefined&&product.productId!==id||captured!==(product.sourceMode==='CURRENT_TYPE_CAPTURE'))invalid();decodeSharedProduct(product,product.productId);return value as ProductPublication}
+export function decodeProductImport(value:unknown):ProductImportReceipt{const raw=object(value,['deviceTypeId','productId','productVersionId','packageDigest','requestedName','createdAt','deleted']);if(!uuid(raw.deviceTypeId)||!uuid(raw.productId)||!uuid(raw.productVersionId)||typeof raw.packageDigest!=='string'||!digest.test(raw.packageDigest)||!text(raw.requestedName,128)||!time(raw.createdAt)||typeof raw.deleted!=='boolean')invalid();return value as ProductImportReceipt}
+export function prepareProductImport(scope:string,source:SharedTypeProduct,name:string):ProductImportIntent{project(scope);decodeSharedProduct(source,source.productId,true);const title=name.trim();if(!text(title,128))throw new Error('新类型名称须为1至128个字符');return Object.freeze({kind:'import',project:scope,key:crypto.randomUUID(),source,body:Object.freeze({productId:source.productId,productVersionId:source.versionId,expectedPackageDigest:source.packageDigest,name:title})})}
+export function prepareProductPublish(scope:string,source:PrivateTemplateVersion,previous:OwnedProduct|null,label:string):ProductPublishIntent{project(scope);decodePrivateTemplateVersion(source,source.versionId);const chosen=label.trim();if(!text(chosen,80))throw new Error('请填写1至80个字符的分享署名');if(previous){decodeOwnedProducts({items:[previous],total:'1',available:true});if(previous.sourceDeviceTypeId!==source.sourceDeviceTypeId||previous.product.sequence>=20)throw new Error('固定来源或发布版本上限不允许此次发布')}
+ return Object.freeze({kind:'publish',project:scope,key:crypto.randomUUID(),source,previous,body:Object.freeze({sourceTemplateVersionId:source.versionId,productId:previous?.product.productId??null,revision:previous?.product.revision??null,expectedPackageDigest:source.packageDigest,publisherLabel:chosen})})}
+export function prepareProductWithdraw(scope:string,source:OwnedProduct):ProductWithdrawIntent{project(scope);decodeOwnedProducts({items:[source],total:'1',available:true});if(source.product.state!=='PUBLISHED')throw new Error('当前产品已撤回，请刷新');return Object.freeze({kind:'withdraw',project:scope,key:crypto.randomUUID(),source,body:Object.freeze({revision:source.product.revision})})}
+export function productImportMatches(value:ProductImportReceipt,intent:ProductImportIntent){return value.productId===intent.body.productId&&value.productVersionId===intent.body.productVersionId&&value.packageDigest===intent.body.expectedPackageDigest&&value.requestedName===intent.body.name}
+export function productPublicationMatches(value:ProductPublication,intent:ProductPublishIntent){return value.sourceTemplateVersionId===intent.source.versionId&&value.product.packageDigest===intent.source.packageDigest&&value.product.modelDigest===intent.source.sourceSchemaDigest&&value.product.packageJson===intent.source.packageJson&&value.product.publisherLabel===intent.body.publisherLabel&&(intent.previous?value.product.productId===intent.previous.product.productId&&value.product.sequence===intent.previous.product.sequence+1:value.product.sequence===1)}
+function mismatch():never{throw new ApiError('产品回执与原固定版本不符，原操作结果尚未确认',200,undefined,undefined,true)}
+function shared(scope:string){return `/api/v1/projects/${project(scope)}/type-products` as const}
+function publications(scope:string){return `/api/v1/projects/${project(scope)}/type-product-publications` as const}
+export const productTransport:ProductTransport={
+ async lookup(scope,id,signal){const known=productId(id);return decodeSharedProduct(await api<Schema<'DeviceTypeProductResponse'>>(`${shared(scope)}/${known}`,{signal,maxResponseBytes:4*1024*1024}),known,true)},
+ async owned(scope,signal){return decodeOwnedProducts(await api<Schema<'DeviceTypeProductPublicationsResponse'>>(publications(scope),{signal,maxResponseBytes:512*1024}))},
+ async current(scope,id,signal){const known=productId(id);return decodeProductPublication(await api<Schema<'DeviceTypeProductPublicationResponse'>>(`${publications(scope)}/${known}`,{signal,maxResponseBytes:4*1024*1024}),known)},
+ async publish(intent,signal){const value=decodeProductPublication(await api<Schema<'DeviceTypeProductPublicationResponse'>>(publications(intent.project),{method:'post',body:intent.body,headers:{'Idempotency-Key':intent.key},signal,maxResponseBytes:4*1024*1024}));if(!productPublicationMatches(value,intent))mismatch();return value},
+ async published(intent,signal){const value=decodeProductPublication(await api<Schema<'DeviceTypeProductPublicationResponse'>>(`${publications(intent.project)}/requests/by-key`,{headers:{'Original-Request-Key':intent.key},signal,maxResponseBytes:4*1024*1024}));if(!productPublicationMatches(value,intent))mismatch();return value},
+ async withdraw(intent,signal){const value=await api<Schema<'DeviceTypeProductWithdrawalResponse'>>(`${publications(intent.project)}/${intent.source.product.productId}/withdrawals`,{method:'post',body:intent.body,headers:{'Idempotency-Key':intent.key},signal,maxResponseBytes:8192});const raw=object(value,['productId','revision','withdrawnAt']);if(raw.productId!==intent.source.product.productId||raw.revision!==String(BigInt(intent.body.revision)+1n)||!time(raw.withdrawnAt))mismatch();return value as ProductWithdrawal},
+ async create(intent,signal){const value=decodeProductImport(await api<Schema<'DeviceTypeProductImportReceiptResponse'>>(`${shared(intent.project)}/imports`,{method:'post',body:intent.body,headers:{'Idempotency-Key':intent.key},signal,maxResponseBytes:8192}));if(!productImportMatches(value,intent))mismatch();return value},
+ async imported(intent,signal){const value=decodeProductImport(await api<Schema<'DeviceTypeProductImportReceiptResponse'>>(`${shared(intent.project)}/imports/by-key`,{headers:{'Original-Request-Key':intent.key},signal,maxResponseBytes:8192}));if(!productImportMatches(value,intent))mismatch();return value}
+}

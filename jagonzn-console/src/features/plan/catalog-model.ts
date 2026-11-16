@@ -68,7 +68,7 @@ export const dimensionLabel = (code: string): string => DIMENSION_LABELS[code] ?
 /** 计量窗口中文标签。 */
 export const WINDOW_LABELS: Record<string, string> = {
   NONE: '存量',
-  UTC_DAY: '每 UTC 日',
+  UTC_DAY: '每日',
   MINUTE: '每分钟',
   CONCURRENT: '并发',
   ROLLING: '滚动窗口'

@@ -4,11 +4,7 @@
       <ElTabPane v-if="canManage" name="definitions" label="项目场景候选" />
       <ElTabPane name="history" label="执行历史" />
     </ElTabs>
-    <ElAlert type="info" :closable="false" show-icon>{{
-      mode === 'definitions'
-        ? '项目场景候选未绑定此设备；条件是否满足须在执行时判断，暂停场景不可执行。'
-        : '保留原执行版本；动作意图受理及设备动作记录数均不代表设备物理执行成功。'
-    }}</ElAlert>
+
     <ElAlert
       v-if="failed"
       type="error"

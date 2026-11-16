@@ -1,0 +1,47 @@
+<script setup lang="ts">
+import {computed,onScopeDispose,ref,shallowRef,watch} from 'vue'
+import RuleFunctionCodeEditor from './RuleFunctionCodeEditor.vue'
+import {ApiError,errorMessage,identityEpoch,onIdentityChange} from '@/core/http'
+import {projectId as activeProject} from '@/core/session'
+import {dataStreamParameterNames,dataStreamTemplate,type DataStreamItem} from '../device-types/data-stream-publication-api'
+import {downlinkSampleBytes} from './data-downlink-function-api'
+import {dataReportFunctionSource} from './rule-builder-draft'
+import {normalizeDataPropertyFunction,previewDataPropertyFunction,type DataPropertyInputContract,type DataPropertyInputProfile,type DataPropertyFunction,type DataPropertyPreview,type SubdeviceDataPreviewSource} from './data-property-preview-api'
+import {useDeviceDataPreviewSample,type DeviceDataPreviewSelection} from './use-device-data-preview-sample'
+import SubdeviceDataPreviewPicker from './SubdeviceDataPreviewPicker.vue'
+const props=defineProps<{projectId:string;typeId:string;scopeKey:string;stream:DataStreamItem;inputProfile:DataPropertyInputProfile;inputContract?:DataPropertyInputContract;modelValue?:DataPropertyFunction;subdevice?:boolean;disabled?:boolean;validationError?:string;top?:string}>()
+const emit=defineEmits<{save:[value:DataPropertyFunction];cancel:[];busy:[value:boolean]}>()
+const deviceSample=useDeviceDataPreviewSample({projectId:()=>props.projectId,typeId:()=>props.typeId,scopeKey:()=>props.scopeKey,streamIdentifier:()=>props.stream.identifier,disabled:()=>!!props.disabled,physical:true})
+const source=ref(props.modelValue?.source??dataReportFunctionSource),shown=ref(false),mode=ref<'HEX'|'TEXT'|'JSON'>('HEX'),sample=ref(''),params=ref<Record<string,string>>({}),busy=ref(false),sampleBusy=ref(false),error=ref(''),result=shallowRef<DataPropertyPreview>(),legacyPhysical=shallowRef<SubdeviceDataPreviewSource>()
+const physical=computed(()=>deviceSample.context.value?deviceSample.physical.value:legacyPhysical.value),stream=computed(()=>deviceSample.context.value?(deviceSample.member.value?.profile.type.deviceKind==='SUB_DEVICE'?physical.value?.stream:deviceSample.member.value?.streams.find(row=>row.identifier===props.stream.identifier)):props.subdevice?physical.value?.stream:props.stream),names=computed(()=>stream.value?dataStreamParameterNames(stream.value):[]),size=computed(()=>new TextEncoder().encode(source.value).length),locked=computed(()=>busy.value||sampleBusy.value||deviceSample.loading.value)
+const legacyTextInput=computed(()=>props.inputContract==='LEGACY_TEXT_V1'||props.inputProfile==='LEGACY_SINGLE'&&stream.value?.format==='TEXT'&&!dataStreamTemplate(stream.value))
+const editorOpen=ref(true),formatBusy=ref(false),conflicting=computed(()=>locked.value||formatBusy.value)
+let alive=true,generation=0,controller:AbortController|undefined
+function clear(){generation++;controller?.abort();busy.value=false;error.value='';result.value=undefined}
+function close(){if(!locked.value){editorOpen.value=false;formatBusy.value=false;emit('cancel')}}
+function save(){if(props.disabled||conflicting.value)return;try{emit('save',normalizeDataPropertyFunction({format:'COMMON_JS',source:source.value}))}catch(cause){error.value=errorMessage(cause)}}
+async function preview(){
+ if(props.disabled||conflicting.value||props.projectId!==activeProject.value)return
+ let raw:Uint8Array,selection:DeviceDataPreviewSelection|undefined;try{selection=deviceSample.capture();if(!stream.value)throw new Error(deviceSample.context.value?'样例设备当前发布中没有该输入流':'请选择当前有效的实际子设备样例');raw=downlinkSampleBytes(sample.value,mode.value)}catch(cause){error.value=errorMessage(cause);return}
+ const s={generation,epoch:identityEpoch(),project:props.projectId,type:props.typeId,scope:props.scopeKey,stream:stream.value!,physical:physical.value,selection,previewType:selection?.member.deviceTypeId??props.typeId};controller?.abort();controller=new AbortController();busy.value=true;error.value='';result.value=undefined
+ const current=()=>alive&&!props.disabled&&generation===s.generation&&identityEpoch()===s.epoch&&activeProject.value===s.project&&props.projectId===s.project&&props.typeId===s.type&&props.scopeKey===s.scope&&stream.value===s.stream&&physical.value===s.physical&&deviceSample.current(s.selection)
+ try{const value=await previewDataPropertyFunction({projectId:s.project,deviceTypeId:s.previewType,scopeKey:s.scope},props.inputProfile,s.stream,source.value,raw,dataStreamTemplate(s.stream)?params.value:undefined,current,controller.signal,s.physical,s.selection,props.inputContract);if(current())result.value=value}catch(cause){if(current()){error.value=errorMessage(cause);if(cause instanceof ApiError&&[401,403,404].includes(cause.status))emit('cancel')}}finally{if(current())busy.value=false}
+}
+watch(names,value=>{params.value=Object.fromEntries(value.map(name=>[name,'']))},{immediate:true,flush:'sync'})
+watch(params,clear,{deep:true,flush:'sync'});watch([source,mode,sample,physical,deviceSample.member],clear,{flush:'sync'})
+watch([()=>props.projectId,()=>props.typeId,()=>props.scopeKey,()=>props.stream,()=>props.inputProfile,()=>props.inputContract,()=>props.disabled],()=>{clear();legacyPhysical.value=undefined;emit('cancel')})
+watch(conflicting,value=>emit('busy',value),{immediate:true,flush:'sync'})
+const dispose=onIdentityChange(()=>{clear();legacyPhysical.value=undefined;emit('cancel')});onScopeDispose(()=>{alive=false;clear();dispose()})
+</script>
+<template><el-dialog :model-value="true" title="配置操作" :width="top?'min(1000px,94vw)':'min(920px,94vw)'" :top="top" :lock-scroll="top===undefined" :close-on-click-modal="false" :close-on-press-escape="!disabled&&!locked" :show-close="!disabled&&!locked" :before-close="close" append-to-body>
+ <el-form label-position="top" :disabled="disabled||busy" @submit.prevent="save"><el-form-item label="云函数"><RuleFunctionCodeEditor v-if="editorOpen" v-model="source" ariaLabel="属性解析函数" :disabled="disabled||locked" @busy="formatBusy=$event"/></el-form-item>
+ <p v-if="!deviceSample.context.value" class="help">{{size}} / 65536 UTF8字节。返回属性对象；实际目标和CURRENT模型由运行时核验。Topic参数可从options.params读取。</p><p v-if="!deviceSample.context.value&&!legacyTextInput" class="help">Buffer支持8/16/32位有符号及无符号整数读取，16/32位可选BE或LE；32位浮点数使用readFloatBE或readFloatLE。读取偏移省略时为0，越界或非有限数值会解析失败。</p><p v-if="!deviceSample.context.value&&!legacyTextInput" class="help">Cloud.Utils提供JSON编解码与类型判断、GB2312/GBK文本转换、8位转换、UTF8/HEX/Base64字符串与只读字节对象转换，以及整数和浮点数的HEX编码；数值方法无LE为大端。位数组高位在前，字节值须为0至255整数；新字节对象沿用上述读取方法。Cloud.ModbusRTU可生成带CRC的请求帧，由下行操作决定是否发送。</p><p v-if="!deviceSample.context.value&&legacyTextInput" class="help">沿用已保存函数的文本输入方式，data.toString('utf8')可读取上报文本。</p>
+ <el-button link type="primary" :disabled="disabled||conflicting" @click="shown=!shown">测试云函数</el-button>
+ <section v-if="shown" class="function-test"><p v-if="!deviceSample.context.value" class="help">纯模拟，不写属性、不发送消息、不改变活动版本。</p>
+ <el-form-item v-if="deviceSample.context.value" label="选择模拟的设备"><el-select v-model="deviceSample.sampleDeviceId.value" filterable style="width:100%" aria-label="选择模拟的设备" placeholder="请选择设备" :disabled="disabled||busy"><el-option v-for="member in deviceSample.context.value.members" :key="member.deviceId" :value="member.deviceId" :label="member.name"/></el-select></el-form-item><el-alert v-if="deviceSample.error.value" :title="deviceSample.error.value" type="error" :closable="false"/><SubdeviceDataPreviewPicker v-if="subdevice&&!deviceSample.context.value" :project-id="projectId" :type-id="typeId" :scope-key="scopeKey" :stream-identifier="props.stream.identifier" :disabled="disabled||busy" @source="legacyPhysical=$event" @busy="sampleBusy=$event"/>
+ <el-form-item label="模拟设备上报自定义数据"><el-radio-group v-model="mode" aria-label="属性模拟输入格式"><el-radio value="HEX">HEX</el-radio><el-radio value="TEXT">Plaintext</el-radio><el-radio value="JSON">JSON</el-radio></el-radio-group><el-input v-model="sample" type="textarea" :rows="3" aria-label="属性模拟上报数据"/></el-form-item>
+ <template v-if="names.length"><p>纯模拟Topic参数</p><el-form-item v-for="name in names" :key="name" :label="name" required><el-input v-model="params[name]" :aria-label="'属性模拟Topic参数 '+name" maxlength="64"/></el-form-item></template>
+ <el-button :disabled="disabled||conflicting||(deviceSample.context.value?!deviceSample.member.value:subdevice&&!physical)" :loading="busy" @click="preview">测试</el-button><template v-if="result"><p role="status">测试调用成功，不代表属性已写入。</p><pre aria-label="属性模拟输出">{{result.attributesJson}}</pre><p v-if="result.previewTargetContext">已核对当前样例绑定 · 子设备地址 {{result.previewTargetContext.subDeviceAddress}}</p></template></section>
+ </el-form><el-alert v-if="error" :title="error" type="error" :closable="false"/><el-alert v-if="validationError" :title="validationError" type="warning" :closable="false"/><template #footer><el-form :disabled="false"><el-button :disabled="disabled||locked" @click="close">取消</el-button><el-button type="primary" :disabled="disabled||conflicting" @click="save">保存</el-button></el-form></template>
+</el-dialog></template>
+<style scoped>.help{font-size:13px;color:var(--el-text-color-secondary);line-height:1.7}.function-test{margin:12px 0;padding:16px;background:var(--el-fill-color-light)}.function-test .el-radio-group{display:flex;margin-bottom:12px}.el-form-item{margin-top:20px}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto}:deep(textarea){font-family:ui-monospace,SFMono-Regular,Menlo,monospace}</style>

@@ -48,7 +48,7 @@
     "hidden" : false,
     "fullPage" : false,
     "fixedTab" : false,
-    "authCodes" : [ "alarm:manage" ]
+    "authCodes" : [ "alarm:manage", "alarm:read" ]
   }, {
     "name" : "ApplicationManager",
     "parent" : "Dashboard",
@@ -460,6 +460,16 @@
     "fixedTab" : false,
     "authCodes" : [ "task:manage", "task:run" ]
   }, {
+    "name" : "TenantGovernance",
+    "parent" : "",
+    "path" : "/tenant-governance",
+    "component" : "/tenant-governance/index",
+    "title" : "menus.tenantGovernance.title",
+    "hidden" : false,
+    "fullPage" : false,
+    "fixedTab" : false,
+    "authCodes" : [ ]
+  }, {
     "name" : "UserCenter",
     "parent" : "",
     "path" : "/system/user-center",
@@ -482,123 +492,283 @@
   } ],
   "cases" : [ {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Exception", "Exception403", "Exception404", "Exception500", "PlanCatalog", "Project", "ProjectCreate", "ProjectList", "ProjectRecycleBin", "SystemStatus", "UserCenter" ],
     "role" : "NONE",
     "commercial" : false,
     "permissions" : [ ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Exception", "Exception403", "Exception404", "Exception500", "PlanCatalog", "Project", "ProjectCreate", "ProjectList", "ProjectRecycleBin", "SystemStatus", "TenantGovernance", "UserCenter" ],
+    "role" : "NONE",
+    "commercial" : false,
+    "permissions" : [ "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Exception", "Exception403", "Exception404", "Exception500", "PlanCatalog", "Project", "ProjectCreate", "ProjectList", "ProjectRecycleBin", "SelfHostedReview", "SystemStatus", "UserCenter" ],
     "role" : "NONE",
     "commercial" : false,
     "permissions" : [ "self_hosted:review" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Exception", "Exception403", "Exception404", "Exception500", "PlanCatalog", "Project", "ProjectCreate", "ProjectList", "ProjectRecycleBin", "SelfHostedReview", "SystemStatus", "TenantGovernance", "UserCenter" ],
+    "role" : "NONE",
+    "commercial" : false,
+    "permissions" : [ "self_hosted:review", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "CommercialOperations", "Exception", "Exception403", "Exception404", "Exception500", "PlanCatalog", "Project", "ProjectCreate", "ProjectList", "ProjectRecycleBin", "SelfHostedEnrollment", "SystemStatus", "UserCenter" ],
     "role" : "NONE",
     "commercial" : true,
     "permissions" : [ "commercial:adjust" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "CommercialOperations", "Exception", "Exception403", "Exception404", "Exception500", "PlanCatalog", "Project", "ProjectCreate", "ProjectList", "ProjectRecycleBin", "SelfHostedEnrollment", "SystemStatus", "TenantGovernance", "UserCenter" ],
+    "role" : "NONE",
+    "commercial" : true,
+    "permissions" : [ "commercial:adjust", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "CommercialOperations", "Exception", "Exception403", "Exception404", "Exception500", "PlanCatalog", "Project", "ProjectCreate", "ProjectList", "ProjectRecycleBin", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "UserCenter" ],
     "role" : "NONE",
     "commercial" : true,
     "permissions" : [ "commercial:adjust", "self_hosted:review" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "CommercialOperations", "Exception", "Exception403", "Exception404", "Exception500", "PlanCatalog", "Project", "ProjectCreate", "ProjectList", "ProjectRecycleBin", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "TenantGovernance", "UserCenter" ],
+    "role" : "NONE",
+    "commercial" : true,
+    "permissions" : [ "commercial:adjust", "self_hosted:review", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "OWNER",
     "commercial" : false,
     "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "task:manage", "task:read", "task:run" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "OWNER",
+    "commercial" : false,
+    "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "task:manage", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "OWNER",
     "commercial" : false,
     "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "self_hosted:review", "task:manage", "task:read", "task:run" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "OWNER",
+    "commercial" : false,
+    "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "self_hosted:review", "task:manage", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedEnrollment", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "OWNER",
     "commercial" : true,
     "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "task:manage", "task:read", "task:run" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedEnrollment", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "OWNER",
+    "commercial" : true,
+    "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "task:manage", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "OWNER",
     "commercial" : true,
     "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "self_hosted:review", "task:manage", "task:read", "task:run" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "OWNER",
+    "commercial" : true,
+    "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "self_hosted:review", "task:manage", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "ADMIN",
     "commercial" : false,
     "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "task:manage", "task:read", "task:run" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "ADMIN",
+    "commercial" : false,
+    "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "task:manage", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "ADMIN",
     "commercial" : false,
     "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "self_hosted:review", "task:manage", "task:read", "task:run" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "ADMIN",
+    "commercial" : false,
+    "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "self_hosted:review", "task:manage", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedEnrollment", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "ADMIN",
     "commercial" : true,
     "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "task:manage", "task:read", "task:run" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedEnrollment", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "ADMIN",
+    "commercial" : true,
+    "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "task:manage", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "ADMIN",
     "commercial" : true,
     "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "self_hosted:review", "task:manage", "task:read", "task:run" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "MessageRules", "Ota", "OtaAudits", "OtaCampaigns", "OtaFirmwares", "OtaJobs", "Overview", "PlanCatalog", "Project", "ProjectApiKeys", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "ProjectWebhooks", "Rule", "RuleAutomations", "RuleExecutions", "RuleScenes", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "ADMIN",
+    "commercial" : true,
+    "permissions" : [ "alarm:maintain", "alarm:manage", "alarm:read", "application:manage", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:manage", "dashboard_definition:read", "device:control", "device:create", "device:delete", "device:read", "device:update", "enduser:manage", "enduser:read", "integration:manage", "member:invite", "member:read", "member:remove", "member:update_role", "ota:deploy", "ota:read", "quota:read", "rule:manage", "rule:read", "self_hosted:review", "task:manage", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "OPERATOR",
     "commercial" : false,
     "permissions" : [ "alarm:maintain", "alarm:read", "application:read", "dashboard:read", "dashboard_definition:read", "device:control", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "task:read", "task:run" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "OPERATOR",
+    "commercial" : false,
+    "permissions" : [ "alarm:maintain", "alarm:read", "application:read", "dashboard:read", "dashboard_definition:read", "device:control", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "OPERATOR",
     "commercial" : false,
     "permissions" : [ "alarm:maintain", "alarm:read", "application:read", "dashboard:read", "dashboard_definition:read", "device:control", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "self_hosted:review", "task:read", "task:run" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "OPERATOR",
+    "commercial" : false,
+    "permissions" : [ "alarm:maintain", "alarm:read", "application:read", "dashboard:read", "dashboard_definition:read", "device:control", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "self_hosted:review", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedEnrollment", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "OPERATOR",
     "commercial" : true,
     "permissions" : [ "alarm:maintain", "alarm:read", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:read", "device:control", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "task:read", "task:run" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedEnrollment", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "OPERATOR",
+    "commercial" : true,
+    "permissions" : [ "alarm:maintain", "alarm:read", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:read", "device:control", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "OPERATOR",
     "commercial" : true,
     "permissions" : [ "alarm:maintain", "alarm:read", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:read", "device:control", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "self_hosted:review", "task:read", "task:run" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "OPERATOR",
+    "commercial" : true,
+    "permissions" : [ "alarm:maintain", "alarm:read", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:read", "device:control", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "self_hosted:review", "task:read", "task:run", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "VIEWER",
     "commercial" : false,
     "permissions" : [ "alarm:read", "application:read", "dashboard:read", "dashboard_definition:read", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "task:read" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "VIEWER",
+    "commercial" : false,
+    "permissions" : [ "alarm:read", "application:read", "dashboard:read", "dashboard_definition:read", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "task:read", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "VIEWER",
     "commercial" : false,
     "permissions" : [ "alarm:read", "application:read", "dashboard:read", "dashboard_definition:read", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "self_hosted:review", "task:read" ]
   }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "VIEWER",
+    "commercial" : false,
+    "permissions" : [ "alarm:read", "application:read", "dashboard:read", "dashboard_definition:read", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "self_hosted:review", "task:read", "tenant:govern" ]
+  }, {
     "reviewer" : false,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedEnrollment", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "VIEWER",
     "commercial" : true,
     "permissions" : [ "alarm:read", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:read", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "task:read" ]
   }, {
+    "reviewer" : false,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedEnrollment", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "VIEWER",
+    "commercial" : true,
+    "permissions" : [ "alarm:read", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:read", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "task:read", "tenant:govern" ]
+  }, {
     "reviewer" : true,
+    "governor" : false,
     "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "UserCenter", "Workbench" ],
     "role" : "VIEWER",
     "commercial" : true,
     "permissions" : [ "alarm:read", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:read", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "self_hosted:review", "task:read" ]
+  }, {
+    "reviewer" : true,
+    "governor" : true,
+    "names" : [ "Alarm", "AlarmHistory", "AlarmNotificationGroups", "AlarmNotificationTemplates", "AlarmRules", "ApplicationManager", "CommercialOperations", "Dashboard", "DashboardDesigner", "Device", "DeviceGroups", "DeviceMessages", "DeviceModbusPoints", "DeviceTopology", "DeviceTypes", "Devices", "Exception", "Exception403", "Exception404", "Exception500", "Overview", "PlanCatalog", "Project", "ProjectCreate", "ProjectEndUsers", "ProjectList", "ProjectMembers", "ProjectRecycleBin", "ProjectSettings", "Rule", "RuleExecutions", "SelfHostedEnrollment", "SelfHostedReview", "SystemStatus", "Task", "TaskJobs", "TenantGovernance", "UserCenter", "Workbench" ],
+    "role" : "VIEWER",
+    "commercial" : true,
+    "permissions" : [ "alarm:read", "application:read", "commercial:adjust", "dashboard:read", "dashboard_definition:read", "device:read", "enduser:read", "member:read", "quota:read", "rule:read", "self_hosted:review", "task:read", "tenant:govern" ]
   } ]
 }

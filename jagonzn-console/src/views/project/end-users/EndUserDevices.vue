@@ -1,9 +1,7 @@
 <template>
-  <section class="end-user-devices">
+  <section class="end-user-devices console-end-user-section">
     <ElDivider content-position="left">当前用户的设备关系</ElDivider>
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >项目角色不代表设备授权；关闭关系后不会因恢复项目角色而自动恢复。</ElAlert
-    >
+
     <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" show-icon />
     <ElTable v-loading="loading" :data="rows" row-key="deviceId">
       <ElTableColumn prop="deviceId" label="设备ID" min-width="230" />
@@ -98,7 +96,7 @@
         await ElMessageBox.confirm(
           '关闭此用户在本项目的设备关系，保留历史。此操作不会删除设备，也不会修改账号或项目角色。',
           '确认解绑设备',
-          { type: 'warning' }
+          { type: 'warning', customClass: 'console-studio-feedback' }
         )
       } catch {
         return

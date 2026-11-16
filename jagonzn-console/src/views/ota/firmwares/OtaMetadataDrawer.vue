@@ -1,19 +1,12 @@
 <template>
   <ElDrawer
-    class="ota-firmware-feedback"
+    class="console-developer-drawer ota-firmware-feedback"
     v-model="visible"
     title="OTA 信任与类型基线"
     size="min(960px, 95vw)"
     destroy-on-close
     data-testid="ota-metadata-drawer"
   >
-    <ElAlert
-      title="这里只展示服务端登记的公开元数据；密钥状态、有效期和基线版本不代表当前设备升级资格。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
-
     <ElDivider content-position="left">信任域</ElDivider>
     <div class="ota-metadata-toolbar">
       <ElButton
@@ -131,10 +124,11 @@
       >
       <ElTableColumn prop="signatureProfile" label="签名算法" min-width="190" />
       <ElTableColumn prop="fingerprint" label="公钥指纹" min-width="250" />
-      <ElTableColumn label="有效期（UTC）" min-width="340"
-        ><template #default="{ row }">{{
-          otaTrustKeyValidity(row.notBefore, row.notAfter)
-        }}</template></ElTableColumn
+      <ElTableColumn label="有效期" min-width="340"
+        ><template #default="{ row }"
+          >{{ formatTime(new Date(row.notBefore * 1000).toISOString()) }} →
+          {{ formatTime(new Date(row.notAfter * 1000).toISOString()) }}（不含终点）</template
+        ></ElTableColumn
       >
       <template #empty
         ><ElEmpty
@@ -169,12 +163,7 @@
       data-testid="ota-baseline-types-error"
     />
     <ElButton v-if="typesError" :loading="typesLoading" @click="loadTypes()">重读设备类型</ElButton>
-    <ElAlert
-      title="基线历史读取要求类型已发布并已生成产品标识；尚未登记基线时显示空集。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
+
     <div class="ota-metadata-filter">
       <div class="ota-metadata-toolbar">
         <label for="ota-baseline-type">已发布设备类型</label>
@@ -275,8 +264,7 @@
     mergeOtaTrustDomainPage,
     mergeOtaTrustKeyPage,
     otaTrustKeyStateLabel,
-    otaTrustKeyStateTag,
-    otaTrustKeyValidity
+    otaTrustKeyStateTag
   } from '@/features/ota/trust-model'
   import {
     emptyOtaBaselineVersionHistory,

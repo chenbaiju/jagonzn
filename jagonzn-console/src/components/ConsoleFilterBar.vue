@@ -7,6 +7,7 @@
   withDefaults(
     defineProps<{
       items: SearchFormItem[]
+      labelPosition?: 'left' | 'top'
       span?: number
       showExpand?: boolean
       showSearch?: boolean
@@ -15,6 +16,7 @@
       loading?: boolean
     }>(),
     {
+      labelPosition: 'left',
       span: 8,
       showExpand: true,
       showSearch: true,
@@ -45,7 +47,7 @@
     :show-reset="showReset"
     :disabled-search="disabledSearch || loading"
     :search-loading="loading"
-    label-position="left"
+    :label-position="labelPosition"
     label-width="auto"
     @search="emit('search')"
     @reset="emit('reset')"
@@ -69,7 +71,7 @@
     box-shadow: none !important;
 
     :deep(.el-row) {
-      row-gap: 10px;
+      row-gap: 8px;
       align-items: center;
     }
     :deep(.el-form-item) {
@@ -78,8 +80,8 @@
     }
     :deep(.el-form-item__label) {
       justify-content: flex-start;
-      font-size: 13px;
-      line-height: 36px;
+      font-size: 14px;
+      line-height: 32px;
       color: var(--el-text-color-regular);
     }
     :deep(.el-input),
@@ -92,23 +94,23 @@
     :deep(.el-input__wrapper),
     :deep(.el-select__wrapper) {
       box-sizing: border-box;
-      min-height: 36px;
+      min-height: 32px;
     }
     :deep(.action-column .action-buttons-wrapper) {
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 0;
     }
     :deep(.action-column .form-buttons) {
-      gap: 10px;
+      gap: 8px;
     }
     :deep(.form-buttons .el-button) {
-      min-width: 112px;
-      height: 36px;
+      min-width: 62px;
+      height: 32px;
       margin: 0;
     }
     :deep(.filter-toggle) {
       margin-left: 0;
-      line-height: 36px;
+      line-height: 32px;
       color: var(--el-color-primary);
     }
     &.console-filter-bar--no-actions :deep(.action-column) {

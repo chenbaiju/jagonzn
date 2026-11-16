@@ -53,18 +53,6 @@ export const dashboardRoutes: AppRouteRecord = {
         icon: 'ri:layout-masonry-line',
         keepAlive: false
       }
-    },
-    {
-      path: 'overview',
-      name: 'Overview',
-      component: '/dashboard/overview',
-      meta: {
-        title: 'menus.dashboard.overview',
-        icon: 'ri:home-smile-2-line',
-        keepAlive: false,
-        // 固定标签页：作为登录后的落点，不允许关闭
-        fixedTab: false
-      }
     }
   ]
 }

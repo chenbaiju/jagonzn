@@ -1,10 +1,22 @@
+import { memoryStorage } from './commercialStorageFixture'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { reactive, nextTick } from 'vue'
-import Overview from '@/views/dashboard/overview/index.vue'
+import Overview from '@/views/dashboard/workbench/index.vue'
 import { fetchProjectOverview, type OverviewResponse } from '@/api/overview'
 import { invalidateIdentity } from '@/utils/http/identity-scope'
 const state = vi.hoisted(() => ({ user: {} as any }))
+vi.mock('@/store/modules/menu', () => ({
+  useMenuStore: () => ({ menuList: [{ path: '/dashboard/workbench' }] })
+}))
+vi.mock('vue-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vue-router')>()),
+  useRouter: () => ({ push: vi.fn() })
+}))
+vi.mock('@/api/project', () => ({
+  fetchProjects: vi.fn(async () => [{ id: 'p', name: '测试项目' }])
+}))
+vi.mock('@/api/quota', () => ({ fetchProjectQuota: vi.fn() }))
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => state.user }))
 vi.mock('@/api/overview', () => ({ fetchProjectOverview: vi.fn() }))
 const snapshot = (n = 5): OverviewResponse => ({
@@ -26,7 +38,16 @@ function render() {
         ElSkeletonItem: { template: '<i class="skeleton"/>' },
         ElEmpty: { props: ['description'], template: '<p>{{description}}</p>' },
         OverviewStatistics: true,
-        ArtRingChart: true,
+        WorkbenchResources: true,
+        WorkbenchAppAndDocs: true,
+        ElButton: { template: '<button><slot/></button>' },
+        ElDrawer: true,
+        ElAlert: { props: ['title'], template: '<p>{{title}}<slot/></p>' },
+        ArtRingChart: {
+          props: ['isEmpty'],
+          template: '<div class="test-ring-chart" :data-empty="isEmpty" />'
+        },
+        DeviceActivityChart: true,
         ArtSvgIcon: true
       }
     }
@@ -39,17 +60,21 @@ function count() {
 }
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.stubGlobal('localStorage', memoryStorage())
   state.user = reactive({ info: { currentProjectId: 'p', userId: 'u', tenantId: 't' } })
   vi.mocked(fetchProjectOverview).mockResolvedValue(snapshot())
 })
 afterEach(() => page?.unmount())
-it.each([5, 0])('renders the standalone alarm device card with %i devices', async (n) => {
+it.each([5, 0])('renders the relocated home alarm device card with %i devices', async (n) => {
   vi.mocked(fetchProjectOverview).mockResolvedValue(snapshot(n))
   render()
   await flushPromises()
   expect(page.findAll('.overview-card--count')).toHaveLength(4)
   expect(count()?.find('.overview-card__value').text()).toBe(String(n))
-  expect(page.text()).toContain(`${n} 台告警设备，按最高活动告警级别归类`)
+  expect(page.find('.overview-card--rate .overview-card__hint').exists()).toBe(false)
+  expect(page.findAll('.overview-card--rate .test-ring-chart')[1]?.attributes('data-empty')).toBe(
+    'false'
+  )
 })
 it.each([
   { ...snapshot(), alarmSeverityDeviceCounts: undefined },
@@ -64,7 +89,10 @@ it.each([
   render()
   await flushPromises()
   expect(count()?.find('.overview-card__value').text()).toBe('—')
-  expect(page.text()).toContain('告警分布暂不可用')
+  expect(page.find('.overview-card--rate .overview-card__hint').exists()).toBe(false)
+  expect(page.findAll('.overview-card--rate .test-ring-chart')[1]?.attributes('data-empty')).toBe(
+    'true'
+  )
 })
 it('shows skeletons while loading and unavailable on first request failure', async () => {
   let reject!: (reason: unknown) => void
@@ -115,6 +143,6 @@ it('clears counts when leaving the project', async () => {
   await flushPromises()
   state.user.info.currentProjectId = ''
   await flushPromises()
-  expect(page.text()).toContain('请先进入一个项目')
+  expect(page.text()).toContain('先选择或创建项目')
   expect(page.findAll('.overview-card--count')).toHaveLength(0)
 })

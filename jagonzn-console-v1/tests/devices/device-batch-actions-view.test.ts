@@ -1,0 +1,30 @@
+import {beforeEach,afterEach,it,expect,vi} from 'vitest'
+import {defineComponent} from 'vue'
+import {mount,flushPromises} from '@vue/test-utils'
+import {session} from '../../src/core/session'
+import DeviceBatchActions from '../../src/features/devices/DeviceBatchActions.vue'
+const mock=vi.hoisted(()=>({device:vi.fn(),access:vi.fn(),prepare:vi.fn(),write:vi.fn(),observe:vi.fn(),groups:vi.fn(),decodeGroups:vi.fn(),candidates:vi.fn()}))
+vi.mock('../../src/features/devices/device-batch-api',async original=>({...await original<typeof import('../../src/features/devices/device-batch-api')>(),readBatchDevice:mock.device,readBatchAccess:mock.access,prepareBatchRow:mock.prepare,writeBatchRow:mock.write,observeBatchRow:mock.observe}))
+vi.mock('../../src/features/devices/static-group-membership-api',()=>({readStaticGroups:mock.groups,decodeStaticGroups:mock.decodeGroups}))
+vi.mock('../../src/features/devices/user-associations-api',()=>({readUserCandidates:mock.candidates}))
+const p='00000000-0000-0000-0000-000000000001',id='00000000-0000-0000-0000-000000000002',g='00000000-0000-0000-0000-000000000003'
+const Button=defineComponent({props:['disabled','loading'],template:'<button :disabled="disabled||loading"><slot/></button>'})
+const Dropdown=defineComponent({emits:['command'],template:'<div><slot/><slot name="dropdown"/></div>'})
+const Item=defineComponent({props:['disabled','command'],template:'<button :disabled="disabled" @click="$parent.$emit(\'command\',command)"><slot/></button>'})
+const Dialog=defineComponent({props:['modelValue'],template:'<section v-if="modelValue" role="dialog"><slot/><slot name="footer"/></section>'})
+const Plain=defineComponent({props:['title'],template:'<div>{{title}}<slot/></div>'})
+const FormItem=defineComponent({props:['label'],template:'<label>{{label}}<slot/></label>'})
+const stubs={ElButton:Button,ElDropdown:Dropdown,ElDropdownMenu:Plain,ElDropdownItem:Item,ElDialog:Dialog,ElIcon:Plain,ElAlert:Plain,ElForm:Plain,ElFormItem:FormItem,ElSelect:Plain,ElOption:Plain}
+let wrapper:ReturnType<typeof mount>
+const button=(text:string)=>{const b=wrapper.findAll('button').find(b=>b.text()===text);if(!b)throw new Error('missing '+text);return b}
+beforeEach(()=>{Object.values(mock).forEach(fn=>fn.mockReset());session.ready=true;session.user={currentProjectId:p,permissions:['device:read','device:update','device:delete','enduser:manage','enduser:read']} as never;session.projects=[{id:p,status:'ACTIVE',myRole:'OWNER'}];mock.device.mockResolvedValue({id,name:'环境设备'});mock.access.mockResolvedValue({enabled:false});mock.prepare.mockResolvedValue({id,name:'环境设备',status:'READY',detail:'待确认'});mock.write.mockResolvedValue(undefined);mock.observe.mockResolvedValue('原请求未确认')})
+afterEach(()=>{wrapper?.unmount();session.user=null})
+async function setup(extra={}){wrapper=mount(DeviceBatchActions,{props:{deviceIds:[id],...extra},global:{stubs}});await flushPromises()}
+async function action(value:string){wrapper.findComponent(Dropdown).vm.$emit('command',value);await flushPromises()}
+it('菜单显示Source各动作与真实enabled计数，无额外选择数前缀或未选组移除',async()=>{await setup();expect(wrapper.text()).not.toContain('已选择');for(const label of ['添加到设备组','关联到用户','移除设备','启用设备 (1)','停用设备 (0)','取消选择'])expect(wrapper.text()).toContain(label);expect(wrapper.text()).not.toContain('从当前分组移除');expect(button('停用设备 (0)').attributes('disabled')).toBeDefined()})
+it('选中静态组才显示当前组移除，取消确认零写',async()=>{await setup({selectedGroupId:g});expect(wrapper.text()).toContain('从当前分组移除');await action('remove');expect(wrapper.find('[role="dialog"]').exists()).toBe(true);expect(wrapper.text()).toContain('环境设备');await button('取消').trigger('click');expect(mock.write).not.toHaveBeenCalled();expect(wrapper.find('[role="dialog"]').exists()).toBe(false)})
+it('清除只发cleared；确认写后发changed并显示逐台结果',async()=>{await setup();await button('󰅚取消选择').trigger('click');expect(wrapper.emitted('cleared')).toHaveLength(1);await action('remove');await button('移除').trigger('click');await flushPromises();expect(wrapper.emitted('changed')).toHaveLength(1);expect(wrapper.text()).toContain('已完成');expect(wrapper.emitted('locked')?.some(v=>v[0]===true)).toBe(true)})
+it('未知时关闭仍显示核对入口，当前读取后才可结束且不续写',async()=>{mock.write.mockRejectedValueOnce(new Error('网络未确认'));await setup();await action('remove');await button('移除').trigger('click');await flushPromises();expect(wrapper.text()).toContain('待核对');expect(button('已核对，结束本次操作').attributes('disabled')).toBeDefined();await button('关闭').trigger('click');expect(wrapper.text()).toContain('核对上次操作');await button('核对上次操作').trigger('click');await button('读取当前状态').trigger('click');await flushPromises();expect(mock.write).toHaveBeenCalledTimes(1);expect(button('已核对，结束本次操作').attributes('disabled')).toBeUndefined()})
+it('移除当前组的确认必须显示读回的真实组名',async()=>{mock.prepare.mockResolvedValue({id,name:'环境设备',status:'READY',detail:'待确认',targetName:'温湿度设备组'});await setup({selectedGroupId:g});await action('remove-group');expect(wrapper.text()).toContain('设备组：温湿度设备组');expect(mock.write).not.toHaveBeenCalled()})
+it('Source分组弹窗一次提交、50%宽度，保留无真实管理路由时的禁用入口',async()=>{mock.decodeGroups.mockReturnValue({items:[{groupId:g,name:'温湿度设备组'}],hasMore:false,nextAfterGroupId:null});await setup();await action('add-group');expect(wrapper.findComponent(Dialog).attributes('title')).toBe('添加到设备组');expect(wrapper.findComponent(FormItem).props('label')).toBe('选择设备组');expect(wrapper.text()).not.toContain('下一步');expect(button('提交').exists()).toBe(true);expect(button('管理设备组').attributes('disabled')).toBeDefined();expect(wrapper.findComponent(Dialog).attributes('width')).toBe('50%');await button('取消').trigger('click');expect(mock.write).not.toHaveBeenCalled()})
+it('管理入口只在父层声明实际可用时发事件，不写设备',async()=>{mock.decodeGroups.mockReturnValue({items:[],hasMore:false,nextAfterGroupId:null});await setup({groupManagementAvailable:true});await action('add-group');await button('管理设备组').trigger('click');expect(wrapper.emitted('manage-groups')).toHaveLength(1);expect(wrapper.find('[role="dialog"]').exists()).toBe(false);expect(mock.write).not.toHaveBeenCalled()})

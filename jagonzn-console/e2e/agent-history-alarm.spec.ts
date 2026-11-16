@@ -17,7 +17,7 @@ test.use({ trace: 'off', video: 'off', screenshot: 'off' })
 
 function seedFacts(project: string, device: string, model: string) {
   if (
-    !existsSync('/.thingscloud-local-ci') ||
+    !existsSync('/.thingslink-local-ci') ||
     process.env.DOCKER_HOST !== 'unix:///var/run/docker.sock' ||
     !/^[0-9a-f]{64}$/.test(process.env.LOCAL_CI_SOURCE_SHA256 || '') ||
     !process.env.E2E_PG_USER ||

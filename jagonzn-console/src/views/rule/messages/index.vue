@@ -1,16 +1,28 @@
 <template>
-  <div class="console-page message-rules">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace message-rules"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="消息规则"
       description="处理上行数据并配置动作。先保存草稿与调试，再明确启用版本。"
+      :links="[
+        { label: '执行记录', path: '/rule/executions?source=rule', permission: 'rule:read' }
+      ]"
     >
       <template #actions>
-        <ElButton v-if="allowed" type="primary" :icon="Plus" :disabled="busy" @click="create">
+        <ElButton
+          v-if="allowed"
+          type="primary"
+          :icon="Plus"
+          :disabled="writesBlocked"
+          @click="create"
+        >
           创建规则
         </ElButton>
       </template>
     </ConsoleWorkspaceHeader>
+    <ElAlert v-if="allowed && error && !visible" :title="error" type="error" :closable="false" />
     <ElCard v-if="!allowed" shadow="never"
       ><ElAlert
         title="需要 OWNER 或 ADMIN 的规则管理权限"
@@ -61,10 +73,8 @@
             prop="activeVersionId"
             label="活动版本"
           />
-          <ElTableColumn label="更新时间"
-            ><template #default="{ row }">{{
-              row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '—'
-            }}</template></ElTableColumn
+          <ElTableColumn min-width="190" label="更新时间"
+            ><template #default="{ row }">{{ formatTime(row.updatedAt) }}</template></ElTableColumn
           >
           <ElTableColumn class-name="console-table-actions-cell" min-width="64" label="操作"
             ><template #default="{ row }"
@@ -79,27 +89,98 @@
       >
     </template>
     <ElDialog
-      class="console-dialog"
-      v-model="visible"
+      class="console-dialog console-developer-dialog console-rule-dialog"
+      :model-value="visible"
+      @update:model-value="dialogVisibility"
       title="消息规则版本管理"
       width="850px"
       destroy-on-close
       :close-on-click-modal="false"
     >
       <p class="console-description" v-if="selected"
-        >状态 {{ selected.status }} · CAS {{ selected.version }} · 活动版本
+        >状态 {{ selected.status }} · CAS
+        {{ Number.isSafeInteger(selected.version) ? selected.version : '无法精确表示' }} · 活动版本
         {{ selected.activeVersionId ?? '无' }}</p
       >
-      <ElForm label-position="top">
-        <ElFormItem label="名称"
-          ><ElInput v-model="form.name" aria-label="规则名称" maxlength="128" :disabled="busy"
+      <section
+        v-if="selected"
+        data-testid="script-health"
+        class="console-section"
+        aria-label="规则脚本健康"
+      >
+        <div class="console-actions">
+          <strong>脚本健康与恢复</strong>
+          <ElButton data-testid="refresh-script-health" :disabled="busy" @click="refreshHealth"
+            >刷新健康状态</ElButton
+          >
+          <ElButton
+            v-if="selected.status === 'PAUSED' && selected.activeVersionId"
+            data-testid="restore-rule"
+            type="warning"
+            :disabled="!canActivate"
+            @click="restore"
+          >
+            恢复原活动版本
+          </ElButton>
+        </div>
+        <ElAlert
+          v-if="needsVerification"
+          type="warning"
+          :closable="false"
+          title="操作后须刷新核对；以下仅为上次已读状态，不代表本次操作结果。"
+        />
+        <ElAlert
+          v-if="readOnly"
+          type="warning"
+          :closable="false"
+          title="项目当前只读，仍可查询健康状态；解除只读后重新打开页面再操作。"
+        />
+        <ElAlert v-if="healthIssue" :title="healthIssue" type="warning" :closable="false" />
+        <ElAlert v-if="operationNotice" :title="operationNotice" type="info" :closable="false" />
+        <template v-if="scriptHealth">
+          <p>{{ pauseLabel }}</p>
+          <ElDescriptions :column="2" border>
+            <ElDescriptionsItem label="连续脚本失败"
+              >{{ scriptHealth.consecutiveFailures }} /
+              {{ scriptHealth.failureThreshold }}</ElDescriptionsItem
+            >
+            <ElDescriptionsItem label="相邻失败间隔"
+              >{{ scriptHealth.failureGapSeconds }} 秒</ElDescriptionsItem
+            >
+            <ElDescriptionsItem label="最近脚本失败">{{
+              observedTime(scriptHealth.lastScriptFailureAt)
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="自动暂停时间">{{
+              observedTime(scriptHealth.autoPausedAt)
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="运行代次">{{
+              scriptHealth.executionGeneration
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="健康快照 CAS">{{ scriptHealth.version }}</ElDescriptionsItem>
+          </ElDescriptions>
+          <p class="console-description"
+            >这是数据库持久观测，页面不自行清零或倒计时。成功归零，平台故障和额度不足不计数；窗口由下一次可计结果裁决。</p
+          >
+        </template>
+        <p v-else>健康状态不可用；不得据此认定零失败或继续发布/恢复。</p>
+        <p class="console-description"
+          >请先修复并保存新版本，或确认原活动版本可运行后显式恢复。恢复会重置当前计数并推进运行代次，不补跑历史消息或死信，历史审计保留。</p
+        >
+      </section>
+      <ElForm class="rule-version-form" label-position="top">
+        <ElFormItem class="rule-form-field--half" label="名称"
+          ><ElInput
+            v-model="form.name"
+            aria-label="规则名称"
+            maxlength="128"
+            :disabled="writesBlocked"
         /></ElFormItem>
-        <ElFormItem label="说明"
+        <ElFormItem class="rule-form-field--half" label="说明"
           ><ElInput
             v-model="form.description"
             aria-label="规则说明"
             maxlength="512"
-            :disabled="busy"
+            :disabled="writesBlocked"
         /></ElFormItem>
         <ElFormItem label="JavaScript 函数源码"
           ><ElInput
@@ -107,18 +188,18 @@
             aria-label="规则源码"
             type="textarea"
             :rows="6"
-            :disabled="busy"
+            :disabled="writesBlocked"
         /></ElFormItem>
         <RuleNodeEditor
           :key="editorKey"
           v-model="actions"
           :descriptors="catalog.actions ?? []"
-          :disabled="busy"
+          :disabled="writesBlocked"
           @valid="editorValid = $event"
         />
         <ElButton
           type="primary"
-          :disabled="busy || !editorValid || !form.name?.trim()"
+          :disabled="writesBlocked || !editorValid || !form.name?.trim()"
           @click="save"
           >保存新版本</ElButton
         >
@@ -138,7 +219,7 @@
                 @click="copyVersion(row)"
                 label="载入编辑"
                 icon="ri:edit-box-line" /><ConsoleTableAction
-                :disabled="busy"
+                :disabled="!canActivate"
                 @click="activate(row)"
                 label="发布此版本"
                 icon="ri:send-plane-line" /><ConsoleTableAction
@@ -150,9 +231,9 @@
         </ElTable>
         <div class="console-actions">
           <ElButton v-if="historyNext" :disabled="busy" @click="moreVersions">更多历史</ElButton>
-          <ElButton :disabled="busy || selected.status !== 'ACTIVE'" @click="pause"
+          <ElButton :disabled="writesBlocked || selected.status !== 'ACTIVE'" @click="pause"
             >暂停规则</ElButton
-          ><ElButton type="danger" :disabled="busy" @click="remove">删除规则</ElButton>
+          ><ElButton type="danger" :disabled="writesBlocked" @click="remove">删除规则</ElButton>
         </div>
         <ElFormItem label="调试样例 JSON（无动作副作用）"
           ><ElInput v-model="inputJson" type="textarea" aria-label="调试样例"
@@ -170,7 +251,8 @@
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import ConsoleStatusTag from '@/components/ConsoleStatusTag.vue'
-  import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+  import { formatTime } from '@/utils/time'
+  import { computed, h, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import * as api from '@/api/rule-management'
@@ -183,6 +265,13 @@
   } from '@/api/rule-management'
   import RuleNodeEditor from '../components/RuleNodeEditor.vue'
   import { HttpError } from '@/utils/http/error'
+  import { currentIdentityEpoch } from '@/utils/http/identity-scope'
+  import {
+    coherentScriptHealth,
+    scriptPauseLabel,
+    isActivationReceipt,
+    type ScriptHealthSnapshot
+  } from '@/features/rule/script-health'
 
   defineOptions({ name: 'MessageRules' })
   const user = useUserStore()
@@ -206,9 +295,56 @@
   const inputJson = ref('{}'),
     debugResult = ref(''),
     error = ref('')
+  const scriptHealth = ref<ScriptHealthSnapshot>()
+  const healthIssue = ref(''),
+    operationNotice = ref('')
+  const needsVerification = ref(false),
+    activationUnknown = ref(false),
+    readOnly = ref(false)
+  const writesBlocked = computed(() => busy.value || needsVerification.value || readOnly.value)
+  const canActivate = computed(
+    () =>
+      allowed.value &&
+      !writesBlocked.value &&
+      !!scriptHealth.value &&
+      !!selected.value &&
+      scriptHealth.value.version === selected.value.version &&
+      Number.isSafeInteger(scriptHealth.value.version + 1)
+  )
+  const pauseLabel = computed(() =>
+    scriptHealth.value ? scriptPauseLabel(scriptHealth.value) : ''
+  )
+  function observedTime(value?: string) {
+    return formatTime(value, '未记录')
+  }
+  function resetObservation() {
+    scriptHealth.value = undefined
+    healthIssue.value = ''
+    operationNotice.value = ''
+    needsVerification.value = false
+    activationUnknown.value = false
+  }
+  function dialogVisibility(value: boolean) {
+    if (value) {
+      visible.value = true
+      return
+    }
+    generation++
+    visible.value = false
+    busy.value = false
+    selected.value = undefined
+    versions.value = []
+    historyNext.value = undefined
+    actions.value = []
+    form.source = ''
+    debugResult.value = ''
+    resetObservation()
+  }
   let generation = 0
   function clear() {
     generation++
+    resetObservation()
+    readOnly.value = false
     visible.value = false
     items.value = []
     versions.value = []
@@ -229,10 +365,15 @@
   async function run(work: (current: () => boolean, projectId: string) => Promise<void>) {
     if (!allowed.value || busy.value) return
     const epoch = generation,
+      identity = currentIdentityEpoch(),
       pid = project.value
     busy.value = true
     error.value = ''
-    const current = () => epoch === generation && pid === project.value && allowed.value
+    const current = () =>
+      epoch === generation &&
+      identity === currentIdentityEpoch() &&
+      pid === project.value &&
+      allowed.value
     try {
       await work(current, pid)
     } catch (reason) {
@@ -258,6 +399,8 @@
     })
   }
   function create() {
+    if (!allowed.value || writesBlocked.value) return
+    resetObservation()
     selected.value = undefined
     versions.value = []
     historyNext.value = undefined
@@ -274,15 +417,59 @@
     editorKey.value++
     debugResult.value = ''
   }
+  function accessFailure(reason: unknown) {
+    return reason instanceof HttpError && [40033, 403, 10003, 50001].includes(reason.code)
+  }
+  /** 每个读端口独立撤销当前上下文；不能由并发聚合的首个普通失败吸收迟到失权。 */
+  function readWithAccessFence<T>(pending: Promise<T>, current: () => boolean): Promise<T> {
+    return pending.catch((reason: unknown) => {
+      if (current() && accessFailure(reason)) clear()
+      throw reason
+    })
+  }
+  async function readObservation(pid: string, id: string, current: () => boolean) {
+    const [detail, observation] = await Promise.all([
+      readWithAccessFence(api.getRule(pid, id), current),
+      readWithAccessFence(api.getRuleScriptHealth(pid, id), current)
+        .then((value) => ({ value }))
+        .catch((reason: unknown) => {
+          if (accessFailure(reason)) throw reason
+          return { value: undefined }
+        })
+    ])
+    if (detail.id !== id) throw new Error('规则读取身份不匹配，请重新打开核对。')
+    let health: ScriptHealthSnapshot | undefined,
+      issue = ''
+    try {
+      if (!observation.value) throw new Error('脚本健康读取失败，请刷新健康状态后再确认。')
+      health = coherentScriptHealth(detail, observation.value)
+    } catch (reason) {
+      issue = reason instanceof Error ? reason.message : '健康状态不可用，请刷新核对。'
+    }
+    return { detail, health, issue }
+  }
+  function applyObservation(observation: Awaited<ReturnType<typeof readObservation>>) {
+    selected.value = observation.detail
+    scriptHealth.value = observation.health
+    healthIssue.value = observation.issue
+    items.value = items.value.map((item) =>
+      item.id === observation.detail.id ? observation.detail : item
+    )
+  }
   function open(row: MessageRule) {
+    if (busy.value) return
+    resetObservation()
     return run(async (current, pid) => {
-      const [detail, history] = await Promise.all([
-        api.getRule(pid, row.id!),
-        api.ruleHistory(pid, row.id!)
+      const [observation, history] = await Promise.all([
+        readObservation(pid, row.id!, current),
+        readWithAccessFence(api.ruleHistory(pid, row.id!), current)
       ])
       if (!current()) return
-      selected.value = detail
-      Object.assign(form, { name: detail.name, description: detail.description ?? '' })
+      applyObservation(observation)
+      Object.assign(form, {
+        name: observation.detail.name,
+        description: observation.detail.description ?? ''
+      })
       versions.value = history.items ?? []
       historyNext.value = history.nextCursor ?? undefined
       inputJson.value = '{}'
@@ -291,7 +478,35 @@
       visible.value = true
     })
   }
+  function refreshHealth() {
+    if (!selected.value?.id) return
+    return run(async (current, pid) => {
+      const id = selected.value!.id!,
+        wasUnknown = activationUnknown.value,
+        wasPending = needsVerification.value
+      scriptHealth.value = undefined
+      healthIssue.value = '健康状态正在重新读取。'
+      let observation: Awaited<ReturnType<typeof readObservation>>
+      try {
+        observation = await readObservation(pid, id, current)
+      } catch (reason) {
+        if (current()) healthIssue.value = '无法取得完整规则健康状态，请刷新后核对。'
+        throw reason
+      }
+      if (!current()) return
+      applyObservation(observation)
+      if (observation.health) {
+        needsVerification.value = false
+        activationUnknown.value = false
+        if (wasPending)
+          operationNotice.value = wasUnknown
+            ? '已读取当前状态；此查询不证明上次操作成功或其归因。再次操作须重新确认，不补跑历史消息。'
+            : '已刷新当前状态，再次操作须重新确认，不补跑历史消息。'
+      }
+    })
+  }
   function save() {
+    if (writesBlocked.value) return
     return run(async (current, pid) => {
       const result = await api.saveRule(pid, selected.value?.id ?? '', {
         ...form,
@@ -300,49 +515,113 @@
       })
       if (!current()) return
       selected.value = result
+      scriptHealth.value = undefined
+      const observation = await readObservation(pid, result.id!, current)
+      if (!current()) return
+      applyObservation(observation)
       const history = await api.ruleHistory(pid, result.id!)
       if (current()) {
         versions.value = history.items ?? []
         historyNext.value = history.nextCursor ?? undefined
-        items.value = [result, ...items.value.filter((item) => item.id !== result.id)]
+        items.value = [observation.detail, ...items.value.filter((item) => item.id !== result.id)]
       }
     })
   }
-  function activate(version: MessageVersion) {
+  function restore() {
+    if (!selected.value?.activeVersionId || selected.value.status !== 'PAUSED') return
+    return activate({ id: selected.value.activeVersionId }, true)
+  }
+  function activate(version: MessageVersion, restoring = false) {
+    if (!canActivate.value || !version.id || !selected.value?.id || !scriptHealth.value) return
     return run(async (current, pid) => {
-      const row = selected.value!
+      const id = selected.value!.id!,
+        target = version.id!,
+        expected = scriptHealth.value!.version
+      const confirmationCurrent = () =>
+        current() &&
+        visible.value &&
+        selected.value?.id === id &&
+        selected.value.version === expected
+      const message =
+        `${restoring ? '恢复原活动版本' : '发布 / 回滚'}：规则“${selected.value!.name}”，版本 ${target}，当前 CAS ${expected}。` +
+        '请确认脚本已修复或原版本已可运行。操作将清当前连续失败计数并推进运行代次，不补跑历史消息或死信，历史审计保留。'
       await ElMessageBox.confirm(
-        `将规则“${row.name}”发布为版本 ${version.versionNumber}？`,
-        '确认发布 / 回滚'
+        () =>
+          h(
+            'span',
+            confirmationCurrent()
+              ? message
+              : '操作上下文已失效，请取消并重新打开规则；此确认不会提交。'
+          ),
+        restoring ? '确认人工恢复' : '确认发布 / 回滚',
+        { customClass: 'console-rule-feedback' }
       )
-      if (!current()) return
-      const result = await api.activateRule(pid, row.id!, version.id!, row.version!)
-      if (current()) {
-        selected.value = result
-        items.value = items.value.map((item) => (item.id === result.id ? result : item))
+      if (
+        !current() ||
+        selected.value?.id !== id ||
+        selected.value.version !== expected ||
+        scriptHealth.value?.version !== expected
+      )
+        return
+      let result: MessageRule
+      try {
+        result = await api.activateRule(pid, id, target, expected)
+        if (!isActivationReceipt(result, id, target, expected)) throw new Error('发布回执不完整')
+      } catch (reason) {
+        if (!current()) return
+        if (accessFailure(reason)) throw reason
+        needsVerification.value = true
+        activationUnknown.value = !(reason instanceof HttpError) || reason.outcomeUnknown
+        if (reason instanceof HttpError && reason.code === 50017) readOnly.value = true
+        error.value =
+          reason instanceof HttpError && reason.code === 40034
+            ? '规则状态或版本已变化，请刷新健康状态后重新确认；未自动重试。'
+            : '规则发布/恢复未确认，请刷新健康状态核对；未自动重试，也未清零计数。'
+        return
       }
+      if (!current()) return
+      selected.value = result
+      scriptHealth.value = undefined
+      needsVerification.value = true
+      operationNotice.value = '发布操作已返回；请以重新读取的当前健康状态为准，不补跑历史消息。'
+      const observation = await readObservation(pid, id, current)
+      if (!current()) return
+      applyObservation(observation)
+      if (observation.health) needsVerification.value = false
     })
   }
   function pause() {
+    if (writesBlocked.value) return
     return run(async (current, pid) => {
       const row = selected.value!
-      const result = await api.pauseRule(pid, row.id!, row.version!)
-      if (current()) {
-        selected.value = result
-        items.value = items.value.map((item) => (item.id === result.id ? result : item))
-      }
+      await api.pauseRule(pid, row.id!, row.version!)
+      if (!current()) return
+      const observation = await readObservation(pid, row.id!, current)
+      if (current()) applyObservation(observation)
     })
   }
   function remove() {
+    if (writesBlocked.value) return
     return run(async (current, pid) => {
       const row = selected.value!
-      await ElMessageBox.confirm(`删除规则“${row.name}”？历史执行将保留。`, '确认删除')
+      await ElMessageBox.confirm(
+        () =>
+          h(
+            'span',
+            current() && visible.value && selected.value?.id === row.id
+              ? `删除规则“${row.name}”？历史执行将保留。`
+              : '操作上下文已失效，请取消并重新打开规则。'
+          ),
+        '确认删除',
+        { customClass: 'console-rule-feedback' }
+      )
       if (!current()) return
       await api.deleteRule(pid, row.id!, row.version!)
       if (current()) {
         visible.value = false
         items.value = items.value.filter((item) => item.id !== row.id)
         selected.value = undefined
+        resetObservation()
         versions.value = []
         actions.value = []
         form.source = ''
@@ -366,12 +645,22 @@
     })
   }
   watch(
-    () => [project.value, allowed.value, user.info.userId, user.isLogin],
+    () => [
+      project.value,
+      allowed.value,
+      user.info.userId,
+      user.info.tenantId,
+      user.isLogin,
+      currentIdentityEpoch()
+    ],
     () => {
       clear()
       if (allowed.value)
         void run(async (current, pid) => {
-          const [nodes, page] = await Promise.all([api.ruleCatalog(pid), api.listRules(pid, {})])
+          const [nodes, page] = await Promise.all([
+            api.ruleCatalog(pid, 'MESSAGE_RULE'),
+            api.listRules(pid, {})
+          ])
           if (current()) {
             catalog.value = nodes
             items.value = page.items ?? []
@@ -379,13 +668,9 @@
           }
         })
     },
-    { immediate: true }
+    { immediate: true, flush: 'sync' }
   )
   onBeforeUnmount(clear)
 </script>
 
-<style scoped lang="scss">
-  .message-rules :deep(.workspace-header > .console-actions) {
-    margin-bottom: 0;
-  }
-</style>
+<style scoped lang="scss"></style>

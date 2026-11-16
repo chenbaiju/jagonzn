@@ -295,3 +295,22 @@ it('切换告警后迟到分页不污染新事件或游标', async () => {
   await action('加载更多事件').trigger('click')
   expect(fetchAlarmEvents).toHaveBeenLastCalledWith('project-a', other.id, 'cursor-b')
 })
+
+it('告警列表展示最近报警时间，首次时间保留在详情', async () => {
+  const current = {
+    ...row,
+    activatedAt: '2026-10-20T04:00:00Z',
+    firstConditionAt: '2026-10-20T04:00:00Z',
+    lastReceivedAt: '2026-10-21T04:05:00Z'
+  }
+  vi.mocked(fetchAlarmInstances).mockResolvedValue({ items: [current], hasMore: false })
+  vi.mocked(fetchAlarmInstance).mockResolvedValue(current)
+  render()
+  await flushPromises()
+  const columns = wrapper.findAll('[label]')
+  expect(columns.some((c) => c.attributes('label') === '最近报警时间')).toBe(true)
+  expect(columns.some((c) => c.attributes('label') === '激活时间')).toBe(false)
+  await action('事件').trigger('click')
+  await flushPromises()
+  expect(wrapper.find('.summary').text()).toContain('2026')
+})

@@ -262,7 +262,8 @@
     try {
       await ElMessageBox.confirm(
         '离开将丢弃本地编辑及尚未确认的创建或发布恢复信息；离开不会撤销已提交的请求。是否继续？',
-        '离开应用编辑'
+        '离开应用编辑',
+        { customClass: 'console-studio-feedback' }
       )
       return !deleteLocked.value && !publicationWorking.value
     } catch {
@@ -366,7 +367,9 @@
       identity = context()
     if (deleteLocked.value || !id || state.busy) return
     try {
-      await ElMessageBox.confirm('将丢弃本地内容并读取最新远端草稿，发布版本不变。', '重载远端')
+      await ElMessageBox.confirm('将丢弃本地内容并读取最新远端草稿，发布版本不变。', '重载远端', {
+        customClass: 'console-studio-feedback'
+      })
     } catch {
       return
     }
@@ -553,8 +556,11 @@
 </script>
 
 <template>
-  <main class="console-page application-manager">
+  <main
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace application-manager"
+  >
     <ManagementRenameDialog
+      class="console-developer-dialog console-studio-dialog"
       :target="renameTarget"
       kind="applications"
       :project-id="project"
@@ -568,14 +574,7 @@
       title="应用管理"
       description="组合已发布的看板版本，编辑应用草稿，再明确发布供终端用户使用。"
     />
-    <ElAlert
-      class="application-manager__notice"
-      aria-label="应用开发流程"
-      title="开发步骤：创建看板并绑定设备 → 发布看板版本 → 加入应用草稿 → 发布应用。草稿保存与发布是两个独立操作。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
+
     <el-alert
       v-if="deleteLocked"
       data-testid="application-delete-lock"
@@ -615,7 +614,10 @@
       show-icon
     />
     <template v-if="canRead">
-      <section class="application-panel application-catalog" aria-label="应用目录">
+      <section
+        class="console-studio-section console-studio-form application-panel application-catalog"
+        aria-label="应用目录"
+      >
         <ElDivider content-position="left">应用目录</ElDivider>
         <div class="console-actions">
           <el-button
@@ -670,7 +672,11 @@
           :image-size="88"
         />
       </section>
-      <section v-if="canManage" class="application-panel" aria-label="创建应用">
+      <section
+        v-if="canManage"
+        class="console-studio-section console-studio-form application-panel application-create"
+        aria-label="创建应用"
+      >
         <ElDivider content-position="left">创建应用</ElDivider>
         <label
           >管理名称
@@ -708,7 +714,7 @@
       />
       <section
         v-if="state.id && state.content"
-        class="application-panel"
+        class="console-studio-section console-studio-form application-panel"
         aria-label="应用草稿"
         :data-application-id="state.id"
       >
@@ -721,9 +727,7 @@
         <ElDivider content-position="left"
           >应用草稿 · {{ state.content.displayName || '未命名应用' }}</ElDivider
         >
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >选择固定的已发布看板版本，不会随看板草稿变化自动升级。</ElAlert
-        >
+
         <p class="console-description"
           >草稿修订 {{ state.revision }} · {{ state.dirty ? '未保存' : '已读取/保存' }}</p
         >
@@ -775,9 +779,7 @@
                 })
               "
           /></label>
-          <ElAlert class="console-hint" type="info" show-icon :closable="false"
-            >宿主范围只是草稿设置，发布时服务端仍会验证实际兼容性。</ElAlert
-          >
+
           <ol
             ><li v-for="(item, index) in state.content.dashboardRefs" :key="item.dashboardId">
               <label
@@ -889,114 +891,52 @@
 
 <style scoped lang="scss">
   .application-manager {
-    padding: 10px;
+    .application-create {
+      display: grid;
+      grid-template-columns: minmax(0, 420px) auto;
+      align-items: end;
 
-    &__notice {
-      margin-bottom: 10px;
-
-      :deep(.el-alert__title) {
-        font-size: 12px;
-        font-weight: normal;
-        line-height: 20px;
+      > .el-divider {
+        grid-column: 1 / -1;
       }
-      :deep(.el-alert__icon) {
-        width: 14px;
-        height: 14px;
-        font-size: 14px;
+
+      > .el-button {
+        justify-self: start;
+        margin: 0;
       }
     }
 
-    section {
-      margin-block: 10px;
-    }
-    .application-panel {
-      padding: 10px;
-      background: var(--el-bg-color);
-      border: 1px solid var(--el-border-color-lighter);
-      border-radius: calc(var(--custom-radius) + 4px);
-    }
-    label {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-width: 420px;
-      margin-block: 10px;
-      font-size: 13px;
-    }
-    input,
-    select {
-      box-sizing: border-box;
-      width: 100%;
-      max-width: 100%;
-      min-height: 36px;
-      padding: 8px 10px;
-      color: inherit;
-      background: var(--el-bg-color);
-      border: 1px solid var(--el-border-color);
-      border-radius: var(--el-border-radius-base);
-    }
-    ul,
-    ol {
-      padding: 0;
-      list-style: none;
-    }
-    li {
-      padding: 10px;
-      margin-block: 10px;
-      background: var(--el-fill-color-light);
-      border: 1px solid var(--el-border-color-lighter);
-      border-radius: var(--el-border-radius-base);
-    }
-    .application-catalog li {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
+    .application-directory {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+      gap: 12px;
+
+      &:empty {
+        display: none;
+      }
+
+      li {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
       span {
-        min-width: 0;
+        flex: 1;
+        min-width: 100px;
         overflow-wrap: anywhere;
       }
-      .el-button {
-        flex-shrink: 0;
+
+      small {
+        color: var(--el-color-primary);
       }
     }
-    small {
-      display: block;
-      overflow-wrap: anywhere;
-    }
-    pre {
-      max-height: 360px;
-      overflow: auto;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-  }
-</style>
 
-<style scoped lang="scss">
-  .application-directory {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-    gap: 12px;
-    padding: 0;
-    list-style: none;
-
-    li {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-      margin-block: 0;
-    }
-
-    span {
-      flex: 1;
-      min-width: 100px;
-      overflow-wrap: anywhere;
-    }
-
-    small {
-      color: var(--el-color-primary);
+    @media (width <= 640px) {
+      .application-create {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
   }
 </style>

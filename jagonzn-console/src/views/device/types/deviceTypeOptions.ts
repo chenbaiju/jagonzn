@@ -5,6 +5,8 @@ export type Protocol =
   | 'MODBUS_TCP_PASSTHROUGH'
   | 'STANDARD_GATEWAY'
   | 'MODBUS_RTU_CLOUD_GATEWAY'
+  | 'OTHER'
+  | 'CUSTOM_GATEWAY'
 export type Network =
   | 'WIFI'
   | 'ETHERNET'
@@ -17,10 +19,12 @@ export type Network =
   | 'ZIGBEE'
   | 'LORA'
   | 'RS485'
+  | 'RS232'
+  | 'RS422'
   | 'OTHER'
 export type PropertyAccessType = 'UNDEFINED' | 'REPORT' | 'DOWNLINK' | 'SHARED' | 'CLOUD_PRIVATE'
 export type PropertyDataType = 'NUMBER' | 'TEXT' | 'SWITCH' | 'ENUM'
-export type EventLevel = 'INFO' | 'WARNING' | 'ERROR'
+export type EventLevel = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
 
 export const kindLabels: Record<string, string> = {
   DIRECT: '直连设备',
@@ -32,7 +36,9 @@ export const protocolLabels: Record<string, string> = {
   MODBUS_RTU_PASSTHROUGH: 'Modbus RTU 透传',
   MODBUS_TCP_PASSTHROUGH: 'Modbus TCP 透传',
   STANDARD_GATEWAY: '标准网关协议',
-  MODBUS_RTU_CLOUD_GATEWAY: 'Modbus RTU 云网关'
+  MODBUS_RTU_CLOUD_GATEWAY: 'Modbus RTU 云网关',
+  OTHER: '其它',
+  CUSTOM_GATEWAY: '自定义'
 }
 export const networkLabels: Record<string, string> = {
   WIFI: 'WiFi',
@@ -46,6 +52,8 @@ export const networkLabels: Record<string, string> = {
   ZIGBEE: 'Zigbee',
   LORA: 'LoRa',
   RS485: 'RS485',
+  RS232: 'RS232',
+  RS422: 'RS422',
   OTHER: '其他'
 }
 export const accessTypeLabels: Record<string, string> = {
@@ -63,11 +71,13 @@ export const propertyDataTypeLabels: Record<string, string> = {
 }
 export const eventLevelLabels: Record<EventLevel, string> = {
   INFO: '信息',
+  SUCCESS: '成功',
   WARNING: '警告',
   ERROR: '故障'
 }
-export const eventLevelTagType: Record<EventLevel, 'info' | 'warning' | 'danger'> = {
+export const eventLevelTagType: Record<EventLevel, 'info' | 'success' | 'warning' | 'danger'> = {
   INFO: 'info',
+  SUCCESS: 'success',
   WARNING: 'warning',
   ERROR: 'danger'
 }
@@ -79,7 +89,7 @@ export const accessTypeOptions = optionsOf(accessTypeLabels)
 export const propertyDataTypeOptions = optionsOf(propertyDataTypeLabels)
 export const eventLevelOptions = optionsOf(eventLevelLabels)
 export const protocolsByKind: Record<Kind, Protocol[]> = {
-  DIRECT: ['STANDARD', 'MODBUS_RTU_PASSTHROUGH', 'MODBUS_TCP_PASSTHROUGH'],
-  GATEWAY: ['STANDARD_GATEWAY', 'MODBUS_RTU_CLOUD_GATEWAY'],
-  SUB_DEVICE: ['STANDARD', 'MODBUS_RTU_PASSTHROUGH']
+  DIRECT: ['STANDARD', 'MODBUS_RTU_PASSTHROUGH', 'MODBUS_TCP_PASSTHROUGH', 'OTHER'],
+  GATEWAY: ['STANDARD_GATEWAY', 'MODBUS_RTU_CLOUD_GATEWAY', 'CUSTOM_GATEWAY'],
+  SUB_DEVICE: ['STANDARD', 'MODBUS_RTU_PASSTHROUGH', 'OTHER']
 }

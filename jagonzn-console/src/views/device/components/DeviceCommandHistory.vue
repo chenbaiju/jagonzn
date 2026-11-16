@@ -4,9 +4,7 @@
       <h4>命令执行历史</h4>
       <ElButton :loading="loading" @click="refresh">刷新历史</ElButton>
     </div>
-    <ElAlert type="info" :closable="false" show-icon>
-      按受理时间倒序，包含命令与属性设置。受理或交给 Broker 不代表设备执行成功。
-    </ElAlert>
+
     <ElAlert
       v-if="failed"
       type="error"

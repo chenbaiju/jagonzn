@@ -46,7 +46,6 @@
         '/project/list': '我的项目',
         '/project/create': '添加项目',
         '/project/recycle-bin': '项目回收站',
-        '/plan-catalog': '套餐与权益',
         '/system-status': '系统状态',
         '/system/user-center': '个人中心'
       })[route.path] || '我的项目'

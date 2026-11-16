@@ -107,7 +107,7 @@ describe('设备自动化', () => {
     await click('执行历史')
     await click('当前自动化')
     expect(wrapper.text()).toContain('第 1 页')
-    expect(wrapper.text()).toContain('仅显示当前发布版本的设备关系')
+    expect(wrapper.findComponent(table).props('data')).toEqual([item])
   })
   it('换设备取消旧请求，旧响应不能落到新设备详情', async () => {
     let finish!: (v: unknown) => void
@@ -185,7 +185,7 @@ describe('设备自动化', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('execution-1')
     expect(wrapper.text()).not.toContain('自动化一')
-    expect(wrapper.text()).toContain('动作意图受理及设备动作记录数均不代表设备物理执行成功')
+    expect(wrapper.findComponent(table).props('data')).toEqual([history])
     api.fetchDeviceAutomations.mockResolvedValue({ items: [] })
     await click('当前自动化')
     expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)

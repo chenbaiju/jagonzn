@@ -1,5 +1,5 @@
 <template>
-  <div class="console-page">
+  <div class="console-page console-developer-workspace">
     <ConsoleWorkspaceHeader
       project-style
       title="自部署授权 · 待审申请"
@@ -9,13 +9,7 @@
         { label: '责任审核', path: '/self-hosted-review', permission: 'self_hosted:review' }
       ]"
     />
-    <ElCard v-if="allowed" shadow="never" class="self-hosted-enrollment">
-      <ElAlert
-        type="info"
-        :closable="false"
-        title="这里只接收申请并查看待审队列。声明的租户尚未核验，登记不代表审核、签发或现场激活。"
-        show-icon
-      />
+    <ElCard v-if="allowed" shadow="never" class="self-hosted-enrollment console-list-data">
       <ElAlert
         v-if="error"
         class="spacing"
@@ -26,9 +20,7 @@
       />
       <section class="spacing">
         <ElDivider content-position="left">导入申请</ElDivider>
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >选择 jagonzn 现场导出的 .tcshreq 文件；不会上传部署私钥目录。</ElAlert
-        >
+
         <input
           data-testid="enrollment-file"
           type="file"
@@ -65,7 +57,9 @@
           <ElTableColumn prop="deploymentId" label="部署 ID" min-width="280" />
           <ElTableColumn prop="claimedTenantId" label="声明租户 ID（未核验）" min-width="280" />
           <ElTableColumn prop="firstChannel" label="首次来源" min-width="120" />
-          <ElTableColumn prop="receivedAt" label="接收时间 UTC" min-width="220" />
+          <ElTableColumn prop="receivedAt" label="接收时间" min-width="220"
+            ><template #default="{ row }">{{ formatTime(row.receivedAt) }}</template></ElTableColumn
+          >
         </ElTable>
         <p v-if="!rows.length && !busy">当前页没有待审申请。</p>
         <div class="spacing">
@@ -87,6 +81,7 @@
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { useUserStore } from '@/store/modules/user'

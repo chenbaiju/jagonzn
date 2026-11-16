@@ -4,11 +4,7 @@
       <ElTabPane name="jobs" label="当前任务" />
       <ElTabPane name="history" label="执行历史" />
     </ElTabs>
-    <ElAlert type="info" :closable="false" show-icon>{{
-      mode === 'jobs'
-        ? '当前目标包含该设备的任务，含暂停配置；动态组变化后结果可能变化。'
-        : '仅列出执行时实际选中过该设备的目标记录，整体执行状态与该设备结果分别展示。'
-    }}</ElAlert>
+
     <ElAlert
       v-if="failed"
       type="error"
@@ -39,7 +35,7 @@
         <ElTableColumn prop="jobId" label="原任务 ID" min-width="230" show-overflow-tooltip />
         <ElTableColumn label="触发方式" width="100"
           ><template #default="{ row }">{{
-            row.triggerType === 'MANUAL' ? '手动' : '调度'
+            ({ MANUAL: '手动', SCHEDULE: '调度', SCENE: '场景', APP_USER: '终端用户' } as Record<string, string>)[row.triggerType] ?? row.triggerType
           }}</template></ElTableColumn
         >
         <ElTableColumn label="整体执行" width="120"

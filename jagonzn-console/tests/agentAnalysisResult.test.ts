@@ -15,7 +15,7 @@ function call(status = 'SUCCEEDED') {
 function result() {
   return {
     model: 'deepseek-flash',
-    promptVersion: 'thingscloud-agent-single-analysis-v1',
+    promptVersion: 'thingslink-agent-single-analysis-v1',
     summary: '<script>private-text</script>，不能当作指令执行',
     findings: ['FACT', 'HYPOTHESIS', 'RECOMMENDATION'].map((kind) => ({
       kind,

@@ -28,19 +28,43 @@
       <h1 class="console-heading">{{ title }}</h1>
       <p v-if="description" class="console-description">{{ description }}</p>
     </div>
-    <div class="console-actions">
+    <div
+      v-if="$slots['leading-actions'] || $slots.actions"
+      class="console-actions workspace-header__actions"
+    >
       <slot name="leading-actions" />
-      <nav v-if="visibleLinks.length" class="console-actions" :aria-label="`${title}关联入口`">
-        <ElButton v-for="link in visibleLinks" :key="link.path" @click="router.push(link.path)">
-          {{ link.label }}
-        </ElButton>
-      </nav>
       <slot name="actions" />
     </div>
+    <nav
+      v-if="visibleLinks.length"
+      class="console-actions workspace-header__links"
+      :aria-label="`${title}关联入口`"
+    >
+      <ElButton v-for="link in visibleLinks" :key="link.path" @click="router.push(link.path)">
+        {{ link.label }}
+      </ElButton>
+    </nav>
   </header>
 </template>
 
 <style scoped lang="scss">
+  .workspace-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 24px;
+    align-items: start;
+  }
+  .workspace-header__actions {
+    grid-row: 1;
+    grid-column: 2;
+    justify-content: flex-end;
+    margin: 0;
+  }
+  .workspace-header__links {
+    grid-column: 1 / -1;
+    gap: 24px;
+    margin: 0;
+  }
   .workspace-header--project {
     padding-bottom: 18px;
     margin-bottom: 14px;
@@ -48,14 +72,24 @@
 
     .console-heading {
       margin: 0 0 8px;
-      font-size: 28px;
+      font-size: 20px;
       font-weight: 400;
-      line-height: 40px;
+      line-height: 28px;
     }
     .console-description {
       margin: 0;
-      font-size: 12px;
-      line-height: 20px;
+      font-size: 14px;
+      line-height: 22px;
+    }
+  }
+  @media (width <= 640px) {
+    .workspace-header {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .workspace-header__actions {
+      grid-row: auto;
+      grid-column: 1;
+      justify-content: flex-start;
     }
   }
 </style>

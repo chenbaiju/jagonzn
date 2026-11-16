@@ -23,7 +23,7 @@ export function assertAssociationFixture(env: NodeJS.ProcessEnv, isolated: boole
     throw new Error('Populated association fixture requires exact isolated selection')
 }
 async function query(sql: string): Promise<unknown> {
-  assertAssociationFixture(process.env, existsSync('/.thingscloud-local-ci'))
+  assertAssociationFixture(process.env, existsSync('/.thingslink-local-ci'))
   try {
     const { stdout } = await promisify(execFile)(
       'docker',
@@ -52,7 +52,7 @@ async function query(sql: string): Promise<unknown> {
   }
 }
 export async function prepareAssociationQuota(projectId: string): Promise<QuotaFixtureScope> {
-  assertAssociationFixture(process.env, existsSync('/.thingscloud-local-ci'))
+  assertAssociationFixture(process.env, existsSync('/.thingslink-local-ci'))
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(projectId))
     throw new Error('Invalid owned project')
   const ownership = await query(

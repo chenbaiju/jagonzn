@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page rule-executions">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace rule-executions"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="执行记录"
@@ -22,6 +24,7 @@
         </ElTabs>
         <template v-if="activeTab === 'scene'"
           ><ConsoleFilterBar
+            label-position="top"
             :items="[
               { key: 'field0', label: '场景', labelWidth: 90, span: 8 },
               { key: 'field1', label: '执行状态', labelWidth: 90, span: 8 },
@@ -65,6 +68,7 @@
             ></template>
             <template #field2
               ><ElDatePicker
+                popper-class="console-operations-date-picker"
                 v-model="sceneFilters.range"
                 class="rule-executions__filter"
                 type="datetimerange"
@@ -75,6 +79,7 @@
         ></template>
         <template v-else
           ><ConsoleFilterBar
+            label-position="top"
             :items="[
               { key: 'field0', label: '消息规则', labelWidth: 90, span: 8 },
               { key: 'field1', label: '执行状态', labelWidth: 90, span: 8 },
@@ -118,6 +123,7 @@
             ></template>
             <template #field2
               ><ElDatePicker
+                popper-class="console-operations-date-picker"
                 v-model="ruleFilters.range"
                 class="rule-executions__filter"
                 type="datetimerange"
@@ -232,6 +238,7 @@
 
     <!-- 场景执行详情抽屉 -->
     <ElDrawer
+      class="console-developer-drawer console-execution-drawer"
       v-model="sceneDetailVisible"
       :title="selectedScene?.sceneName ?? '场景执行详情'"
       size="680px"
@@ -312,6 +319,7 @@
 
     <!-- 上行规则执行 attempt 时间线抽屉 -->
     <ElDrawer
+      class="console-developer-drawer console-execution-drawer"
       v-model="attemptsVisible"
       :title="selectedRule?.ruleName ?? 'attempt 时间线'"
       size="680px"
@@ -626,18 +634,6 @@
 
 <style scoped lang="scss">
   .rule-executions {
-    padding: 10px;
-
-    :deep(.console-filter-bar .el-form-item__label) {
-      justify-content: flex-end;
-    }
-
-    :deep(.console-filter-bar .el-date-editor.el-range-editor) {
-      flex-grow: 0;
-      width: 400px !important;
-      max-width: 100%;
-    }
-
     &__more {
       display: flex;
       justify-content: center;

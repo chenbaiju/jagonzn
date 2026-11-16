@@ -15,12 +15,12 @@ describe('App 接入弹窗', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal('navigator', { clipboard: { writeText } })
     const wrapper = mount(AppProjectEntryDialog, {
-      props: { project: { id: 'a', projectKey: 'key-a', name: '项目A' } },
+      props: { project: { id: 'a', projectCode: 'key-a', name: '项目A' } },
       global: { components },
       attachTo: document.body
     })
     await flushPromises()
-    expect(document.querySelector('input')!.value).toBe('http://127.0.0.1:18080')
+    expect(document.querySelector('input')!.value).toBe('http://127.0.0.1:8080')
     expect(document.querySelector('[aria-label="项目接入二维码"] svg path')).not.toBeNull()
     const copy = Array.from(document.querySelectorAll('button')).find((e) =>
       e.textContent?.includes('复制接入信息')
@@ -29,11 +29,11 @@ describe('App 接入弹窗', () => {
     await flushPromises()
     expect(JSON.parse(writeText.mock.calls[0][0])).toEqual({
       version: 1,
-      baseUrl: 'http://127.0.0.1:18080',
+      baseUrl: 'http://127.0.0.1:8080',
       projectKey: 'key-a',
       label: '项目A'
     })
-    await wrapper.setProps({ project: { id: 'b', projectKey: 'key-b', name: '项目B' } })
+    await wrapper.setProps({ project: { id: 'b', projectCode: 'key-b', name: '项目B' } })
     await flushPromises()
     copy.click()
     await flushPromises()
@@ -54,7 +54,7 @@ describe('App 接入弹窗', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal('navigator', { clipboard: { writeText } })
     const wrapper = mount(AppProjectEntryDialog, {
-      props: { project: { id: 'a', projectKey: 'key-a', name: '项目A' } },
+      props: { project: { id: 'a', projectCode: 'key-a', name: '项目A' } },
       global: { components },
       attachTo: document.body
     })
@@ -80,7 +80,7 @@ describe('App 接入弹窗', () => {
     copy.click()
     await flushPromises()
     expect(document.body.textContent).toContain('自动复制不可用')
-    await wrapper.setProps({ project: { id: 'b', projectKey: 'key-b' } })
+    await wrapper.setProps({ project: { id: 'b', projectCode: 'key-b' } })
     await flushPromises()
     expect(input.value).toBe('')
     expect(document.body.textContent).not.toContain('已复制接入信息')

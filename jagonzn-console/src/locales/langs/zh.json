@@ -128,8 +128,8 @@
   },
   "login": {
     "leftView": {
-      "title": "一款兼具设计美学与高效开发的后台系统",
-      "subTitle": "美观实用的界面，经过视觉优化，确保卓越的用户体验"
+      "title": "连接设备、数据与业务的物联网平台",
+      "subTitle": "通过 ThingsLink 统一管理设备，实时查看数据，构建自动化与智能应用。"
     },
     "title": "欢迎回来",
     "subTitle": "输入您的账号和密码登录",
@@ -431,21 +431,5 @@
     "retryBtnText": "重新找回密码",
     "toLogin": "去登录",
     "redirecting": "{seconds} 秒后自动跳转到登录页…"
-  },
-  "planCatalog": {
-    "title": "套餐与权益目录",
-    "subTitle": "平台全局的售卖事实：四个档位的冻结额度与能力权益。付费档当前未开卖，参考价只作展示、不是成交价。",
-    "refresh": "刷新",
-    "saleStatus": "销售状态",
-    "billingPeriod": "计费周期",
-    "price": "价格",
-    "priceIsReference": "参考价（不是成交价）",
-    "quotaTitle": "冻结额度",
-    "capabilityTitle": "目录能力声明",
-    "capabilityHint": "目录标记不代表当前账号权限。OTA使用仍须满足项目权限、设备和部署安全条件。",
-    "capabilityDisabled": "目录未包含",
-    "empty": "目录暂不可用",
-    "loadFailed": "读取套餐目录失败",
-    "frozenNotice": "额度来自不可变产品修订版 product-revision-1；调额或调价必须新建修订版。"
   }
 }

@@ -186,3 +186,37 @@ it('设备来源仅在用户点击创建时预选，撤权后立即清除', asyn
   expect(state.deviceId).toBe('')
   page.unmount()
 })
+
+it('下次执行仅按东八区显示，不受调度时区影响且保留原始时间', async () => {
+  vi.mocked(api.listAutomations).mockResolvedValue({ items: [] })
+  const page = shallowMount(Page, {
+    global: {
+      stubs: {
+        ElCard: true,
+        ElDialog: true,
+        ElTable: true,
+        ElTableColumn: true,
+        ElAlert: true,
+        ElForm: true,
+        ElFormItem: true
+      },
+      directives: { loading: () => {} }
+    }
+  })
+  try {
+    await flushPromises()
+    const state = (page.vm as any).$.setupState
+    const row = {
+      nextFireAt: '2026-10-23T20:43:39.488199Z',
+      scheduleTimezone: 'America/New_York'
+    }
+    expect(state.nextDescription(row)).toBe('2026-10-24 04:43:39')
+    expect(row).toEqual({
+      nextFireAt: '2026-10-23T20:43:39.488199Z',
+      scheduleTimezone: 'America/New_York'
+    })
+    expect(state.nextDescription({})).toBe('暂无未来计划（草稿、暂停或已结束）')
+  } finally {
+    page.unmount()
+  }
+})

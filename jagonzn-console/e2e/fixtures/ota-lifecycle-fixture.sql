@@ -1,6 +1,6 @@
 -- TEST-ONLY E2E fixture for the OTA campaign lifecycle journey (S13-4d-2b-2b-13).
 --
--- The controlled type baseline for `things-cloud.ota.type-baselines-json` is a
+-- The controlled type baseline for `things-link.ota.type-baselines-json` is a
 -- startup snapshot indexed by an exact (tenantId, projectId, deviceTypeId)
 -- triple with no wildcard. The console E2E stack therefore pre-provisions this
 -- FIXED triple (and an OWNER account bound to the fixed project) before the

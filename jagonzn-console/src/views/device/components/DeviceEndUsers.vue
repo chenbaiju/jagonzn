@@ -1,54 +1,53 @@
 <template>
   <section class="device-detail-list">
-    <ElDivider content-position="left">当前终端用户</ElDivider>
-    <div class="device-end-users__actions">
-      <ElButton :loading="loading" @click="refresh">刷新用户</ElButton>
-      <ElAlert type="info" :closable="false" show-icon
-        >仅列出账号、项目角色和设备关系均有效的用户；关系角色不等于项目角色。</ElAlert
-      >
-    </div>
-    <ElAlert
-      v-if="failed"
-      type="error"
-      title="终端用户读取失败，请刷新重试"
-      :closable="false"
-      show-icon
-    />
-    <DeviceClaimToken
-      :project-id="projectId"
-      :device-id="deviceId"
-      :primary-known="rows.some((row) => row.relationRole === 'PRIMARY')"
-    />
-    <ElTable v-loading="loading" :data="rows" row-key="id">
-      <ElTableColumn prop="appUserId" label="用户 ID" min-width="230" show-overflow-tooltip />
-      <ElTableColumn label="显示名" min-width="140">
-        <template #default="{ row }">{{ row.displayName || '—' }}</template>
-      </ElTableColumn>
-      <ElTableColumn label="设备关系" width="100">
-        <template #default="{ row }">{{ roles[row.relationRole] }}</template>
-      </ElTableColumn>
-      <ElTableColumn label="关系建立时间" min-width="180">
-        <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
-      </ElTableColumn>
-      <template #empty
-        ><ElEmpty
-          :description="
-            failed ? '用户关系不可用' : loading ? '正在读取用户' : '暂无当前有效终端用户'
-          "
-      /></template>
-    </ElTable>
-    <DeviceDetailPagination
-      v-if="rows.length > 0"
-      :page-index="pageIndex"
-      :loading="loading"
-      :failed="failed"
-      :has-next="!!nextCursor"
-      @previous="previous"
-      @next="next"
-    />
+    <DeviceDetailCard title="当前终端用户">
+      <div class="device-end-users__actions">
+        <ElButton :loading="loading" @click="refresh">刷新用户</ElButton>
+      </div>
+      <ElAlert
+        v-if="failed"
+        type="error"
+        title="终端用户读取失败，请刷新重试"
+        :closable="false"
+        show-icon
+      />
+      <DeviceClaimToken
+        :project-id="projectId"
+        :device-id="deviceId"
+        :primary-known="rows.some((row) => row.relationRole === 'PRIMARY')"
+      />
+      <ElTable v-loading="loading" :data="rows" row-key="id">
+        <ElTableColumn prop="appUserId" label="用户 ID" min-width="230" show-overflow-tooltip />
+        <ElTableColumn label="显示名" min-width="140">
+          <template #default="{ row }">{{ row.displayName || '—' }}</template>
+        </ElTableColumn>
+        <ElTableColumn label="设备关系" width="100">
+          <template #default="{ row }">{{ roles[row.relationRole] }}</template>
+        </ElTableColumn>
+        <ElTableColumn label="关系建立时间" min-width="180">
+          <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
+        </ElTableColumn>
+        <template #empty
+          ><ElEmpty
+            :description="
+              failed ? '用户关系不可用' : loading ? '正在读取用户' : '暂无当前有效终端用户'
+            "
+        /></template>
+      </ElTable>
+      <DeviceDetailPagination
+        v-if="rows.length > 0"
+        :page-index="pageIndex"
+        :loading="loading"
+        :failed="failed"
+        :has-next="!!nextCursor"
+        @previous="previous"
+        @next="next"
+      />
+    </DeviceDetailCard>
   </section>
 </template>
 <script setup lang="ts">
+  import DeviceDetailCard from './DeviceDetailCard.vue'
   import DeviceDetailPagination from './DeviceDetailPagination.vue'
   import DeviceClaimToken from './DeviceClaimToken.vue'
   import { useUserStore } from '@/store/modules/user'

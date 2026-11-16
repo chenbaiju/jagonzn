@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { appProjectEntry, defaultAppProjectAddress } from '@/utils/app-project-entry'
 
-const project = { projectKey: 'project-001', name: '测试项目' }
+const project = { projectCode: 'project-001', name: '测试项目' }
 afterEach(() => vi.unstubAllEnvs())
 
 describe('ThingsX 项目入口合同', () => {
   it('仅本机开发页面预填，其他环境不推断平台地址', () => {
     vi.stubEnv('DEV', true)
     for (const host of ['localhost', '127.0.0.1', '[::1]']) {
-      expect(defaultAppProjectAddress(host)).toBe('http://127.0.0.1:18080')
+      expect(defaultAppProjectAddress(host)).toBe('http://127.0.0.1:8080')
     }
     expect(defaultAppProjectAddress('console.example.test')).toBe('')
     expect(defaultAppProjectAddress('192.168.1.2')).toBe('')
@@ -17,23 +17,23 @@ describe('ThingsX 项目入口合同', () => {
   })
   it('开发模式接受固定本机HTTP，生产模式拒绝同一载荷', () => {
     vi.stubEnv('DEV', true)
-    expect(JSON.parse(appProjectEntry(project, 'http://127.0.0.1:18080/').payload).baseUrl).toBe(
-      'http://127.0.0.1:18080'
+    expect(JSON.parse(appProjectEntry(project, 'http://127.0.0.1:8080/').payload).baseUrl).toBe(
+      'http://127.0.0.1:8080'
     )
     for (const address of [
-      'http://localhost:18080',
-      'http://10.0.2.2:18080',
+      'http://localhost:8080',
+      'http://10.0.2.2:8080',
       'http://127.0.0.1:8081',
-      'http://127.0.0.1:18080?',
-      'http://127.0.0.1:18080/api',
-      'http://u:p@127.0.0.1:18080',
-      'http://127.0.0.1.example.com:18080',
-      'http://2130706433:18080'
+      'http://127.0.0.1:8080?',
+      'http://127.0.0.1:8080/api',
+      'http://u:p@127.0.0.1:8080',
+      'http://127.0.0.1.example.com:8080',
+      'http://2130706433:8080'
     ]) {
       expect(() => appProjectEntry(project, address)).toThrow()
     }
     vi.stubEnv('DEV', false)
-    expect(() => appProjectEntry(project, 'http://127.0.0.1:18080')).toThrow()
+    expect(() => appProjectEntry(project, 'http://127.0.0.1:8080')).toThrow()
     expect(appProjectEntry(project, 'https://example.test').qrAvailable).toBe(true)
   })
   it('生成无凭据的版本化源站配置', () => {

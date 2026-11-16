@@ -62,12 +62,15 @@ test('设备证据与默认关闭模型：真实手动读取、四角色与跨�
     )
     await panel.getByRole('button', { name: '加载属性目录', exact: true }).click()
     expect((await directory).status()).toBe(200)
+    const properties = panel.getByRole('combobox', { name: '证据属性', exact: true })
+    await expect(properties).toBeEnabled()
     await panel
       .locator('.el-select')
       .filter({
         has: target.getByRole('combobox', { name: '证据属性', exact: true })
       })
       .click()
+    await expect(properties).toHaveAttribute('aria-expanded', 'true')
     await target
       .locator('.el-select-dropdown:visible')
       .getByRole('option', { name: 'temperature', exact: true })
@@ -282,7 +285,14 @@ test('设备证据与默认关闭模型：真实手动读取、四角色与跨�
     await enterProject(page, name)
     await open(page)
     await expect(page.getByTestId('agent-evidence')).not.toContainText('未上报')
-    await expect(page.getByTestId('agent-analysis')).toContainText('尚未读取模型状态')
+    const resetAnalysis = page.getByTestId('agent-analysis')
+    await expect(resetAnalysis).not.toContainText('模型分析服务尚未启用')
+    await expect(
+      resetAnalysis.getByRole('button', { name: '查看模型状态', exact: true })
+    ).toBeEnabled()
+    await expect(
+      resetAnalysis.getByRole('button', { name: '确认并分析一次', exact: true })
+    ).toBeDisabled()
     expect(modelStatusRequests).toHaveLength(5)
     expect(snapshotRequests).toHaveLength(5)
     expect(assistantWrites).toEqual([])

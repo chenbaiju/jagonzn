@@ -84,7 +84,7 @@ function result(value: unknown): AnalysisResult {
   if (
     !exact(value, 'findings,limitations,model,promptVersion,summary,usage') ||
     value.model !== 'deepseek-flash' ||
-    value.promptVersion !== 'thingscloud-agent-single-analysis-v1' ||
+    value.promptVersion !== 'thingslink-agent-single-analysis-v1' ||
     !text(value.summary) ||
     !Array.isArray(value.findings) ||
     !Array.isArray(value.limitations) ||

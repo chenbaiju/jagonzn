@@ -11,7 +11,11 @@ import request from '@/utils/http'
 vi.mock('@/utils/http', () => ({ default: { get: vi.fn() } }))
 let wrapper: VueWrapper | undefined
 beforeEach(() => vi.resetAllMocks())
-afterEach(() => wrapper?.unmount())
+afterEach(() => {
+  wrapper?.unmount()
+  wrapper = undefined
+  vi.useRealTimers()
+})
 
 it('counts the complete directory, deduplicating resources across cursor pages', async () => {
   const read = vi
@@ -65,6 +69,7 @@ it('reads every supported project directory including complete array responses',
 })
 
 function render(paths: string[]) {
+  vi.useFakeTimers()
   wrapper = mount(Resources, {
     props: { projectId: 'a', scopeKey: 'user-a', allowedPaths: paths },
     global: { stubs: { ArtSvgIcon: true } }
@@ -77,6 +82,7 @@ it('only reads permitted directories and distinguishes a real zero from a failed
     .mockResolvedValueOnce({ items: [] })
     .mockRejectedValueOnce(new Error('offline'))
   const view = render(['/device/types', '/alarm/rules'])
+  await vi.advanceTimersByTimeAsync(1500)
   await flushPromises()
   expect(view.findAll('li')).toHaveLength(2)
   expect(view.get('[aria-label="设备类型数量"]').text()).toBe('0')
@@ -94,7 +100,9 @@ it('ignores old project results and clears rows immediately when read permission
     )
     .mockResolvedValueOnce({ items: [{ id: 'new' }] })
   const view = render(['/device/types'])
+  await vi.advanceTimersByTimeAsync(1000)
   await view.setProps({ projectId: 'b', scopeKey: 'user-b' })
+  await vi.advanceTimersByTimeAsync(1500)
   await flushPromises()
   release({ items: [{ id: 'old-1' }, { id: 'old-2' }] })
   await flushPromises()
@@ -103,4 +111,33 @@ it('ignores old project results and clears rows immediately when read permission
   await flushPromises()
   expect(view.findAll('li')).toHaveLength(0)
   expect(request.get).toHaveBeenCalledTimes(2)
+})
+
+it('defers background reads, bounds each second and cancels queued reads on permission loss', async () => {
+  vi.mocked(request.get).mockResolvedValue({ items: [] })
+  const view = render(workbenchResources.map((row) => row.path))
+  await vi.advanceTimersByTimeAsync(999)
+  expect(request.get).not.toHaveBeenCalled()
+  await vi.advanceTimersByTimeAsync(1)
+  expect(request.get).toHaveBeenCalledTimes(1)
+  await vi.advanceTimersByTimeAsync(999)
+  expect(request.get).toHaveBeenCalledTimes(4)
+  await view.setProps({ allowedPaths: [] })
+  await vi.advanceTimersByTimeAsync(10000)
+  expect(request.get).toHaveBeenCalledTimes(4)
+  expect(view.findAll('li')).toHaveLength(0)
+})
+
+it('paces cursor pages too and never starts a queued page after the component closes', async () => {
+  vi.mocked(request.get)
+    .mockResolvedValueOnce({ items: [{ id: '1' }], hasMore: true, nextCursor: 'next' })
+    .mockResolvedValueOnce({ items: [{ id: '2' }] })
+  const view = render(['/device/types'])
+  await vi.advanceTimersByTimeAsync(1000)
+  expect(request.get).toHaveBeenCalledTimes(1)
+  await vi.advanceTimersByTimeAsync(249)
+  expect(request.get).toHaveBeenCalledTimes(1)
+  view.unmount()
+  await vi.advanceTimersByTimeAsync(1000)
+  expect(request.get).toHaveBeenCalledTimes(1)
 })

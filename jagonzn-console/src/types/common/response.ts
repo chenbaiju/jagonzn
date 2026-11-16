@@ -16,7 +16,7 @@
  * - 响应数据解析
  *
  * @module types/common/response
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 /** 基础 API 响应结构 */

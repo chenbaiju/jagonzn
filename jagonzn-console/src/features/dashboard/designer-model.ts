@@ -12,7 +12,7 @@ import {
   type DashboardHistoryGranularity,
   type DashboardHistoryAggregation,
   type DashboardSchemaV1
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 export const BUILTIN_IMAGE = Object.freeze({
   resourceId: 'device_mark',
   resourceDigest: '5977f591d5eeb691ee85c7656468a8b5dd1378b70b02a55af574331a0f0f0eaa'

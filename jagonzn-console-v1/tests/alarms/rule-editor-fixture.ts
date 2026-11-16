@@ -1,0 +1,5 @@
+import type {AlarmRuleEditorChoices} from '../../src/features/alarms/alarm-rule-editor-draft'
+import {configuredAlarmRule} from '../../src/features/alarms/alarm-rule-management-api'
+import {managementDevice,managementProject,managementResponse,managementRule} from './rule-management-fixture'
+export function editorRule(){return configuredAlarmRule(managementResponse())}
+export function editorChoices():AlarmRuleEditorChoices{return {projectId:managementProject,source:{kind:'DEVICE',ids:[managementDevice]},sources:[{id:managementDevice,label:'环境监测设备'}],properties:[{key:'temperature',label:'温度 temperature',dataType:'NUMBER'},{key:'lower',label:'温度下限 lower',dataType:'NUMBER'},{key:'status',label:'开关 status',dataType:'SWITCH'},{key:'text',label:'文本 text',dataType:'TEXT'},{key:'mode',label:'模式 mode',dataType:'ENUM'},{key:'list',label:'列表 list',dataType:'LIST'},{key:'object',label:'对象 object',dataType:'OBJECT'}],groups:[{id:managementRule,label:'值班通知组'}],applications:[{id:managementRule,label:'用户服务应用'}]}}

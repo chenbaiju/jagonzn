@@ -54,9 +54,6 @@
         <ElFormItem label="允许设备接入">
           <ElSwitch v-model="enabled" aria-label="允许设备接入" />
         </ElFormItem>
-        <ElAlert type="info" :closable="false" show-icon
-          >修改协议或关闭接入会使旧连接失效；切换协议不会自动更换设备凭据。</ElAlert
-        >
       </ElForm>
     </template>
     <div class="console-actions">
@@ -172,7 +169,7 @@
   }
 
   .device-access__current {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: normal;
     line-height: 20px;
     color: var(--el-text-color-secondary);

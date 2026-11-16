@@ -16,7 +16,6 @@ test('平台页面在进入项目前后保留菜单，并使用对应的 titleba
     ['/project/list', '项目列表', '我创建的项目'],
     ['/project/create', '添加项目', '添加项目'],
     ['/project/recycle-bin', '项目回收站', '项目回收站'],
-    ['/plan-catalog', '套餐与权益', '套餐与权益'],
     ['/system-status', '系统状态', '系统状态']
   ]
   for (const entered of [false, true]) {
@@ -25,7 +24,7 @@ test('平台页面在进入项目前后保留菜单，并使用对应的 titleba
       await page.goto(`/#${route}`)
       await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
       const sidebar = page.locator('#app-sidebar')
-      const parent = ['套餐与权益', '系统状态'].includes(label) ? '账号与平台工具' : '项目与资源'
+      const parent = label === '系统状态' ? '账号与平台工具' : '项目与资源'
       const item = sidebar.getByRole('menuitem', { name: label, exact: true })
       if (!(await item.isVisible()))
         await sidebar.getByRole('menuitem', { name: parent, exact: true }).click()

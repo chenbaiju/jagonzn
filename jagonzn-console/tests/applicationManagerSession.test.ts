@@ -192,7 +192,8 @@ describe('应用管理身份与发布恢复接线', () => {
     expect(await mocks.leave!()).toBe(true)
     expect(mocks.confirm).toHaveBeenLastCalledWith(
       expect.stringContaining('离开不会撤销已提交的请求'),
-      '离开应用编辑'
+      '离开应用编辑',
+      { customClass: 'console-studio-feedback' }
     )
   })
   it('写入进行中禁止切换应用、创建和离开', async () => {

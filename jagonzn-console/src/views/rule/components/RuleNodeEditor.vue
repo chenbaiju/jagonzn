@@ -1,12 +1,5 @@
 <template>
   <section class="console-fragment">
-    <ElAlert
-      class="rule-node-editor__notice"
-      title="按顺序执行。选择节点后填写参数，复杂值使用 JSON；保存不会自动发布。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
     <div class="console-toolbar">
       <ElSelect v-model="newType" placeholder="选择节点" aria-label="选择节点" :disabled="disabled">
         <ElOption
@@ -167,7 +160,7 @@
   }
 
   .rule-node-editor__notice :deep(.el-alert__title) {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: normal;
     line-height: 20px;
   }

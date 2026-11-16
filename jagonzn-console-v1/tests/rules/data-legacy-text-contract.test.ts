@@ -1,0 +1,22 @@
+import {expect,it} from 'vitest'
+import {normalizeDataOperations,validateDataOperationsContext} from '../../src/features/rules/data-operations-api'
+import {upgradeSingleDataOperation} from '../../src/features/rules/preprocess-version-editor'
+import {deviceDataInputStreams,type DeviceDataSourceContext} from '../../src/features/rules/device-data-source-context'
+import {decodeTypeProfile} from '../../src/features/device-types/profile-api'
+import type {DataStreamItem} from '../../src/features/device-types/data-stream-publication-api'
+const source='module.exports = function(identifier,data) { return JSON.parse(data.toString("utf8")); };\r\n',single={functions:[{id:'original-function',format:'COMMON_JS' as const,source}]}
+const plain:DataStreamItem={identifier:'input',name:'原输入',format:'TEXT'},literal:DataStreamItem={...plain,mqttTopics:{profile:'TL_LITERAL_TOPIC_PAIR_V1',publishTopic:'data/in',subscribeTopic:'data/out'}},template:DataStreamItem={...plain,mqttTopics:{profile:'TL_TEMPLATE_TOPIC_PAIR_V1',publishTopic:'data/{part}/in',subscribeTopic:'data/{part}/out'}}
+const row={id:'old-id',kind:'PROPERTY',function:{format:'COMMON_JS',source}},profile='DATA_OPERATIONS_V1'
+it('旧文本组合的闭集和canonical保旧字节，完整来源全非模板才保原约定且混合明确拒绝',()=>{
+ const old=normalizeDataOperations({profile,operations:[row]});expect(JSON.stringify(old)).toBe(JSON.stringify({profile,operations:[row]}));expect(old.operations[0]).not.toHaveProperty('inputContract')
+ const checked=normalizeDataOperations({profile,operations:[{inputContract:'LEGACY_TEXT_V1',...row}]});expect(JSON.stringify(checked)).toBe(JSON.stringify({profile,operations:[{...row,inputContract:'LEGACY_TEXT_V1'}]}));expect(checked.operations[0]!.function!.source).toBe(source)
+ for(const inputContract of [null,'UNKNOWN',''])expect(()=>normalizeDataOperations({profile,operations:[{...row,inputContract}]})).toThrow()
+ expect(()=>normalizeDataOperations({profile,operations:[{...row,inputContract:'LEGACY_TEXT_V1',extra:1}]})).toThrow();expect(()=>normalizeDataOperations({profile,operations:[{id:'down',kind:'DATA_DOWNLINK',dataDownlink:{protocol:'MQTT',streamIdentifier:'reply',source},transportTarget:'ORIGINAL_PHYSICAL_DEVICE',inputContract:'LEGACY_TEXT_V1'}]})).toThrow()
+ const upgraded=upgradeSingleDataOperation(single,[plain,literal]);expect(upgraded.operations[0]!.inputContract).toBe('LEGACY_TEXT_V1');expect(upgraded.operations[0]!.function!.source).toBe(source);expect(upgraded.operations[0]!.id).not.toBe('original-function')
+ for(const streams of [[template],[template,template],[{...plain,format:'HEX' as const}],[{...plain,format:'JSON' as const}]])expect(upgradeSingleDataOperation(single,streams).operations[0]).not.toHaveProperty('inputContract')
+ for(const streams of [[plain,template],[template,literal],[],[{...plain,identifier:'other'},plain],[plain,{...plain,format:'HEX' as const}]])expect(()=>upgradeSingleDataOperation(single,streams)).toThrow()
+ const actual={deviceKind:'DIRECT',payloadProtocol:'STANDARD',streamFormat:'TEXT',streamTemplate:false};expect(()=>validateDataOperationsContext(checked,actual)).not.toThrow();for(const context of [{...actual,streamTemplate:true},{...actual,streamTemplate:undefined},{...actual,streamFormat:'HEX'}])expect(()=>validateDataOperationsContext(checked,context)).toThrow()
+ // 此处仅核完整来源事实提取，不伪造管理读取或最终模型确权。
+ const ids=['20000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002'],expected={kind:'DEVICE' as const,referenceId:null,referenceIds:ids},project='10000000-0000-4000-8000-000000000001',context:DeviceDataSourceContext={deviceSource:expected,members:ids.map((deviceId,index)=>({deviceId,name:'来源'+index,deviceTypeId:deviceId,profile:decodeTypeProfile({type:{id:deviceId,projectId:project,name:'实际类型'+index,deviceKind:'DIRECT',networkType:'WIFI',payloadProtocol:'STANDARD',status:'PUBLISHED'},description:null,tags:{},revision:'1',profileToken:'a'.repeat(64)},project,deviceId),streams:[index===0?plain:template]}))}
+ expect(deviceDataInputStreams(context,expected,'input')).toEqual([plain,template]);expect(()=>upgradeSingleDataOperation(single,deviceDataInputStreams(context,expected,'input'))).toThrow();expect(()=>deviceDataInputStreams({...context,members:context.members.slice(0,1)},expected,'input')).toThrow();expect(()=>deviceDataInputStreams(context,{kind:'DEVICE',referenceId:ids[0]},'input')).toThrow();expect(()=>deviceDataInputStreams(context,expected,'missing')).toThrow()
+})

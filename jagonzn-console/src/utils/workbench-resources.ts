@@ -40,51 +40,56 @@ export async function countResourcePages(
 
 /** 当前项目已有业务目录；每个统计项沿用对应页面的读取权限和后端过滤口径。 */
 export const workbenchResources = [
-  { label: '设备类型', path: '/device/types', icon: 'ri:box-3-line', read: fetchDeviceTypePage },
+  { label: '设备类型', path: '/device/types', icon: 'tl:layers', read: fetchDeviceTypePage },
   {
     label: '设备组',
     path: '/device/groups',
-    icon: 'ri:organization-chart',
+    icon: 'tl:git-branch',
     read: fetchDeviceGroups
   },
-  { label: '看板', path: '/dashboard/designer', icon: 'ri:dashboard-line', read: fetchDashboards },
+  {
+    label: '看板',
+    path: '/dashboard/designer',
+    icon: 'tl:layout-dashboard',
+    read: fetchDashboards
+  },
   {
     label: '消息规则',
     path: '/rule/messages',
-    icon: 'ri:terminal-box-line',
+    icon: 'tl:terminal',
     read: (id: string, cursor?: string) => listRules(id, { cursor })
   },
-  { label: '任务', path: '/task/jobs', icon: 'ri:calendar-check-line', read: fetchTaskJobs },
-  { label: '告警规则', path: '/alarm/rules', icon: 'ri:error-warning-line', read: fetchAlarmRules },
+  { label: '任务', path: '/task/jobs', icon: 'tl:calendar', read: fetchTaskJobs },
+  { label: '告警规则', path: '/alarm/rules', icon: 'tl:triangle-alert', read: fetchAlarmRules },
   {
     label: '自动化',
     path: '/rule/automations',
-    icon: 'ri:robot-2-line',
+    icon: 'tl:git-branch',
     read: (id: string, cursor?: string) => listAutomations(id, { cursor })
   },
   {
     label: '场景',
     path: '/rule/scenes',
-    icon: 'ri:play-circle-line',
+    icon: 'tl:activity',
     read: (id: string, cursor?: string) => listScenes(id, { cursor })
   },
   {
     label: '告警通知组',
     path: '/alarm/notification-groups',
-    icon: 'ri:notification-3-line',
+    icon: 'tl:bell',
     read: fetchAlarmNotificationGroups
   },
   {
     label: '项目应用',
     path: '/dashboard/applications',
-    icon: 'ri:apps-line',
+    icon: 'tl:layout-dashboard',
     read: fetchApplications
   },
-  { label: '用户', path: '/project/end-users', icon: 'ri:group-line', read: fetchEndUsers },
+  { label: '用户', path: '/project/end-users', icon: 'tl:users', read: fetchEndUsers },
   {
     label: 'OTA 版本',
     path: '/ota/firmwares',
-    icon: 'ri:upload-cloud-2-line',
+    icon: 'tl:cloud-upload',
     read: fetchOtaFirmwares
   }
 ]
@@ -92,9 +97,12 @@ export const workbenchResources = [
 export async function countWorkbenchResource(
   resource: (typeof workbenchResources)[number],
   projectId: string,
-  current: () => boolean
+  current: () => boolean,
+  beforeRead?: () => Promise<void>
 ) {
   return countResourcePages(async (cursor) => {
+    await beforeRead?.()
+    if (!current()) throw new Error('资源统计所属身份已改变')
     const value = await resource.read(projectId, cursor)
     return Array.isArray(value) ? { items: value } : value
   }, current)

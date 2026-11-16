@@ -1,4 +1,4 @@
-import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
 export type TextSelections = Readonly<Record<string, string | null>>
 export interface TextPreviewEntry {
   id: string

@@ -6,33 +6,44 @@
 <template>
   <ElTable :data="rows" size="default">
     <ElTableColumn label="指标" min-width="150">
-      <template #default="{ row }">{{ metricLabels[row.metric] }}</template>
+      <template #default="{ row }">
+        <span :title="row.snapshotText">{{ row.label }}</span>
+      </template>
     </ElTableColumn>
-    <ElTableColumn label="已用" min-width="110" align="right">
-      <template #default="{ row }">{{ formatNumber(row.used) }}</template>
+    <ElTableColumn :label="unitRows.length ? '已用 / 占用' : '已用'" min-width="110" align="right">
+      <template #default="{ row }">{{ row.usedText }}</template>
     </ElTableColumn>
-    <ElTableColumn label="上限" min-width="110" align="right">
-      <template #default="{ row }">{{ formatLimit(row.limit) }}</template>
+    <ElTableColumn label="共享上限" min-width="110" align="right">
+      <template #default="{ row }">{{ row.limitText }}</template>
     </ElTableColumn>
-    <ElTableColumn label="剩余" min-width="110" align="right">
-      <template #default="{ row }">{{ formatLimit(row.remaining) }}</template>
+    <ElTableColumn label="共享剩余" min-width="110" align="right">
+      <template #default="{ row }">{{ row.remainingText }}</template>
     </ElTableColumn>
     <ElTableColumn label="状态" min-width="100" align="center">
       <template #default="{ row }">
-        <ElTag :type="statusType(row.status)" disable-transitions>{{
-          statusText(row.status, row.metric, row.limit)
-        }}</ElTag>
+        <ElTag :type="row.statusType" disable-transitions>{{ row.statusText }}</ElTag>
       </template>
     </ElTableColumn>
     <template #empty><ElEmpty description="暂无配额指标" :image-size="72" /></template>
   </ElTable>
+  <ElText v-if="unitRows.length" tag="p" type="info" size="small">
+    消息按每个原报文每 4KiB 向上取整，按 UTC 日计量，未决受理也占用额度。
+    {{ usageScope === 'tenant' ? '占用为租户全部项目合计。' : '占用为当前项目贡献。' }}
+    上限与剩余均为租户共享日池，不是本项目独享余额。
+  </ElText>
 </template>
 
 <script setup lang="ts">
-  import type { ProjectQuotaScopeResponse } from '@/api/quota'
+  import type { MessageUnitQuotaResponse, ProjectQuotaScopeResponse } from '@/api/quota'
+  import {
+    buildMessageUnitQuotaRows,
+    withoutProjectedMessageMetrics
+  } from '@/features/quota/message-unit-model'
 
   const props = defineProps<{
     scope?: ProjectQuotaScopeResponse
+    messageUnitQuotas?: MessageUnitQuotaResponse[]
+    usageScope?: 'project' | 'tenant'
   }>()
 
   const metricLabels: Record<string, string> = {
@@ -50,10 +61,29 @@
     STORAGE_BYTES: '对象存储占用'
   }
 
-  /** 设备存量不属于日计数表，但它和 UTC 日指标共享同一套餐上限与状态展示。 */
+  const unitRows = computed(() => buildMessageUnitQuotaRows(props.messageUnitQuotas))
+
+  /** 对应新方向只保留真实原件占用；旧条数及其他指标保持原合同。 */
   const rows = computed(() => {
-    const dailyMetrics = props.scope?.dailyMetrics ?? []
-    return props.scope?.deviceCount ? [props.scope.deviceCount, ...dailyMetrics] : dailyMetrics
+    const dailyMetrics = withoutProjectedMessageMetrics(props.scope?.dailyMetrics, unitRows.value)
+    const legacyRows = props.scope?.deviceCount
+      ? [props.scope.deviceCount, ...dailyMetrics]
+      : dailyMetrics
+    return [
+      ...legacyRows.map((row) => ({
+        label: metricLabels[row.metric ?? ''] ?? row.metric ?? '—',
+        usedText: formatNumber(row.used),
+        limitText: formatLimit(row.limit),
+        remainingText: formatLimit(row.remaining),
+        statusText: statusText(row.status, row.metric, row.limit),
+        statusType: statusType(row.status),
+        snapshotText: undefined
+      })),
+      ...unitRows.value.map((row) => ({
+        ...row,
+        usedText: props.usageScope === 'tenant' ? row.tenantOccupiedText : row.projectOccupiedText
+      }))
+    ]
   })
 
   /** 缺失不是零；用破折号保留“不确定”的语义。 */

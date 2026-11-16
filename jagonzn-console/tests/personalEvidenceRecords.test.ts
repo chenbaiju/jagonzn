@@ -94,7 +94,8 @@ it.each(['OWNER', 'ADMIN', 'OPERATOR', 'VIEWER'])(
     await vm().save()
     expect(savePersonalRecord).toHaveBeenCalledWith('p', 'd', 'm', ['n'], expect.any(AbortSignal))
     expect(vm().rows).toEqual([row])
-    expect(panel.text()).toContain('历史事实不代表设备当前状态')
+    expect(panel.text()).toContain('2026-10-04 08:00:00（可见至 2026-11-03 08:00:00）')
+    expect(panel.text()).not.toContain('历史事实不代表设备当前状态')
   }
 )
 it('shows safe zero false and omitted text from an explicit historical read', async () => {

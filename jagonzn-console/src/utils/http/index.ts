@@ -11,7 +11,7 @@
  * - 支持 GET/POST/PUT/DELETE 等常用方法
  *
  * @module utils/http
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
@@ -196,11 +196,59 @@ axiosInstance.interceptors.response.use(
       )
     }
 
-    // 接收号码写入即使401也不自动重放；由页面只读核对权威结果。
-    if (originalConfig && isSingleAttemptNotificationContact(originalConfig)) {
+    // 图片写入严格单次，401也不刷新后重放原始照片。
+    if (originalConfig && isSingleAttemptDeviceImage(originalConfig)) {
       return Promise.reject(
         createHttpError(
-          '接收号码保存未确认，请重新读取后核对。',
+          '图片操作未确认，请刷新状态后核对。',
+          status === ApiStatus.unauthorized ? ApiStatus.unauthorized : (status ?? ApiStatus.error),
+          { outcomeUnknown: !error.response || (typeof status === 'number' && status >= 500) }
+        )
+      )
+    }
+
+    // 认领能力签发/撤销不自动重放，错误正文不传播能力或外部输入。
+    if (originalConfig && isSingleAttemptDeviceClaimCode(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          '设备认领码操作未确认，请核对当前状态。',
+          status === ApiStatus.unauthorized ? ApiStatus.unauthorized : (status ?? ApiStatus.error),
+          { outcomeUnknown: !error.response || (typeof status === 'number' && status >= 500) }
+        )
+      )
+    }
+
+    // 规则发布同时承担人工恢复；自动刷新或重试不能代替用户再次确认当前CAS。
+    if (originalConfig && isSingleAttemptRuleActivation(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          '规则发布/恢复结果未确认，请刷新健康状态并核对当前版本。',
+          status === ApiStatus.unauthorized
+            ? ApiStatus.unauthorized
+            : Number.isSafeInteger(apiError?.code)
+              ? apiError!.code
+              : (status ?? ApiStatus.error),
+          { outcomeUnknown: !error.response || (typeof status === 'number' && status >= 500) }
+        )
+      )
+    }
+
+    // 安全治理写入必须保留原操作身份，401/网络失败亦交回页面核对原回执。
+    if (originalConfig && isSingleAttemptTenantGovernance(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          '租户安全操作未确认，请查询原申请。',
+          Number.isSafeInteger(apiError?.code) ? apiError!.code : (status ?? ApiStatus.error),
+          { outcomeUnknown: !error.response || (typeof status === 'number' && status >= 500) }
+        )
+      )
+    }
+
+    // 通知设置写入即使401也不自动重放；由页面只读核对权威结果。
+    if (originalConfig && isSingleAttemptNotificationSetting(originalConfig)) {
+      return Promise.reject(
+        createHttpError(
+          '通知设置保存未确认，请重新读取后核对。',
           status === ApiStatus.unauthorized
             ? ApiStatus.unauthorized
             : Number.isSafeInteger(apiError?.code)
@@ -418,7 +466,11 @@ async function retryRequest<T>(
   retries: number = MAX_RETRIES
 ): Promise<T> {
   if (
-    isSingleAttemptNotificationContact(config) ||
+    isSingleAttemptRuleActivation(config) ||
+    isSingleAttemptTenantGovernance(config) ||
+    isSingleAttemptDeviceImage(config) ||
+    isSingleAttemptDeviceClaimCode(config) ||
+    isSingleAttemptNotificationSetting(config) ||
     isSingleAttemptAnalysis(config) ||
     isSingleAttemptProductCredential(config) ||
     isSingleAttemptOtaDownload(config) ||
@@ -573,11 +625,55 @@ const api = {
 
 export default api
 
-/** 仅号码PUT不重放；GET仍沿普通认证恢复流程。 */
-function isSingleAttemptNotificationContact(config: ExtendedAxiosRequestConfig): boolean {
+/** 接收号码及项目告警策略PUT不重放；GET仍沿普通认证恢复流程。 */
+function isSingleAttemptNotificationSetting(config: ExtendedAxiosRequestConfig): boolean {
   return (
     config.method?.toUpperCase() === 'PUT' &&
-    /^\/api\/v1\/projects\/[^/?#]+\/end-users\/[^/?#]+\/notification-contact(?:[?#].*)?$/.test(
+    /^(?:\/api\/v1\/projects\/[^/?#]+\/(?:end-users\/[^/?#]+\/notification-contact|alarm-sms-recipient|alarm-notification-policy)|\/api\/v1\/tenant\/notification-recipients\/(?:QUOTA_WARNING|SUBSCRIPTION_EXPIRING))(?:[?#].*)?$/.test(
+      config.url ?? ''
+    )
+  )
+}
+
+/** 定位GET沿原只读恢复；能力POST和显式撤销DELETE严格单次。 */
+function isSingleAttemptDeviceClaimCode(config: ExtendedAxiosRequestConfig): boolean {
+  const method = config.method?.toUpperCase(),
+    url = config.url ?? ''
+  return (
+    (method === 'POST' &&
+      /^\/api\/v1\/projects\/[^/?#]+\/devices\/[^/?#]+\/purpose-codes\/claim(?:[?#].*)?$/.test(
+        url
+      )) ||
+    (method === 'DELETE' &&
+      /^\/api\/v1\/projects\/[^/?#]+\/devices\/[^/?#]+\/purpose-codes\/claim\/[^/?#]+(?:[?#].*)?$/.test(
+        url
+      ))
+  )
+}
+
+/** 只匹配图片子资源写入，读取沿原身份保护且不扩大相邻路由。 */
+function isSingleAttemptDeviceImage(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    ['PUT', 'DELETE'].includes(config.method?.toUpperCase() ?? '') &&
+    /^\/api\/v1\/projects\/[^/?#]+\/devices\/[^/?#]+\/image(?:[?#].*)?$/.test(config.url ?? '')
+  )
+}
+
+/** 只限制租户安全操作POST，目录及历史GET保持既有只读策略。 */
+function isSingleAttemptTenantGovernance(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    config.method?.toUpperCase() === 'POST' &&
+    /^\/api\/v1\/operations\/tenants\/[^/?#]+\/governance\/operations(?:[?#].*)?$/.test(
+      config.url ?? ''
+    )
+  )
+}
+
+/** 仅消息规则版本发布POST为单次确认操作；健康GET及其他路由不扩大排除。 */
+function isSingleAttemptRuleActivation(config: ExtendedAxiosRequestConfig): boolean {
+  return (
+    config.method?.toUpperCase() === 'POST' &&
+    /^\/api\/v1\/projects\/[^/?#]+\/message-rules\/[^/?#]+\/versions\/[^/?#]+\/activate(?:[?#].*)?$/.test(
       config.url ?? ''
     )
   )

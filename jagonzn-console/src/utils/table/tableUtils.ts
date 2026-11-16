@@ -36,7 +36,7 @@
  * - createErrorHandler: 生成错误处理器
  *
  * @module utils/table/tableUtils
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import type { ApiResponse } from './tableCache'

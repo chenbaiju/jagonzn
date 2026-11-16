@@ -83,14 +83,7 @@
         :precision="0"
         aria-label="绑定每页行数"
     /></el-form-item>
-    <ElAlert
-      v-if="kind === 'TABLE' || kind === 'JSON_VIEW'"
-      class="console-hint"
-      type="info"
-      show-icon
-      :closable="false"
-      >只读取完整顶层属性，不支持嵌套路径。表格分页和展开不改变原始值。</ElAlert
-    >
+
     <p v-if="!deviceId || !model">请先选择设备并加载其已发布物模型。</p>
     <p v-else-if="kind !== 'STATUS' && !supportedProperties.length"
       >该模型没有适用于当前组件的顶层属性。</p
@@ -105,10 +98,7 @@
 </template>
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import {
-    gaugePosition,
-    type DashboardSchemaV1
-  } from '@things-cloud/client-contracts/dashboard/v1'
+  import { gaugePosition, type DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
   import {
     parseGaugeBounds,
     type DeviceBindingProperty,

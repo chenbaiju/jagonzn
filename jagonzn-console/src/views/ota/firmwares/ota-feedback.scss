@@ -1,11 +1,11 @@
 .ota-firmware-feedback .el-alert {
   margin-bottom: 10px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 20px;
 
   .el-alert__title,
   .el-alert__description {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: normal;
     line-height: 20px;
   }
@@ -18,6 +18,8 @@
 }
 
 .ota-firmware-feedback {
+  overflow-wrap: anywhere;
+
   .ota-baseline-type-field {
     display: flex;
     gap: 10px;
@@ -25,7 +27,7 @@
     margin-bottom: 10px;
     label {
       flex-shrink: 0;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--el-text-color-regular);
     }
     .el-select {
@@ -39,7 +41,7 @@
     align-items: center;
     padding: 8px 12px;
     margin: 10px 0;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--el-text-color-secondary);
     background: var(--el-fill-color-light);
     border: 1px solid var(--el-border-color-lighter);
@@ -49,7 +51,7 @@
   .ota-registration-revision__value {
     min-width: 28px;
     padding: 2px 8px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     line-height: 20px;
     color: var(--el-color-primary);
@@ -64,14 +66,14 @@
 
   .ota-trust-import-file {
     max-width: 100%;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--el-text-color-secondary);
 
     &::file-selector-button {
       height: 32px;
       padding: 0 12px;
       margin-right: 10px;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-color-primary);
       cursor: pointer;
       background: var(--el-color-primary-light-9);
@@ -99,7 +101,7 @@
   .ota-metadata-filter {
     label {
       flex-shrink: 0;
-      font-size: 13px;
+      font-size: 14px;
       line-height: 20px;
       color: var(--el-text-color-regular);
       white-space: nowrap;
@@ -108,6 +110,30 @@
     .el-select {
       flex: 1;
       min-width: 0;
+    }
+  }
+}
+
+@media (width <= 640px) {
+  .ota-firmware-feedback {
+    .ota-baseline-type-field,
+    .ota-metadata-toolbar {
+      flex-wrap: wrap;
+    }
+
+    .ota-baseline-type-field > label,
+    .ota-metadata-filter label {
+      flex-basis: 100%;
+    }
+
+    .el-checkbox {
+      height: auto;
+      white-space: normal;
+    }
+
+    .el-checkbox__label {
+      line-height: 22px;
+      white-space: normal;
     }
   }
 }

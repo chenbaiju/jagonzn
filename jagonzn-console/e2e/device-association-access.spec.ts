@@ -82,11 +82,11 @@ test('设备关联：VIEWER可读历史但不可读管理配置，撤权后原�
     const detail = viewer.locator('.device-detail')
     const prefix = `/api/v1/projects/${project.id}/devices/${device.id}/`
     const cases = [
-      { tab: '终端用户', endpoint: 'end-users', forbiddenButton: '' },
-      { tab: '任务调度', endpoint: 'task-jobs', forbiddenButton: '' },
-      { tab: '自动化', endpoint: 'automation-executions', forbiddenButton: '当前自动化' },
-      { tab: '场景', endpoint: 'scene-executions', forbiddenButton: '项目场景候选' },
-      { tab: '消息规则', endpoint: 'message-rule-executions', forbiddenButton: '项目消息规则候选' }
+      { tab: '终端用户', endpoint: 'end-users', forbiddenTab: '' },
+      { tab: '任务调度', endpoint: 'task-jobs', forbiddenTab: '' },
+      { tab: '自动化', endpoint: 'automation-executions', forbiddenTab: '当前自动化' },
+      { tab: '场景', endpoint: 'scene-executions', forbiddenTab: '项目场景候选' },
+      { tab: '消息规则', endpoint: 'message-rule-executions', forbiddenTab: '项目消息规则候选' }
     ]
     for (const entry of cases) {
       const pending = viewer.waitForResponse(
@@ -98,9 +98,9 @@ test('设备关联：VIEWER可读历史但不可读管理配置，撤权后原�
       expect(response.status()).toBe(200)
       expect(response.headers()['cache-control']).toBe('no-store')
       expect((await response.json()).items).toEqual([])
-      if (entry.forbiddenButton)
+      if (entry.forbiddenTab)
         await expect(
-          detail.getByRole('button', { name: entry.forbiddenButton, exact: true })
+          detail.getByRole('tab', { name: entry.forbiddenTab, exact: true })
         ).toHaveCount(0)
     }
     await detail.getByRole('tab', { name: '命令', exact: true }).click()

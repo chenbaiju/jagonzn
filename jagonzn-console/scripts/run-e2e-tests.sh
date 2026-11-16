@@ -3,15 +3,15 @@
 # 起后端（专用 Redis DB）→ 起模拟器 → 起 Vite → 跑 Playwright → 收尾。
 #
 # 用法（仓库根或 console 目录均可）：
-#   ./things-cloud-console/scripts/run-e2e-tests.sh [--with-simulator]
+#   ./jagonzn-console/scripts/run-e2e-tests.sh [--with-simulator]
 #
 # 选项：
-#   --with-simulator   旅程 3/6/7 的真实 MQTT 上报与命令需要；不带时排除 @simulator。
+#   --with-simulator   使用本轮 CA 严格 TLS 运行真实 MQTT 模拟器；不带时排除 @simulator。
 #
 # 环境变量（可选）：
 #   CONTRACT_BASE_URL   后端基地址，默认 http://localhost:8080
 #   E2E_BASE_URL        控制台基地址，默认 http://localhost:3006
-#   E2E_LOCAL_LOG_DIR   普通本机验证的子进程日志目录；默认 things-cloud-console/logs
+#   E2E_LOCAL_LOG_DIR   普通本机验证的子进程日志目录；默认 jagonzn-console/logs
 #   E2E_WEBAPP_PORT     匿名分享旅程独立宿主端口，默认3019；不接管已有进程
 #   SKIP_BACKEND=1      复用已按本脚本同一环境启动的后端（专用 Redis DB 15）
 #   E2E_SPEC            可选单文件（如 journey-7.spec.ts）；用于按验证方针先跑单旅程 L3。
@@ -26,7 +26,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONSOLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$CONSOLE_DIR/.." && pwd)"
 DEPLOY_DIR="$REPO_ROOT/deploy"
-BACKEND_DIR="$REPO_ROOT/things-cloud"
+BACKEND_DIR="$REPO_ROOT/things-link"
 
 # G2-A4a：任何环境变更之前检查候选，普通调用不得与资格批次并发。
 if [[ -n "${E2E_BATCH_DIR:-}" ]]; then
@@ -128,7 +128,7 @@ smtp_java_args=()
 # Identity messages are retained only for this exact private Dind journey.
 unset E2E_SMTP_PRIVATE_IDENTITY E2E_INVITATION_RECIPIENT
 if [[ "${E2E_SPEC}" == "invitation-registration-smtp.spec.ts" ]]; then
-  [[ -f /.thingscloud-local-ci ]] || { printf '%s\n' "邀请注册邮件夹具只允许隔离 Dind 选场" >&2; exit 1; }
+  [[ -f /.thingslink-local-ci ]] || { printf '%s\n' "邀请注册邮件夹具只允许隔离 Dind 选场" >&2; exit 1; }
   export E2E_SMTP_PRIVATE_IDENTITY=1
   E2E_INVITATION_RECIPIENT="$(python3 -c 'import uuid; print("invited-"+uuid.uuid4().hex+"@example.test")')"
   export E2E_INVITATION_RECIPIENT E2E_SPEC
@@ -137,10 +137,10 @@ fi
 # Populated association fixture: fresh stack only; default runs retain no authority.
 unset E2E_ASSOCIATION_FIXTURE
 if [[ "${E2E_SPEC}" == "device-associations-populated.spec.ts" ]]; then
-  [[ -f /.thingscloud-local-ci && "${SKIP_BACKEND:-0}" != "1" && "${WITH_SIMULATOR}" == "true" ]] || {
+  [[ -f /.thingslink-local-ci && "${SKIP_BACKEND:-0}" != "1" && "${WITH_SIMULATOR}" == "true" ]] || {
     printf '[e2e] 非空关联夹具只允许完整隔离 Dind 选场\n' >&2; exit 1;
   }
-  smtp_env_args+=("THINGS_CLOUD_AUTOMATION_PROPERTY_ENABLED=true")
+  smtp_env_args+=("THINGS_LINK_AUTOMATION_PROPERTY_ENABLED=true")
 fi
 # End populated association selection.
 OTA_SIGNING_TOKEN=""
@@ -179,7 +179,7 @@ if [[ -f "${DEPLOY_DIR}/.env" ]]; then
   source <(grep -E '^EMQX_DASHBOARD_USER=|^EMQX_DASHBOARD_PASSWORD=|^EMQX_DASHBOARD_PORT=|^EMQX_MQTT_PORT=' "${DEPLOY_DIR}/.env")
 fi
 EMQX_DASHBOARD_USER="${EMQX_DASHBOARD_USER:-admin}"
-EMQX_DASHBOARD_PASSWORD="${EMQX_DASHBOARD_PASSWORD:-thingscloud123}"
+EMQX_DASHBOARD_PASSWORD="${EMQX_DASHBOARD_PASSWORD:-thingslink123}"
 EMQX_DASHBOARD_PORT="${EMQX_DASHBOARD_PORT:-18083}"
 EMQX_MQTT_PORT="${EMQX_MQTT_PORT:-1883}"
 EMQX_API_BASE_URL="http://localhost:${EMQX_DASHBOARD_PORT}"
@@ -196,8 +196,8 @@ EMQX_LIFECYCLE_CALLBACK_REPOINTED=false
 MINIO_ROOT_USER="$(grep -m1 '^MINIO_ROOT_USER=' "${DEPLOY_DIR}/.env" 2>/dev/null | cut -d= -f2- || true)"
 MINIO_ROOT_PASSWORD="$(grep -m1 '^MINIO_ROOT_PASSWORD=' "${DEPLOY_DIR}/.env" 2>/dev/null | cut -d= -f2- || true)"
 MINIO_PORT="$(grep -m1 '^MINIO_PORT=' "${DEPLOY_DIR}/.env" 2>/dev/null | cut -d= -f2- || true)"
-MINIO_ROOT_USER="${MINIO_ROOT_USER:-thingscloud}"
-MINIO_ROOT_PASSWORD="${MINIO_ROOT_PASSWORD:-thingscloud123}"
+MINIO_ROOT_USER="${MINIO_ROOT_USER:-thingslink}"
+MINIO_ROOT_PASSWORD="${MINIO_ROOT_PASSWORD:-thingslink123}"
 MINIO_PORT="${MINIO_PORT:-9000}"
 if [[ ! "${MINIO_PORT}" =~ ^[0-9]+$ ]] \
   || (( 10#${MINIO_PORT} < 1 || 10#${MINIO_PORT} > 65535 )); then
@@ -207,7 +207,7 @@ fi
 MINIO_STORAGE_ENDPOINT="http://127.0.0.1:${MINIO_PORT}"
 # ADR0119/D-153：平台刻意不创建也不借用对象存储桶。E2E 的固件桶必须由部署侧
 # （deploy/docker-compose.yml 的 minio-init）准备；这里显式指定，绝不静默回退。
-OTA_STORAGE_BUCKET="${THINGS_CLOUD_OTA_STORAGE_BUCKET:-firmware}"
+OTA_STORAGE_BUCKET="${THINGS_LINK_OTA_STORAGE_BUCKET:-firmware}"
 
 log() { printf '\033[36m[e2e]\033[0m %s\n' "$*"; }
 
@@ -268,8 +268,8 @@ ota_pg_credentials() {
   if [[ -f "${DEPLOY_DIR}/.env" ]]; then
     source <(grep -E '^POSTGRES_USER=|^POSTGRES_DB=' "${DEPLOY_DIR}/.env")
   fi
-  PGUSER="${POSTGRES_USER:-thingscloud}"
-  PGDB="${POSTGRES_DB:-thingscloud}"
+  PGUSER="${POSTGRES_USER:-thingslink}"
+  PGDB="${POSTGRES_DB:-thingslink}"
 }
 
 ota_schema_present() {
@@ -324,6 +324,8 @@ start_dependency_stack() {
   (
     cd "${DEPLOY_DIR}"
     if [[ ! -f .env ]]; then cp .env.example .env; fi
+    python3 scripts/emqx-image.py prepare --env-file .env
+    export THINGS_LINK_EMQX_IMAGE="$(python3 scripts/emqx-image.py image-ref)"
     local compose=(docker compose --env-file .env)
     local pg_user pg_db sql_file
     "${compose[@]}" up -d --wait postgres redis redpanda emqx minio
@@ -369,7 +371,7 @@ wait_for_durable_ingress_ready() {
     metrics="$(curl -fsS --max-time 3 "${BASE_URL}/actuator/prometheus" 2>/dev/null || true)"
     # pipefail 下 grep -q 命中后会提前关闭管道，大型 Prometheus 响应会让上游 printf 因 SIGPIPE 返回非零，
     # 从而把已就绪误判为未就绪；here-string 让 grep 完整拥有输入，不再依赖管道退出时序。
-    if grep -Eq '^thingscloud_ingress_handoff_connected\{[^}]*\} 1(\.0+)?$' <<< "${metrics}"; then
+    if grep -Eq '^thingslink_ingress_handoff_connected\{[^}]*\} 1(\.0+)?$' <<< "${metrics}"; then
       log "Broker durable ingress owner 已完成连接与订阅"
       return 0
     fi
@@ -425,7 +427,7 @@ emqx_dashboard_token() {
 
 emqx_callbacks_match_port() {
   # Q4 与 candidate 前资格共用完整 callback + rule→action→connector 合同；URL 单点不能证明送达。
-  python3 "${DEPLOY_DIR}/scripts/emqx-environment-qualification.py" callback-route \
+  python3 "${DEPLOY_DIR}/scripts/emqx-environment-qualification.py" callback-route --current-image \
     --callback-port "$1" --api-base "${EMQX_API_BASE_URL}"
 }
 
@@ -612,12 +614,14 @@ cleanup() {
     G2_CLEANUP_REDIS=FAIL
     cleanup_failed=1
   fi
+  if ${NORMAL_LEASE} && [[ "$(cat "${CONSOLE_DIR}/.e2e-evidence/runtime.lock")" == "normal:$$" ]]; then
+    rm -- "${CONSOLE_DIR}/.e2e-evidence/runtime.lock" || cleanup_failed=1
+  fi
+  # 回执必须包含TLS、归档及锁释放失败；保留原业务失败码，不把清理失败记成0。
+  if [[ "${rc}" -eq 0 && "${cleanup_failed}" -ne 0 ]]; then rc=1; fi
   if [[ -n "${E2E_RUN_DIR:-}" ]]; then
     if ! python3 "${SCRIPT_DIR}/e2e-evidence.py" cleanup --batch "${E2E_BATCH_DIR}" \
       --run-dir "${E2E_RUN_DIR}" --exit-code "${rc}"; then cleanup_failed=1; fi
-  fi
-  if ${NORMAL_LEASE} && [[ "$(cat "${CONSOLE_DIR}/.e2e-evidence/runtime.lock")" == "normal:$$" ]]; then
-    rm -- "${CONSOLE_DIR}/.e2e-evidence/runtime.lock" || cleanup_failed=1
   fi
   if [[ "${rc}" -eq 0 && "${cleanup_failed}" -ne 0 ]]; then rc=1; fi
   exit "${rc}"
@@ -676,6 +680,9 @@ else
   log "错误：依赖栈启动或初始化失败（退出码 ${rc}），日志见 ${STACK_LOG}"
   exit "${rc}"
 fi
+python3 "${DEPLOY_DIR}/scripts/emqx-image.py" verify-container --container tc-emqx \
+  >"${DEFAULT_E2E_LOG_DIR}/target-e2e-emqx-image-${E2E_LOG_TIMESTAMP}.json"
+
 # 基础设施就绪后、后端启动前确认固件桶前置条件（ADR0119/D-153）。
 verify_ota_storage_bucket
 
@@ -690,12 +697,12 @@ if ${OTA_LIFECYCLE}; then
   fi
   start_ota_signer_stub
   ota_env_args+=(
-    THINGS_CLOUD_OTA_TYPE_BASELINES_JSON="$(cat "${OTA_FIXTURE_DIR}/ota-type-baseline.json")"
-    THINGS_CLOUD_OTA_TRUST_ANCHORS_JSON="$(cat "${OTA_FIXTURE_DIR}/ota-trust-anchors.json")"
-    THINGS_CLOUD_OTA_SIGNING_ENDPOINT="${OTA_SIGNING_ENDPOINT}"
-    THINGS_CLOUD_OTA_SIGNING_TOKEN="${OTA_SIGNING_TOKEN}"
-    THINGS_CLOUD_OTA_SIGNING_ALLOW_INSECURE_LOOPBACK=true
-    THINGS_CLOUD_OTA_CAMPAIGN_RUNTIME_ENABLED=false
+    THINGS_LINK_OTA_TYPE_BASELINES_JSON="$(cat "${OTA_FIXTURE_DIR}/ota-type-baseline.json")"
+    THINGS_LINK_OTA_TRUST_ANCHORS_JSON="$(cat "${OTA_FIXTURE_DIR}/ota-trust-anchors.json")"
+    THINGS_LINK_OTA_SIGNING_ENDPOINT="${OTA_SIGNING_ENDPOINT}"
+    THINGS_LINK_OTA_SIGNING_TOKEN="${OTA_SIGNING_TOKEN}"
+    THINGS_LINK_OTA_SIGNING_ALLOW_INSECURE_LOOPBACK=true
+    THINGS_LINK_OTA_CAMPAIGN_RUNTIME_ENABLED=false
   )
 fi
 
@@ -788,7 +795,7 @@ verify_redpanda_ready
 # bind-mounted base.hocon 内容变化不会让已存在的 EMQX 容器自动重启。ADR 0046 已删除 raw/command-reply
 # 两个消息 Webhook；E2E 必须核验唯一 durable republish 及旧入口均不存在，不能等待一个源码已删除的 URL。
 emqx_durable_ingress_contract() {
-  local token rule legacy_raw_status legacy_command_status
+  local token rule get_rule capability_rule reply_rule data_rule rules legacy_raw_status legacy_command_status
   token="$(curl -fsS --max-time 3 -X POST "${EMQX_API_BASE_URL}/api/v5/login" \
     -H 'Content-Type: application/json' \
     -d "{\"username\":\"${EMQX_DASHBOARD_USER}\",\"password\":\"${EMQX_DASHBOARD_PASSWORD}\"}" \
@@ -796,12 +803,22 @@ emqx_durable_ingress_contract() {
   [[ -n "${token}" ]] || return 1
   rule="$(curl -fsS --max-time 3 "${EMQX_API_BASE_URL}/api/v5/rules/tc_durable_uplink" \
     -H "Authorization: Bearer ${token}" 2>/dev/null)" || return 1
+  get_rule="$(curl -fsS --max-time 3 "${EMQX_API_BASE_URL}/api/v5/rules/tc_durable_property_get" \
+    -H "Authorization: Bearer ${token}" 2>/dev/null)" || return 1
+  capability_rule="$(curl -fsS --max-time 3 "${EMQX_API_BASE_URL}/api/v5/rules/tc_durable_property_mixed_capability" \
+    -H "Authorization: Bearer ${token}" 2>/dev/null)" || return 1
+  reply_rule="$(curl -fsS --max-time 3 "${EMQX_API_BASE_URL}/api/v5/rules/tc_durable_property_mixed_reply" \
+    -H "Authorization: Bearer ${token}" 2>/dev/null)" || return 1
+  data_rule="$(curl -fsS --max-time 3 "${EMQX_API_BASE_URL}/api/v5/rules/tc_durable_data_uplink" \
+    -H "Authorization: Bearer ${token}" 2>/dev/null)" || return 1
+  rules="$(python3 -c 'import json,sys;print(json.dumps([json.loads(value) for value in sys.argv[1:]]))' \
+    "${rule}" "${get_rule}" "${capability_rule}" "${reply_rule}" "${data_rule}")" || return 1
   legacy_raw_status="$(curl -sS --max-time 3 -o /dev/null -w '%{http_code}' \
     "${EMQX_API_BASE_URL}/api/v5/rules/tc_raw_uplink" -H "Authorization: Bearer ${token}" 2>/dev/null)" || return 1
   legacy_command_status="$(curl -sS --max-time 3 -o /dev/null -w '%{http_code}' \
     "${EMQX_API_BASE_URL}/api/v5/bridges/webhook:tc_command_reply" \
     -H "Authorization: Bearer ${token}" 2>/dev/null)" || return 1
-  printf '%s' "${rule}" | python3 "${SCRIPT_DIR}/verify-emqx-durable-ingress.py" \
+  printf '%s' "${rules}" | python3 "${SCRIPT_DIR}/verify-emqx-durable-ingress.py" \
     --legacy-raw-status "${legacy_raw_status}" --legacy-command-status "${legacy_command_status}" \
     >/dev/null 2>&1 || return 1
   python3 "${DEPLOY_DIR}/scripts/emqx-environment-qualification.py" mqtt-isolation >/dev/null 2>&1
@@ -897,7 +914,7 @@ fi
 flush_test_redis_db() {
   local password out rc
   password="$(grep -E '^REDIS_PASSWORD=' "${DEPLOY_DIR}/.env" 2>/dev/null | cut -d= -f2- || true)"
-  password="${password:-thingscloud}"
+  password="${password:-thingslink}"
   log "清空专用 Redis DB ${REDIS_TEST_DB}（只清测试库，不碰 dev 的 DB 0）"
   local redis_cli=(docker exec -e "REDISCLI_AUTH=${password}" tc-redis redis-cli -n "${REDIS_TEST_DB}")
   if out="$("${redis_cli[@]}" FLUSHDB 2>&1)"; then
@@ -915,7 +932,7 @@ REDIS_TOUCHED=true
 flush_test_redis_db
 
 # S12-4c发布旅程必须消费真实受管宿主；旧旅程不额外构建，不能以测试Host替身放行。
-DASHBOARD_HOST_REGISTRY="${THINGS_CLOUD_DASHBOARD_HOST_REGISTRY_DIRECTORY:-}"
+DASHBOARD_HOST_REGISTRY="${THINGS_LINK_DASHBOARD_HOST_REGISTRY_DIRECTORY:-}"
 NEEDS_DASHBOARD_HOST="$(python3 - "${E2E_SPEC}" "${E2E_MATRIX_SPECS}" <<'PY_HOST'
 import re, sys
 selectors = sys.argv[2].split(':') if sys.argv[2] else [sys.argv[1]]
@@ -924,9 +941,9 @@ PY_HOST
 )"
 if [[ "${NEEDS_DASHBOARD_HOST}" == "true" && "${SKIP_BACKEND:-0}" != "1" ]]; then
   log "构建并登记发布旅程专用真实WebApp宿主（不覆盖既有登记、不部署）"
-  (cd "${CONSOLE_DIR}/../things-cloud-webapp" && pnpm build)
+  (cd "${CONSOLE_DIR}/../things-link-webapp" && pnpm build)
   DASHBOARD_HOST_REGISTRY="$(python3 -c 'import pathlib,tempfile; print(pathlib.Path(tempfile.mkdtemp(prefix="console-publication-host-")).resolve())')"
-  (cd "${CONSOLE_DIR}/../things-cloud-webapp" && python3 scripts/host-candidate.py register \
+  (cd "${CONSOLE_DIR}/../things-link-webapp" && python3 scripts/host-candidate.py register \
     --registry-directory "${DASHBOARD_HOST_REGISTRY}")
   log "测试宿主登记留存供复核：${DASHBOARD_HOST_REGISTRY}"
 fi
@@ -938,9 +955,9 @@ selectors = sys.argv[2].split(':') if sys.argv[2] else [sys.argv[1]]
 print('true' if any(not item or re.search(item, 'e2e/dashboard-share.spec.ts') for item in selectors) else 'false')
 PY_SHARE
 )"
-SHARE_ENABLED="${THINGS_CLOUD_DASHBOARD_SHARE_ENABLED:-false}"
-SHARE_ORIGIN="${THINGS_CLOUD_DASHBOARD_SHARE_HOST_ORIGIN:-}"
-SHARE_LOOPBACK="${THINGS_CLOUD_DASHBOARD_SHARE_ALLOW_LOOPBACK_HTTP:-false}"
+SHARE_ENABLED="${THINGS_LINK_DASHBOARD_SHARE_ENABLED:-false}"
+SHARE_ORIGIN="${THINGS_LINK_DASHBOARD_SHARE_HOST_ORIGIN:-}"
+SHARE_LOOPBACK="${THINGS_LINK_DASHBOARD_SHARE_ALLOW_LOOPBACK_HTTP:-false}"
 # 所有自有后端都必须取得非空日志目录；空LOG_PATH会把滚动文件解析到根目录。
 E2E_BACKEND_LOG_PATH="${LOG_PATH:-}"
 if [[ "${SKIP_BACKEND:-0}" != "1" && -z "${E2E_BACKEND_LOG_PATH}" ]]; then
@@ -961,8 +978,9 @@ if [[ "${NEEDS_SHARE_HOST}" == "true" ]]; then
   fi
 fi
 
-# 受控SMTP独立选场：临时可信TLS、真实邮件接收，不关闭信任检查或改变生产重试间隔。
-if ${CONTROLLED_SMTP}; then
+# 模拟器与受控SMTP共用本轮可信TLS；认证/ACL保持，收尾必须恢复监听器。
+simulator_java_args=()
+if ${WITH_SIMULATOR} || ${CONTROLLED_SMTP}; then
   TEST_TLS_DIRECTORY="${CONSOLE_DIR}/.e2e-evidence/tls-${TS}-$$"
   [[ ! -e "${TEST_TLS_DIRECTORY}" ]] || { log "错误：测试TLS目录已存在"; TEST_TLS_DIRECTORY=""; exit 1; }
   EMQX_DASHBOARD_USER="${EMQX_DASHBOARD_USER}" EMQX_DASHBOARD_PASSWORD="${EMQX_DASHBOARD_PASSWORD}" \
@@ -971,6 +989,16 @@ if ${CONTROLLED_SMTP}; then
   keytool -importcert -noprompt -alias controlled-test-ca -storetype PKCS12 \
     -keystore "${TEST_TLS_DIRECTORY}/trust.p12" -storepass changeit \
     -file "${TEST_TLS_DIRECTORY}/ca.pem" >/dev/null 2>&1
+  if ${WITH_SIMULATOR}; then
+    simulator_java_args=("-Djavax.net.ssl.trustStore=${TEST_TLS_DIRECTORY}/trust.p12"
+      "-Djavax.net.ssl.trustStoreType=PKCS12" "-Djavax.net.ssl.trustStorePassword=changeit")
+    export E2E_SIMULATOR_BASE_URL=http://localhost:8090
+    export E2E_SIMULATOR_BROKER_URI="ssl://localhost:${EMQX_MQTT_TLS_PORT:-8883}"
+  fi
+fi
+
+# 受控SMTP仍独立选场；不关闭信任检查或改变生产重试间隔。
+if ${CONTROLLED_SMTP}; then
   node "${SCRIPT_DIR}/controlled-smtp-fixture.mjs" "${TEST_TLS_DIRECTORY}" \
     >"${DEFAULT_E2E_LOG_DIR}/controlled-smtp-${E2E_LOG_TIMESTAMP}.log" 2>&1 &
   SMTP_PID=$!
@@ -985,20 +1013,20 @@ if ${CONTROLLED_SMTP}; then
     "MAIL_SMTP_USERNAME=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["username"])' "${TEST_TLS_DIRECTORY}/smtp-config.json")"
     "MAIL_SMTP_PASSWORD=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["password"])' "${TEST_TLS_DIRECTORY}/smtp-config.json")")
   if [[ "${E2E_SPEC}" == "invitation-registration-smtp.spec.ts" ]]; then
-    smtp_env_args+=("THINGS_CLOUD_CONSOLE_BASE_URL=${E2E_URL}")
+    smtp_env_args+=("THINGS_LINK_CONSOLE_BASE_URL=${E2E_URL}")
   fi
   smtp_java_args=("-Djavax.net.ssl.trustStore=${TEST_TLS_DIRECTORY}/trust.p12"
     "-Djavax.net.ssl.trustStorePassword=changeit"
     "-Dspring.mail.properties.mail.smtp.ssl.checkserveridentity=true"
-    "-Dlogging.level.com.things.cloud.support.notification.mail.SmtpMailSender=WARN"
-    "-Dlogging.level.com.things.cloud.support.notification.mail.MailConfiguration=WARN")
+    "-Dlogging.level.com.things.link.support.notification.mail.SmtpMailSender=WARN"
+    "-Dlogging.level.com.things.link.support.notification.mail.MailConfiguration=WARN")
   export E2E_CONTROLLED_SMTP=1 E2E_TEST_TLS_DIRECTORY="${TEST_TLS_DIRECTORY}"
   if [[ "${E2E_SPEC}" == "property-automation-smtp.spec.ts" ]]; then
-    [[ -f /.thingscloud-local-ci ]] || { log "属性自动化运营夹具只允许隔离 Dind 选场"; exit 1; }
-    smtp_env_args+=("THINGS_CLOUD_AUTOMATION_PROPERTY_ENABLED=true")
+    [[ -f /.thingslink-local-ci ]] || { log "属性自动化运营夹具只允许隔离 Dind 选场"; exit 1; }
+    smtp_env_args+=("THINGS_LINK_AUTOMATION_PROPERTY_ENABLED=true")
   elif [[ "${E2E_SPEC}" == "time-once-smtp.spec.ts" || "${E2E_SPEC}" == "time-cron-smtp.spec.ts" ]]; then
-    [[ -f /.thingscloud-local-ci ]] || { log "时间自动化运营夹具只允许隔离 Dind 选场"; exit 1; }
-    smtp_env_args+=("THINGS_CLOUD_AUTOMATION_TIME_ENABLED=true")
+    [[ -f /.thingslink-local-ci ]] || { log "时间自动化运营夹具只允许隔离 Dind 选场"; exit 1; }
+    smtp_env_args+=("THINGS_LINK_AUTOMATION_TIME_ENABLED=true")
   fi
 fi
 
@@ -1010,10 +1038,10 @@ if [[ "${SKIP_BACKEND:-0}" != "1" ]]; then
   else
     log "构建后端胖 jar（普通运行，不构成正式逐场资格）"
     # D-163 已按根因修复：模拟器的可执行 JAR 改带 exec 分类器，主构件保留普通 JAR，
-    # 因此 bootstrap 的测试编译在这个 `package` 里能正常解析 `com.things.cloud.simulator.*`，
+    # 因此 bootstrap 的测试编译在这个 `package` 里能正常解析 `com.things.link.simulator.*`，
     # 不再需要 `-Dmaven.test.skip=true` 这一变通；这里只用 `-DskipTests` 跳过**执行**测试。
-    (cd "${BACKEND_DIR}" && ./mvnw -q -pl things-cloud-bootstrap -am package -DskipTests)
-    JAR="$(ls "${BACKEND_DIR}"/things-cloud-bootstrap/target/things-cloud-bootstrap-*.jar | head -1)"
+    (cd "${BACKEND_DIR}" && ./mvnw -q -pl things-link-bootstrap -am package -DskipTests)
+    JAR="$(ls "${BACKEND_DIR}"/things-link-bootstrap/target/things-link-bootstrap-*.jar | head -1)"
   fi
   # 仅向本次测试后端注入独立随机主密钥，不写仓库/文件、不调用模型供应商。
   # 合并既有测试配置；显式覆盖 assistant 凭据环，避免继承真实项目主密钥。
@@ -1022,9 +1050,9 @@ import base64, json, os, secrets
 config = json.loads(os.environ.get("SPRING_APPLICATION_JSON") or "{}")
 # Spring JSON 支持嵌套及点分属性；测试凭据设置应只有一个来源。
 for key in list(config):
-    if key.startswith("things-cloud.assistant.credentials"):
+    if key.startswith("things-link.assistant.credentials"):
         del config[key]
-config.setdefault("things-cloud", {}).setdefault("assistant", {})["credentials"] = {
+config.setdefault("things-link", {}).setdefault("assistant", {})["credentials"] = {
     "active-key-id": "e2e",
     "keys": {"e2e": base64.b64encode(secrets.token_bytes(32)).decode("ascii")},
 }
@@ -1039,20 +1067,21 @@ PY_AGENT_KEY
   SERVER_PORT="${BASE_PORT}" \
   EMQX_API_KEY="${EMQX_API_KEY}" \
   EMQX_API_SECRET="${EMQX_API_SECRET}" \
-  THINGS_CLOUD_STORAGE_INTERNAL_ENDPOINT="${MINIO_STORAGE_ENDPOINT}" \
-  THINGS_CLOUD_STORAGE_EXTERNAL_ENDPOINT="${MINIO_STORAGE_ENDPOINT}" \
-  THINGS_CLOUD_STORAGE_ACCESS_KEY="${MINIO_ROOT_USER}" \
-  THINGS_CLOUD_STORAGE_SECRET_KEY="${MINIO_ROOT_PASSWORD}" \
-  THINGS_CLOUD_OTA_STORAGE_BUCKET="${OTA_STORAGE_BUCKET}" \
-  THINGS_CLOUD_DASHBOARD_HOST_REGISTRY_DIRECTORY="${DASHBOARD_HOST_REGISTRY}" \
-  THINGS_CLOUD_DASHBOARD_CONSOLE_ALLOWED_ORIGINS="${E2E_URL}" \
-  THINGS_CLOUD_DASHBOARD_SHARE_ENABLED="${SHARE_ENABLED}" \
-  THINGS_CLOUD_DASHBOARD_SHARE_HOST_ORIGIN="${SHARE_ORIGIN}" \
-  THINGS_CLOUD_DASHBOARD_SHARE_ALLOW_LOOPBACK_HTTP="${SHARE_LOOPBACK}" \
+  THINGS_LINK_STORAGE_INTERNAL_ENDPOINT="${MINIO_STORAGE_ENDPOINT}" \
+  THINGS_LINK_STORAGE_EXTERNAL_ENDPOINT="${MINIO_STORAGE_ENDPOINT}" \
+  THINGS_LINK_STORAGE_ACCESS_KEY="${MINIO_ROOT_USER}" \
+  THINGS_LINK_STORAGE_SECRET_KEY="${MINIO_ROOT_PASSWORD}" \
+  THINGS_LINK_OTA_STORAGE_BUCKET="${OTA_STORAGE_BUCKET}" \
+  THINGS_LINK_DASHBOARD_HOST_REGISTRY_DIRECTORY="${DASHBOARD_HOST_REGISTRY}" \
+  THINGS_LINK_DASHBOARD_CONSOLE_ALLOWED_ORIGINS="${E2E_URL}" \
+  THINGS_LINK_DASHBOARD_SHARE_ENABLED="${SHARE_ENABLED}" \
+  THINGS_LINK_DASHBOARD_SHARE_HOST_ORIGIN="${SHARE_ORIGIN}" \
+  THINGS_LINK_DASHBOARD_SHARE_ALLOW_LOOPBACK_HTTP="${SHARE_LOOPBACK}" \
   LOG_PATH="${E2E_BACKEND_LOG_PATH}" \
-  THINGS_CLOUD_INGRESS_HANDOFF_ENABLED=true \
-  THINGS_CLOUD_INGRESS_HANDOFF_BROKER_URI="tcp://127.0.0.1:${EMQX_MQTT_PORT}" \
-  THINGS_CLOUD_INGRESS_HANDOFF_PASSWORD="${INGRESS_HANDOFF_PASSWORD}" \
+  THINGS_LINK_INTEGRATION_REALTIME_ENABLED=true \
+  THINGS_LINK_INGRESS_HANDOFF_ENABLED=true \
+  THINGS_LINK_INGRESS_HANDOFF_BROKER_URI="tcp://127.0.0.1:${EMQX_MQTT_PORT}" \
+  THINGS_LINK_INGRESS_HANDOFF_PASSWORD="${INGRESS_HANDOFF_PASSWORD}" \
     java "${smtp_java_args[@]+"${smtp_java_args[@]}"}" -jar "${JAR}" >"${BACKEND_LOG}" 2>&1 &
   BACKEND_PID=$!
   unset INGRESS_HANDOFF_PASSWORD AGENT_TEST_APPLICATION_JSON
@@ -1104,8 +1133,34 @@ fi
 if [[ -f "${DEPLOY_DIR}/.env" ]]; then
   source <(grep -E '^POSTGRES_USER=|^POSTGRES_DB=' "${DEPLOY_DIR}/.env")
 fi
-PGUSER="${POSTGRES_USER:-thingscloud}"
-PGDB="${POSTGRES_DB:-thingscloud}"
+PGUSER="${POSTGRES_USER:-thingslink}"
+PGDB="${POSTGRES_DB:-thingslink}"
+# 普通默认矩阵也独立供给通知账号；其他旅程有意共享成员，不能删除或复用那些关系。
+if [[ -z "${E2E_OWNED_RUNTIME:-}" && -z "${E2E_BATCH_DIR:-}" ]]; then
+  unset E2E_ALARM_INBOX_OWNER_EMAIL E2E_ALARM_INBOX_OWNER_PASSWORD E2E_ALARM_INBOX_OWNER_PROJECT_KEY
+  unset E2E_ALARM_INBOX_MEMBER_EMAIL E2E_ALARM_INBOX_MEMBER_PASSWORD E2E_ALARM_INBOX_MEMBER_PROJECT_KEY
+  if [[ -z "${E2E_SPEC}" && -z "${E2E_MATRIX_SPECS}" \
+    || "${E2E_SPEC}" == alarm-inbox.spec.ts ]]; then
+    log "预置本轮通知专用账号与项目（不复用普通成员，不构成独占运行资格）"
+    inbox_suffix="$(python3 -c 'import secrets; print(secrets.token_hex(12))')"
+    for inbox_role in OWNER MEMBER; do
+      inbox_email="e2e-inbox-${inbox_role}-${inbox_suffix}@example.com"
+      inbox_email="$(printf '%s' "${inbox_email}" | tr '[:upper:]' '[:lower:]')"
+      inbox_existing="$(docker exec tc-postgres psql -U "${PGUSER}" -d "${PGDB}" --no-psqlrc -t -A \
+        -c "SELECT count(*) FROM sys_account WHERE email='${inbox_email}';")"
+      [[ "${inbox_existing}" == 0 ]] || { log "错误：通知专用账号已存在，拒绝复用"; exit 1; }
+      if [[ "${inbox_role}" == OWNER ]]; then inbox_name='E2E项目'; else inbox_name='成员项目'; fi
+      "${DEPLOY_DIR}/scripts/add-console-account.sh" --email "${inbox_email}" --password "${PASSWORD}" \
+        --display-name "E2E-Inbox-${inbox_role}" --project-name "${inbox_name}" --plan-code PROFESSIONAL >/dev/null
+      inbox_key="$(docker exec tc-postgres psql -U "${PGUSER}" -d "${PGDB}" --no-psqlrc -t -A \
+        -c "SELECT p.project_key FROM sys_project p JOIN sys_project_member m ON m.project_id=p.id JOIN sys_account a ON a.id=m.account_id WHERE a.email='${inbox_email}' AND m.role='OWNER' AND m.status='ACTIVE' AND p.status='ACTIVE';")"
+      [[ "${inbox_key}" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$ ]] || { log "错误：通知专用项目不唯一或project_key无效"; exit 1; }
+      export "E2E_ALARM_INBOX_${inbox_role}_EMAIL=${inbox_email}"
+      export "E2E_ALARM_INBOX_${inbox_role}_PASSWORD=${PASSWORD}"
+      export "E2E_ALARM_INBOX_${inbox_role}_PROJECT_KEY=${inbox_key}"
+    done
+  fi
+fi
 E2E_PROJECT_KEY="$(docker exec tc-postgres psql -U "$PGUSER" -d "$PGDB" --no-psqlrc -t -A \
   -c "SELECT p.project_key FROM sys_project p JOIN sys_project_member pm ON pm.project_id = p.id JOIN sys_account a ON a.id = pm.account_id WHERE a.email = '${OWNER_EMAIL}' AND pm.role = 'OWNER' LIMIT 1;")"
 if [[ -z "$E2E_PROJECT_KEY" ]]; then
@@ -1119,11 +1174,11 @@ if $WITH_SIMULATOR; then
     SIM_JAR="${E2E_SIMULATOR_JAR}"
   else
     log "构建模拟器胖 jar（普通运行）"
-    (cd "${BACKEND_DIR}" && ./mvnw -q -pl things-cloud-simulator -am package -DskipTests)
-    SIM_JAR="$(ls "${BACKEND_DIR}"/things-cloud-simulator/target/things-cloud-simulator-*.jar | head -1)"
+    (cd "${BACKEND_DIR}" && ./mvnw -q -pl things-link-simulator -am package -DskipTests)
+    SIM_JAR="$(ls "${BACKEND_DIR}"/things-link-simulator/target/things-link-simulator-*.jar | head -1)"
   fi
   log "启动模拟器 ${SIM_JAR}（8090）"
-  java -jar "${SIM_JAR}" >"${SIMULATOR_LOG}" 2>&1 &
+  java ${simulator_java_args[@]+"${simulator_java_args[@]}"} -jar "${SIM_JAR}" >"${SIMULATOR_LOG}" 2>&1 &
   SIMULATOR_PID=$!
   sleep 1
   if ! kill -0 "${SIMULATOR_PID}" 2>/dev/null; then
@@ -1161,7 +1216,7 @@ fi
 
 if [[ "${NEEDS_SHARE_HOST}" == "true" ]]; then
   # exec使cleanup持有实际Vite PID；端口只允许本轮创建的宿主。
-  (cd "${CONSOLE_DIR}/../things-cloud-webapp" && VITE_DEV_API_TARGET="${BASE_URL}" \
+  (cd "${CONSOLE_DIR}/../things-link-webapp" && VITE_DEV_API_TARGET="${BASE_URL}" \
     exec node_modules/.bin/vite --host localhost --strictPort --port "${WEBAPP_PORT}" \
     >"${WEBAPP_LOG}" 2>&1) &
   WEBAPP_PID=$!

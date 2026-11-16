@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
   import { Plus } from '@element-plus/icons-vue'
 
@@ -315,7 +316,12 @@
       await ElMessageBox.confirm(
         '尚有未保存修改。离开会丢弃本地内容，已经发出的保存请求可能仍会完成。',
         '离开草稿编辑',
-        { confirmButtonText: '丢弃并离开', cancelButtonText: '继续编辑', type: 'warning' }
+        {
+          confirmButtonText: '丢弃并离开',
+          cancelButtonText: '继续编辑',
+          type: 'warning',
+          customClass: 'console-studio-feedback'
+        }
       )
       return true
     } catch {
@@ -369,8 +375,12 @@
 </script>
 
 <template>
-  <div class="console-page dashboard-designer" v-loading="state.loading">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace dashboard-designer"
+    v-loading="state.loading"
+  >
     <ManagementRenameDialog
+      class="console-developer-dialog console-studio-dialog"
       :target="renameTarget"
       kind="dashboards"
       :project-id="projectId"
@@ -480,7 +490,9 @@
             label="看板名称"
             min-width="220"
           />
-          <ElTableColumn show-overflow-tooltip prop="updatedAt" label="最近更新" min-width="190" />
+          <ElTableColumn show-overflow-tooltip prop="updatedAt" label="最近更新" min-width="190"
+            ><template #default="{ row }">{{ formatTime(row.updatedAt) }}</template></ElTableColumn
+          >
           <ElTableColumn class-name="console-table-actions-cell" label="操作" width="112"
             ><template #default="{ row }"
               ><ConsoleTableAction
@@ -574,6 +586,7 @@
         />
       </div>
       <DesignerDevicePreview
+        class="designer-preview"
         :schema="state.schema"
         :page-id="state.activePageId"
         :project-id="projectId"
@@ -581,7 +594,7 @@
       />
       <div class="workspace-scroll">
         <div class="workspace">
-          <aside class="component-panel">
+          <aside class="component-panel console-studio-form">
             <h3 class="console-heading">组件</h3>
             <ElButton
               data-testid="designer-add-text"
@@ -709,7 +722,7 @@
             @select="editor.select"
             @layout="layout"
           />
-          <aside class="property-panel">
+          <aside class="property-panel console-studio-form">
             <h3 class="console-heading">画布属性</h3>
             <label
               >主题<select
@@ -971,7 +984,7 @@
       </div>
     </template>
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-studio-dialog console-studio-form"
       v-model="createVisible"
       title="创建看板"
       width="420px"
@@ -1005,65 +1018,61 @@
 <style scoped>
   .dashboard-designer {
     min-width: 0;
-    padding: 10px;
   }
   .toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
-    margin-bottom: 10px;
   }
   .toolbar > .console-actions {
-    margin-bottom: 0;
-  }
-  .dashboard-designer :deep(.workspace-header > .console-actions) {
-    margin-bottom: 0;
+    margin: 0;
   }
   .hint,
   .revision {
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 20px;
     color: var(--el-text-color-secondary);
-  }
-  .designer-grants {
-    margin-top: 10px;
   }
   .designer-management {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 16px;
     align-items: start;
   }
-  .designer-management :deep(.console-editor-section) {
-    margin: 0;
-  }
-  @media (width <= 900px) {
-    .designer-management {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
   .workspace-scroll {
-    margin-top: 10px;
+    min-width: 0;
     overflow: auto;
   }
   .workspace {
     display: grid;
     grid-template-columns: 220px minmax(800px, 1fr) 240px;
-    gap: 10px;
+    gap: 16px;
     align-items: start;
   }
   .component-panel,
   .property-panel {
     min-width: 0;
-    padding: 12px;
+    padding: 16px;
     background: var(--el-bg-color);
-    border: 1px solid var(--el-border-color);
-    border-radius: 8px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px;
   }
-  h3 {
-    margin: 8px 0 12px;
+  .property-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .designer-preview {
+    padding: var(--console-page-spacing);
+    margin: 0;
+    border-radius: 4px;
+  }
+  .component-panel .console-heading,
+  .property-panel .console-heading {
+    margin: 0 0 12px;
     font-size: 14px;
+    line-height: 24px;
   }
   .component-panel .el-button {
     display: block;
@@ -1073,49 +1082,37 @@
   .page-button {
     display: block;
     width: 100%;
-    padding: 8px;
-    margin: 6px 0;
+    min-height: 32px;
+    padding: 6px 10px;
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 22px;
     color: var(--el-text-color-primary);
     text-align: left;
     overflow-wrap: anywhere;
-    background: transparent;
+    background: var(--el-bg-color);
     border: 1px solid var(--el-border-color);
-    border-radius: 5px;
+    border-radius: 4px;
   }
+  .page-button:hover:not(:disabled),
   .page-button.active {
     color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
     border-color: var(--el-color-primary);
-  }
-  label {
-    display: block;
-    margin: 12px 0;
-    font-size: 13px;
-  }
-  input,
-  textarea,
-  select {
-    box-sizing: border-box;
-    display: block;
-    width: 100%;
-    padding: 8px;
-    margin-top: 6px;
-    color: var(--el-text-color-primary);
-    background: var(--el-fill-color-blank);
-    border: 1px solid var(--el-border-color);
-    border-radius: 5px;
   }
   .layout-fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
-  .layout-fields label {
-    margin: 4px 0;
+  @media (width <= 900px) {
+    .designer-management {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
-  .error {
-    margin-top: 10px;
-  }
-  .pager {
-    margin-top: 10px;
+  @media (width <= 640px) {
+    .designer-management {
+      gap: 12px;
+    }
   }
 </style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import type { CSSProperties } from 'vue'
-  import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+  import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
   import deviceMark from '@/assets/images/dashboard/device-mark.png'
 
   const dataLabels: Record<string, string> = {

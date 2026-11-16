@@ -3,7 +3,7 @@
     ref="element"
     class="device-alarm-status"
     :class="{ 'has-alarm': state === 'active' }"
-    :title="observedAt ? `观测时间：${observedAt}` : undefined"
+    :title="observedAt ? `观测时间：${formatTime(observedAt)}` : undefined"
   >
     <ArtSvgIcon :icon="state === 'active' ? 'ri:alarm-warning-line' : 'ri:notification-off-line'" />
     {{ label }}
@@ -14,6 +14,7 @@
 <script setup lang="ts">
   import { requestDeviceAlarmStatus } from '@/api/device-alarm-status'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'
+  import { formatTime } from '@/utils/time'
 
   const props = defineProps<{ projectId: string; deviceId?: string; active: boolean }>()
   const element = ref<HTMLElement>()

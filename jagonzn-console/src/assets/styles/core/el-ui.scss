@@ -102,7 +102,7 @@ html.dark .el-card {
 .el-checkbox-button--default .el-checkbox-button__inner,
 // 修改 el-radio-button 高度
 .el-radio-button--default .el-radio-button__inner {
-  padding: 10px 15px !important;
+  padding: 4px 15px !important;
 }
 // -------------------------------- 修改 el-size=default 组件默认高度 end --------------------------------
 
@@ -118,8 +118,7 @@ html.dark .el-card {
 }
 
 .el-dialog {
-  border-radius: 100px !important;
-  border-radius: calc(var(--custom-radius) / 1.2 + 2px) !important;
+  border-radius: 4px !important;
   overflow: hidden;
 }
 

@@ -1,0 +1,89 @@
+<script setup lang="ts">
+import {showOperationFeedback} from '@/ui/operation-feedback'
+import {computed,nextTick,onScopeDispose,ref,shallowRef,watch} from 'vue'
+import {ElTable} from 'element-plus'
+import {session,projectId,currentProject} from '@/core/session'
+import {ApiError,IdentityChanged,errorMessage,identityEpoch,onIdentityChange} from '@/core/http'
+import CursorPager from '@/ui/CursorPager.vue'
+import {type DeviceGroup,type GroupTreePage} from './device-group-api'
+import {type MemberDevice,type MemberDirectory,type MemberPage,type GroupScope} from './group-members-api'
+import {groupExportQuery,groupMemberExportCsv,readGroupMemberExport,type GroupExportTransport} from './group-member-export'
+import {groupBulkSelection,groupBulkTransport,prepareGroupBulkRow,groupBulkKnownFailure,groupBulkKey,groupBulkObservation,groupPageCsv,type GroupBulkAction,type GroupBulkRow,type GroupBulkTransport} from './group-bulk'
+const props=withDefaults(defineProps<{group:DeviceGroup;scope:GroupScope;keyword:string;currentPage?:MemberPage;disabled?:boolean;transport?:GroupBulkTransport;exportTransport?:GroupExportTransport}>(),{disabled:false,transport:()=>groupBulkTransport,exportTransport:readGroupMemberExport})
+const emit=defineEmits<{locked:[value:boolean];changed:[]}>(),roles=['OWNER','ADMIN','OPERATOR','VIEWER']
+const readable=computed(()=>session.ready&&!session.transitioning&&!!session.user?.accountId&&!!currentProject.value&&roles.includes(session.user?.projectRole||'')&&roles.includes(currentProject.value?.myRole||''))
+const writable=computed(()=>readable.value&&currentProject.value?.status==='ACTIVE'&&props.group.type==='STATIC'&&props.scope==='DIRECT'&&['OWNER','ADMIN'].includes(session.user?.projectRole||'')&&['OWNER','ADMIN'].includes(currentProject.value?.myRole||''))
+const exporting=ref(false)
+const shown=ref(false),action=ref<GroupBulkAction>('ADD'),phase=ref<'select'|'preview'|'result'>('select'),error=ref(''),loading=ref(false),preparing=ref(false),writing=ref(false),checking=ref(false),stopping=ref(false)
+const page=ref(1),keyword=ref(''),appliedKeyword=ref(''),candidates=shallowRef<MemberDirectory>(),selection=shallowRef(new Map<string,MemberDevice>()),rows=shallowRef<GroupBulkRow[]>([]),table=ref<InstanceType<typeof ElTable>>()
+const target=shallowRef<DeviceGroup>(),targetPath=ref<{id:string;name:string}[]>([]),targetPage=ref(1),targets=shallowRef<GroupTreePage>(),targetLoading=ref(false)
+const locked=computed(()=>shown.value||exporting.value),busy=computed(()=>preparing.value||writing.value||checking.value||exporting.value),unknown=computed(()=>rows.value.some(row=>row.status==='UNKNOWN')),canFinish=computed(()=>!busy.value&&rows.value.filter(row=>row.status==='UNKNOWN').every(row=>row.checked)),ready=computed(()=>rows.value.filter(row=>row.status==='READY').length)
+const labels={READY:'待发送',NOOP:'无需修改',RUNNING:'正在提交',SUCCESS:'已完成',FAILED:'明确失败',UNKNOWN:'结果未知',NOTRUN:'未执行'}
+let generation=0,loadToken=0,targetToken=0,alive=true,syncing=false,listController:AbortController|undefined,actionController:AbortController|undefined,targetController:AbortController|undefined,exportController:AbortController|undefined
+function capture(){return{generation,epoch:identityEpoch(),project:projectId.value,account:session.user?.accountId,group:props.group.id}}
+function current(s:ReturnType<typeof capture>){return alive&&s.generation===generation&&s.epoch===identityEpoch()&&s.project===projectId.value&&s.account===session.user?.accountId&&s.group===props.group.id&&readable.value}
+function reset(){exportController?.abort();exporting.value=false;generation++;loadToken++;targetToken++;listController?.abort();actionController?.abort();targetController?.abort();shown.value=false;phase.value='select';loading.value=false;preparing.value=false;writing.value=false;checking.value=false;stopping.value=false;selection.value=new Map();rows.value=[];candidates.value=undefined;target.value=undefined;targets.value=undefined;targetPath.value=[];page.value=1;targetPage.value=1;keyword.value='';appliedKeyword.value='';error.value=''}
+function patch(index:number,change:Partial<GroupBulkRow>){rows.value=rows.value.map((row,i)=>i===index?{...row,...change}:row)}
+async function sync(){syncing=true;await nextTick();table.value?.clearSelection();for(const row of candidates.value?.items??[])if(selection.value.has(row.id))table.value?.toggleRowSelection(row,true);await nextTick();syncing=false}
+function selectable(row:MemberDevice){return !busy.value&&phase.value==='select'&&(selection.value.has(row.id)||selection.value.size<100)}
+function selectionChanged(values:MemberDevice[]){if(syncing||loading.value||busy.value||phase.value!=='select')return;const next=new Map(selection.value);for(const row of candidates.value?.items??[])next.delete(row.id);for(const row of values)next.set(row.id,row);try{if(next.size)groupBulkSelection([...next.values()]);selection.value=next;error.value=''}catch(cause){error.value=errorMessage(cause);void sync()}}
+async function load(){if(!shown.value||!writable.value||props.disabled||busy.value)return;const s=capture(),token=++loadToken;listController?.abort();listController=new AbortController();loading.value=true;candidates.value=undefined;error.value=''
+ try{const value=action.value==='ADD'?await props.transport.devices(s.project,appliedKeyword.value,page.value,listController.signal):(await props.transport.members(s.project,s.group,{scope:'DIRECT',keyword:appliedKeyword.value,page:page.value,limit:20},listController.signal)).directory;if(current(s)&&token===loadToken){candidates.value=value;await sync()}}
+ catch(cause){if(current(s)&&token===loadToken)error.value=errorMessage(cause)}finally{if(current(s)&&token===loadToken)loading.value=false}}
+async function loadTargets(){if(!shown.value||!writable.value||props.disabled||busy.value||action.value!=='MOVE')return;const s=capture(),token=++targetToken;targetController?.abort();targetController=new AbortController();targetLoading.value=true;targets.value=undefined
+ try{const value=await props.transport.groups(s.project,{parentId:targetPath.value.at(-1)?.id??null,page:targetPage.value,size:20},targetController.signal);if(current(s)&&token===targetToken)targets.value=value}catch(cause){if(current(s)&&token===targetToken)error.value=errorMessage(cause)}finally{if(current(s)&&token===targetToken)targetLoading.value=false}}
+function open(){if(!writable.value||props.disabled||locked.value)return;reset();shown.value=true;action.value='ADD';void load()}
+function changeAction(value:unknown){if(busy.value||phase.value!=='select'||!['ADD','REMOVE','MOVE'].includes(String(value)))return;action.value=value as GroupBulkAction;selection.value=new Map();target.value=undefined;targetPath.value=[];targetPage.value=1;page.value=1;keyword.value='';appliedKeyword.value='';void load();if(action.value==='MOVE')void loadTargets()}
+function search(){if(loading.value||busy.value)return;appliedKeyword.value=keyword.value;page.value=1;void load()}
+function turn(value:number){if(loading.value||busy.value||value<1||value>1000000)return;page.value=value;void load()}
+function chooseTarget(group:DeviceGroup){if(!busy.value&&group.type==='STATIC'&&group.id!==props.group.id)target.value=group}
+function targetEnter(group:DeviceGroup){if(busy.value||targetLoading.value)return;targetPath.value.push({id:group.id,name:group.name});targetPage.value=1;void loadTargets()}
+function targetBack(index:number){if(busy.value||targetLoading.value)return;targetPath.value=targetPath.value.slice(0,index+1);targetPage.value=1;void loadTargets()}
+function turnTargets(value:number){if(busy.value||targetLoading.value||value<1||value>1000000)return;targetPage.value=value;void loadTargets()}
+async function prepare(){if(!writable.value||props.disabled||busy.value||loading.value||phase.value!=='select'||action.value==='MOVE'&&!target.value)return
+ let selected:readonly MemberDevice[];try{selected=groupBulkSelection([...selection.value.values()])}catch(cause){error.value=errorMessage(cause);return}
+ const s=capture(),group=props.group,kind=action.value,targetId=target.value?.id;preparing.value=true;rows.value=[];error.value='';actionController=new AbortController();const signal=actionController.signal,result:GroupBulkRow[]=[]
+ try{for(const device of selected){if(!current(s)||!writable.value||props.disabled||signal.aborted)throw new Error('准备已停止，未发送修改');result.push(await prepareGroupBulkRow(props.transport,s.project,group,kind,targetId,device,signal))}if(current(s)){rows.value=result;phase.value='preview'}}catch(cause){if(current(s))error.value=signal.aborted?'准备已取消，未发送任何修改':errorMessage(cause)}finally{if(current(s))preparing.value=false}}
+function back(){if(busy.value||unknown.value)return;rows.value=[];phase.value='select';void load()}
+async function confirm(){if(!writable.value||props.disabled||busy.value||phase.value!=='preview'||!ready.value)return;const s=capture();phase.value='result';writing.value=true;stopping.value=false;error.value='';actionController=new AbortController();let attempted=false
+ try{for(let index=0;index<rows.value.length;index++){const row=rows.value[index]!;if(row.status!=='READY')continue;if(!current(s))return;if(stopping.value||!writable.value||props.disabled)break;patch(index,{status:'RUNNING',detail:'正在提交；该行只发送一次'});attempted=true
+   try{await props.transport.write(row.intent,actionController.signal);if(!current(s))return;patch(index,{status:'SUCCESS',detail:'已取得该行操作回执'})}
+   catch(cause){if(!current(s)||cause instanceof IdentityChanged)return;patch(index,{status:groupBulkKnownFailure(cause)?'FAILED':'UNKNOWN',detail:errorMessage(cause),checked:false});error.value='已停止后续设备；不会自动重试或继续。';break}
+  }
+ }finally{if(current(s)){rows.value=rows.value.map(row=>row.status==='READY'?{...row,status:'NOTRUN',detail:'批次停止，未发送'}:row);writing.value=false;if(attempted)emit('changed')}}}
+function stop(){if(preparing.value){actionController?.abort();return}if(writing.value){stopping.value=true;error.value='停止后续请求；正在等待已发送的一行返回，不撤销该行。'}}
+async function recover(){if(!readable.value||busy.value||!unknown.value)return;const s=capture();checking.value=true;actionController=new AbortController();error.value=''
+ try{for(let index=0;index<rows.value.length;index++){const row=rows.value[index]!;if(row.status!=='UNKNOWN')continue;try{const value=await props.transport.recover(row.intent,actionController.signal);if(!current(s))return;patch(index,{checked:true,observation:groupBulkObservation(value)})}catch(cause){if(!current(s))return;if(cause instanceof ApiError&&cause.status===404)patch(index,{checked:true,observation:'原设备或组当前不可见；原请求历史仍未知'});else throw cause}}}catch(cause){if(current(s))error.value=errorMessage(cause)}finally{if(current(s))checking.value=false}}
+function close(){if(busy.value||unknown.value)return;reset()}
+function finish(){if(!canFinish.value)return;const unresolved=unknown.value;reset();showOperationFeedback(unresolved?'已结束核对，原操作结果仍未确认':'组批量操作已结束',unresolved?'warning':'success')}
+function beforeClose(done:()=>void){if(!busy.value&&!unknown.value){close();done()}}
+function visibleChanged(value:boolean){if(!value)close()}
+function exportPage(){if(!readable.value||props.disabled||locked.value||!props.currentPage)return;try{if(props.currentPage.group.id!==props.group.id||props.currentPage.scope!==props.scope)throw new Error('当前页与组范围不一致，请先刷新成员');const file=groupPageCsv(props.currentPage),url=URL.createObjectURL(new Blob([file.text],{type:'text/csv;charset=utf-8'}));try{const link=document.createElement('a');link.href=url;link.download=file.filename;link.click()}finally{URL.revokeObjectURL(url)}showOperationFeedback('已导出当前成员页')}catch(cause){showOperationFeedback(errorMessage(cause),'error')}}
+async function exportComplete(){if(!readable.value||props.disabled||locked.value)return;const s=capture();let query:ReturnType<typeof groupExportQuery>
+ try{query=groupExportQuery(s.project,s.group,props.scope,props.keyword)}catch(cause){showOperationFeedback(errorMessage(cause),'error');return}
+ exporting.value=true;exportController=new AbortController()
+ try{const snapshot=await props.exportTransport(query,exportController.signal);if(!current(s))return;const file=groupMemberExportCsv(snapshot,query),url=URL.createObjectURL(new Blob([file.text],{type:'text/csv;charset=utf-8'}));try{const link=document.createElement('a');link.href=url;link.download=file.filename;link.click()}finally{URL.revokeObjectURL(url)}showOperationFeedback(`已导出 ${snapshot.total} 台设备`)}
+ catch(cause){if(current(s)&&!(cause instanceof IdentityChanged))showOperationFeedback(`导出未生成：${errorMessage(cause)}`,'error')}
+ finally{if(current(s))exporting.value=false}}
+watch(locked,value=>emit('locked',value),{immediate:true,flush:'sync'})
+watch([()=>props.group.id,()=>props.scope,()=>props.keyword,()=>projectId.value,()=>session.user?.accountId,()=>readable.value],reset,{flush:'sync'})
+const dispose=onIdentityChange(reset)
+onScopeDispose(()=>{alive=false;reset();dispose();emit('locked',false)})
+</script>
+<template><div class="group-bulk-actions">
+ <el-button size="small" v-if="writable" :disabled="disabled||locked" @click="open">组批量操作</el-button><el-button size="small" :disabled="!readable||disabled||locked||!currentPage?.directory.items.length" @click="exportPage">导出当前成员页</el-button><el-button size="small" :loading="exporting" :disabled="!readable||disabled||locked" @click="exportComplete">导出当前完整条件（最多500台）</el-button>
+ <el-dialog :model-value="shown" title="组批量操作 · 最多100台" width="900px" destroy-on-close :close-on-click-modal="false" :close-on-press-escape="!busy&&!unknown" :before-close="beforeClose" @update:model-value="visibleChanged">
+  <p>人工翻页选择明确设备，逐项单并发执行，不是整批原子事务。遇失败立即停止后续；不会自动重试或续跑。</p><el-alert v-if="error" :title="error" type="warning" :closable="false"/>
+  <template v-if="phase==='select'"><el-radio-group :model-value="action" :disabled="busy" aria-label="组批量动作" @update:model-value="changeAction"><el-radio-button value="ADD">加入本组</el-radio-button><el-radio-button value="REMOVE">移出本组</el-radio-button><el-radio-button value="MOVE">移到其它静态组</el-radio-button></el-radio-group><p>当前来源组：{{group.name}}；已选 {{selection.size}} / 100 台。选集可跨人工浏览的页面，不代表全部符合条件。</p>
+   <div class="bulk-search"><el-input v-model="keyword" aria-label="批量设备搜索" placeholder="名称或标识" maxlength="128" :disabled="busy" @keyup.enter="search"/><el-button :disabled="loading||busy" @click="search">搜索候选</el-button><el-button :disabled="busy||!selection.size" @click="selection=new Map();sync()">清空选择</el-button></div>
+   <el-table ref="table" v-loading="loading" :data="candidates?.items??[]" row-key="id" @selection-change="selectionChanged"><el-table-column type="selection" width="50" :selectable="selectable"/><el-table-column prop="name" label="设备名称"/><el-table-column prop="id" label="设备ID" min-width="270"/></el-table>
+   <CursorPager v-if="candidates" :page="page" :limit="20" :total="candidates.total" :show-sizes="false" :loading="loading||busy" @update:page="turn"/>
+   <section v-if="action==='MOVE'" class="bulk-targets"><h3>目标静态组：{{target?.name??'请选择'}}</h3><nav><el-button text :disabled="busy||targetLoading" @click="targetBack(-1)">根组</el-button><el-button v-for="(part,index) in targetPath" :key="part.id" text :disabled="busy||targetLoading" @click="targetBack(index)">{{part.name}}</el-button></nav><div v-for="item in targets?.items" :key="item.group.id"><span>{{item.group.name}}</span><el-button :disabled="busy||item.group.type!=='STATIC'||item.group.id===group.id" @click="chooseTarget(item.group)">选择目标</el-button><el-button :disabled="busy||targetLoading" @click="targetEnter(item.group)">子组</el-button></div><CursorPager v-if="targets" :page="targetPage" :limit="20" :total="String(targets.total)" :show-sizes="false" :loading="busy||targetLoading" @update:page="turnTargets"/></section>
+  </template>
+  <template v-else><p>冻结选集 {{rows.length}} 台；{{action==='ADD'?'加入本组':action==='REMOVE'?'移出本组':'仅从本组移到已选目标组'}}。无需修改的行不发送；其它组保持。</p><el-table :data="rows"><el-table-column prop="name" label="设备名称"/><el-table-column label="结果" width="110"><template #default="{row}">{{labels[row.status as keyof typeof labels]}}</template></el-table-column><el-table-column label="说明" min-width="280"><template #default="{row}">{{row.detail}}<p v-if="row.status==='UNKNOWN'">原键：<code>{{groupBulkKey(row)}}</code></p><p v-if="row.observation">{{row.observation}}</p></template></el-table-column></el-table></template>
+  <template #footer><el-button v-if="!busy&&!unknown" @click="close">取消</el-button><el-button v-if="phase==='select'" type="primary" :disabled="!writable||disabled||busy||loading||!selection.size||action==='MOVE'&&!target" :loading="preparing" @click="prepare">核对所选设备</el-button><template v-if="phase==='preview'"><el-button :disabled="busy" @click="back">返回选择</el-button><el-button type="primary" :disabled="!writable||disabled||busy||!ready" @click="confirm">确认逐项执行</el-button></template><el-button v-if="writing||preparing" @click="stop">停止后续</el-button><el-button v-if="unknown" :disabled="busy||!readable" :loading="checking" @click="recover">只读核对未知行</el-button><el-button v-if="phase==='result'" :disabled="!canFinish" @click="finish">结束本次批次</el-button></template>
+ </el-dialog>
+</div></template>
+<style scoped>
+.group-bulk-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}.bulk-search{display:flex;gap:10px;margin:15px 0;max-width:620px}.bulk-search .el-input{min-width:0}.bulk-targets{border:1px solid var(--tl-border);padding:12px;margin-top:15px}.bulk-targets h3{font-size:15px;font-weight:500}.bulk-targets>div{display:flex;align-items:center;gap:10px;padding:7px 0}.bulk-targets>div>span{flex:1;overflow-wrap:anywhere}.group-bulk-actions code{overflow-wrap:anywhere}.group-bulk-actions :deep(.el-dialog){max-width:calc(100vw - 30px)}.group-bulk-actions :deep(.cell){overflow-wrap:anywhere}
+</style>

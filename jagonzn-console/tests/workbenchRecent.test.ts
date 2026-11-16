@@ -28,11 +28,11 @@ it('expires records and tolerates malformed storage', () => {
   vi.advanceTimersByTime(7 * 86400000)
   expect(readRecentResources(scope)).toEqual([])
   localStorage.setItem(
-    'thingscloud-recent-v1:u:t:p',
+    'thingslink-recent-v1:u:t:p',
     '[{"kind":"secret","id":"x","label":"x","visitedAt":1}]'
   )
   expect(readRecentResources(scope)).toEqual([])
-  localStorage.setItem('thingscloud-recent-v1:u:t:p', '{')
+  localStorage.setItem('thingslink-recent-v1:u:t:p', '{')
   expect(readRecentResources(scope)).toEqual([])
   vi.useRealTimers()
 })

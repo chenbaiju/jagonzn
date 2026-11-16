@@ -1,0 +1,80 @@
+import {beforeEach,describe,expect,it,vi} from 'vitest'
+import {endUserApi} from '../../src/features/end-users/end-user-api'
+
+const mock=vi.hoisted(()=>({api:vi.fn()}))
+vi.mock('../../src/core/http',async original=>({...await original<typeof import('../../src/core/http')>(),api:mock.api}))
+const project='00000000-0000-4000-8000-000000000001',user='00000000-0000-4000-8000-000000000002'
+const row={id:user,username:'alice',displayName:'张三',status:'ACTIVE',role:'OPERATOR',roleStatus:'ACTIVE',assignedAt:'2026-01-01T00:00:00Z'}
+beforeEach(()=>mock.api.mockReset())
+describe('终端用户目录合同消费',()=>{
+ it('使用项目目录路径、20条游标页并保留角色状态',async()=>{
+  mock.api.mockResolvedValueOnce({items:[row],nextCursor:'next',hasMore:true})
+  const page=await endUserApi.list(project,undefined)
+  expect(mock.api).toHaveBeenCalledWith(`/api/v1/projects/${project}/end-users`,{query:{limit:20},signal:undefined})
+  expect(page.items).toEqual([row]);expect(page.hasMore).toBe(true);expect(page.nextCursor).toBe('next')
+ })
+ it('续页传递不透明游标',async()=>{
+  mock.api.mockResolvedValueOnce({items:[],nextCursor:null,hasMore:false})
+  await endUserApi.list(project,'cursor-1')
+  expect(mock.api).toHaveBeenCalledWith(`/api/v1/projects/${project}/end-users`,{query:{limit:20,cursor:'cursor-1'},signal:undefined})
+ })
+ it('不完整项、非法时间和缺失续页游标拒绝',async()=>{
+  mock.api.mockResolvedValueOnce({items:[{id:user}],nextCursor:null,hasMore:false})
+  await expect(endUserApi.list(project,undefined)).rejects.toThrow('终端用户目录项不完整')
+  mock.api.mockResolvedValueOnce({items:[{...row,assignedAt:'bad'}],nextCursor:null,hasMore:false})
+  await expect(endUserApi.list(project,undefined)).rejects.toThrow('终端用户时间')
+  mock.api.mockResolvedValueOnce({items:[row],nextCursor:null,hasMore:true})
+  await expect(endUserApi.list(project,undefined)).rejects.toThrow('续页游标')
+ })
+ it('精确查找使用用户名查询并解码可空角色',async()=>{
+  mock.api.mockResolvedValueOnce({...row,role:null,roleStatus:null,assignedAt:null})
+  const found=await endUserApi.lookup(project,' Alice ')
+  expect(mock.api).toHaveBeenCalledWith(`/api/v1/projects/${project}/end-users/lookup`,{query:{username:'Alice'},signal:undefined})
+  expect(found.role).toBeNull()
+  await expect(endUserApi.lookup(project,'  ')).rejects.toThrow('精确用户名')
+ })
+ it('只读设备绑定解码且拒绝坏项',async()=>{
+  mock.api.mockResolvedValueOnce([{deviceId:'00000000-0000-4000-8000-000000000009',relationRole:'PRIMARY',status:'ACTIVE',createdAt:'2026-01-01T00:00:00Z'}])
+  expect(await endUserApi.devices(project,user)).toEqual([{deviceId:'00000000-0000-4000-8000-000000000009',relationRole:'PRIMARY',status:'ACTIVE',createdAt:'2026-01-01T00:00:00Z'}])
+  expect(mock.api).toHaveBeenLastCalledWith(`/api/v1/projects/${project}/end-users/${user}/devices`,{signal:undefined})
+  mock.api.mockResolvedValueOnce([{deviceId:'bad'}])
+  await expect(endUserApi.devices(project,user)).rejects.toThrow('设备绑定不完整')
+ })
+ it('角色修改、停用与恢复使用正式方法和路径',async()=>{
+  mock.api.mockResolvedValue(undefined)
+  await endUserApi.updateRole(project,user,'OPERATOR')
+  expect(mock.api).toHaveBeenLastCalledWith(`/api/v1/projects/${project}/end-users/${user}/role`,{method:'patch',body:{role:'OPERATOR'},signal:undefined})
+  await endUserApi.suspend(project,user)
+  expect(mock.api).toHaveBeenLastCalledWith(`/api/v1/projects/${project}/end-users/${user}/suspend`,{method:'post',signal:undefined})
+  await endUserApi.restore(project,user)
+  expect(mock.api).toHaveBeenLastCalledWith(`/api/v1/projects/${project}/end-users/${user}/restore`,{method:'post',signal:undefined})
+  await expect(endUserApi.updateRole(project,user,'OWNER' as never)).rejects.toThrow('角色无效')
+ })
+ it('预置用户和分配角色使用正式方法，预置回执允许角色为空',async()=>{
+  mock.api.mockResolvedValueOnce({...row,role:null,roleStatus:null,assignedAt:null})
+  const created=await endUserApi.provision(project,{username:'bob',password:'password1',displayName:'Bob'})
+  expect(mock.api).toHaveBeenLastCalledWith(`/api/v1/projects/${project}/end-users`,{method:'post',body:{username:'bob',password:'password1',displayName:'Bob'},signal:undefined})
+  expect(created.role).toBeNull()
+  mock.api.mockResolvedValueOnce(undefined)
+  await endUserApi.assignRole(project,user,'APP_ADMIN')
+  expect(mock.api).toHaveBeenLastCalledWith(`/api/v1/projects/${project}/end-users/${user}/role`,{method:'post',body:{role:'APP_ADMIN'},signal:undefined})
+ })
+ it('接收号码按项目合同读取并以null清除、revision做CAS',async()=>{
+  mock.api.mockResolvedValueOnce({voiceNumber:'+8613800000000',smsNumber:null,revision:'2'})
+  expect(await endUserApi.notificationContact(project,user)).toEqual({voiceNumber:'+8613800000000',smsNumber:null,revision:'2'})
+  expect(mock.api).toHaveBeenLastCalledWith(`/api/v1/projects/${project}/end-users/${user}/notification-contact`,{signal:undefined})
+  mock.api.mockResolvedValueOnce({voiceNumber:null,smsNumber:'+8613900000000',revision:'3'})
+  expect(await endUserApi.updateNotificationContact(project,user,{voiceNumber:null,smsNumber:'+8613900000000',expectedRevision:'2'})).toEqual({voiceNumber:null,smsNumber:'+8613900000000',revision:'3'})
+  expect(mock.api).toHaveBeenLastCalledWith(`/api/v1/projects/${project}/end-users/${user}/notification-contact`,{method:'put',body:{voiceNumber:null,smsNumber:'+8613900000000',expectedRevision:'2'},signal:undefined})
+ })
+ it('接收号码坏回执、非法号码与版本拒绝',async()=>{
+  mock.api.mockResolvedValueOnce({voiceNumber:'13800000000',smsNumber:null,revision:'0'})
+  await expect(endUserApi.notificationContact(project,user)).rejects.toThrow('电话接收号码格式无效')
+  mock.api.mockResolvedValueOnce({voiceNumber:null,smsNumber:null,revision:'00'})
+  await expect(endUserApi.notificationContact(project,user)).rejects.toThrow('接收号码版本无效')
+  mock.api.mockResolvedValueOnce({voiceNumber:null,revision:'0'})
+  await expect(endUserApi.notificationContact(project,user)).rejects.toThrow('接收号码响应不完整')
+  await expect(endUserApi.updateNotificationContact(project,user,{voiceNumber:'+86bad',smsNumber:null,expectedRevision:'0'})).rejects.toThrow('电话接收号码格式无效')
+  await expect(endUserApi.updateNotificationContact(project,user,{voiceNumber:null,smsNumber:null,expectedRevision:'9223372036854775808'})).rejects.toThrow('接收号码版本无效')
+ })
+})

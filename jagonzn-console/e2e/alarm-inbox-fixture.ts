@@ -87,7 +87,7 @@ export class AlarmInboxFixture {
     )
     if (existing !== 0) throw new Error('通知E2E存在历史交叉成员，拒绝覆盖或复用')
     if (
-      this.configuration.owned &&
+      (this.configuration.owned || this.configuration.dedicated) &&
       sql(
         "SELECT count(*) FROM alarm_event WHERE project_id IN (:'ownerProject'::uuid,:'memberProject'::uuid);",
         this.identities()

@@ -1,10 +1,12 @@
 // @vitest-environment node
 import { createHash } from 'node:crypto'
-import { resolve } from 'node:path'
+import { resolve as nativeResolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
 import { verifyOwnedRuntime, type OwnedRuntimeIO } from '../e2e/owned-runtime-setup'
 
+// 模拟Unix运行进程时统一夹具路径，不改变真实运行守卫。
+const resolve = (...parts: string[]) => nativeResolve(...parts).replaceAll('\\', '/')
 const consoleRoot = fileURLToPath(new URL('..', import.meta.url))
 const repoRoot = resolve(consoleRoot, '..')
 const logs = resolve(consoleRoot, 'logs')
@@ -30,7 +32,7 @@ function fixture() {
       imageDigest: 'sha256:' + 'c'.repeat(64),
       port: 5549,
       database: 'tc_console_wp03_guard',
-      user: 'thingscloud',
+      user: 'thingslink',
       databaseOid: 19384
     },
     backendPort: 8090,
@@ -53,9 +55,9 @@ function fixture() {
     hostDescriptorPath: host.path,
     hostDescriptorSha256: host.sha256,
     sourceFiles: [
-      'things-cloud-console/e2e/owned-runtime-setup.ts',
-      'things-cloud-console/playwright.config.ts',
-      'things-cloud-console/vite.config.ts'
+      'jagonzn-console/e2e/owned-runtime-setup.ts',
+      'jagonzn-console/playwright.config.ts',
+      'jagonzn-console/vite.config.ts'
     ].map((path) => {
       const bytes = Buffer.from(path)
       files.set(resolve(repoRoot, path), bytes)
@@ -75,7 +77,7 @@ function fixture() {
   processes.set(101, { command: backendCommand, cwd: repoRoot, port: 8090 })
   for (const [role, pid, port, cwd] of [
     ['vite', 102, 3019, consoleRoot],
-    ['webapp', 103, 4018, resolve(repoRoot, 'things-cloud-webapp')]
+    ['webapp', 103, 4018, resolve(repoRoot, 'things-link-webapp')]
   ] as const) {
     const scriptPath = resolve(cwd, 'node_modules/vite/bin/vite.js'),
       nodePath = '/runtime/bin/node'
@@ -105,7 +107,7 @@ function fixture() {
             ConfigImage: runtime.postgres.image
           }
         : { Id: sha(role), Image: 'sha256:' + sha(role + '-image'), ConfigImage: role + ':frozen' }
-    runtime.containers[role] = { ...expected, Labels: { 'thingscloud.owner': 'console-wp03' } }
+    runtime.containers[role] = { ...expected, Labels: { 'thingslink.owner': 'console-wp03' } }
     const ports: any = { [target]: [{ HostIp: '127.0.0.1', HostPort: String(port) }] }
     if (role === 'emqx')
       Object.assign(ports, {
@@ -233,7 +235,7 @@ describe('owned default matrix global setup', () => {
     [
       'owner drift',
       (f: ReturnType<typeof fixture>) => {
-        f.actuals['tc-console-wp03-redis'].Labels = { 'thingscloud.owner': 'developer' }
+        f.actuals['tc-console-wp03-redis'].Labels = { 'thingslink.owner': 'developer' }
       }
     ],
     [
@@ -327,7 +329,7 @@ describe('owned default matrix global setup', () => {
       const f = fixture(),
         snapshot: any = { sourceCommit: f.runtime.sourceCommit, files: f.runtime.sourceFiles }
       if (kind === 'files drift')
-        snapshot.files = [{ path: 'things-cloud-console/vite.config.ts', sha256: 'e'.repeat(64) }]
+        snapshot.files = [{ path: 'jagonzn-console/vite.config.ts', sha256: 'e'.repeat(64) }]
       else if (kind === 'wrong source identity') snapshot.sourceCommit = 'e'.repeat(40)
       else snapshot.uncontrolled = true
       const bytes = Buffer.from(JSON.stringify(snapshot))

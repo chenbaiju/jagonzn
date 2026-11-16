@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -92,16 +93,52 @@ def clean_head():
 
 def tracked_files():
     """源码+工具+部署工作树字节共同冻结，不只信任 Git 的 CRLF 归一化 blob。"""
-    paths = command(["git", "ls-files", "-z", "--", "things-cloud", "things-cloud-console", "deploy",
-                     "docs/openapi.json", "docs/TEST_VERIFICATION_POLICY.md",
-                     "docs/delivery/G2-A4a-e2e-evidence-contract.md",
-                     "docs/delivery/G2-A4c-combined-e2e-evidence-contract.md"]).split("\0")
+    paths = command(["git", "ls-files", "-z", "--", "things-link", "jagonzn-console", "deploy",
+                     "docs/openapi.json", "docs/delivery/verification/menu-catalog-baseline.json",
+                     "docs/delivery/verification/openapi-structure-baseline.json"]).split("\0")
     return {name: sha(inside(REPO, name)) for name in sorted(filter(None, paths))}
+
+
+DOCUMENTS = (
+    ".private/thingslink-docs/docs/TEST_VERIFICATION_POLICY.md",
+    ".private/thingslink-docs/docs/delivery/G2-A4a-e2e-evidence-contract.md",
+    ".private/thingslink-docs/docs/delivery/G2-A4c-combined-e2e-evidence-contract.md",
+)
+
+
+def documentation_identity():
+    """新资格绑定主仓 HEAD 与知识库规范原字节。"""
+    root = REPO
+    require(root.is_dir() and not root.is_symlink() and (root / ".git").exists(),
+            "qualification requires main repository")
+    require(Path(command(["git", "rev-parse", "--show-toplevel"], cwd=root)).resolve() == root.resolve(),
+            "repository documentation repository root mismatch")
+    require(not command(["git", "status", "--porcelain", "--untracked-files=all"], cwd=root),
+            "qualification requires clean repository documentation HEAD")
+    commit = command(["git", "rev-parse", "HEAD"], cwd=root)
+    files = {}
+    for name in DOCUMENTS:
+        path = inside(root, name)
+        require(path.is_file(), "missing repository policy: " + name)
+        command(["git", "ls-files", "--error-unmatch", "--", name], cwd=root)
+        files[name] = sha(path)
+    require(command(["git", "rev-parse", "HEAD"], cwd=root) == commit
+            and not command(["git", "status", "--porcelain", "--untracked-files=all"], cwd=root),
+            "repository documentation changed while fingerprinting")
+    return {"format": 2, "sourceCommit": commit, "files": files}
+
+
+def check_documentation_identity(candidate):
+    # 历史候选只允许离线复算，不能重新授予当前运行资格。
+    require("documentationBinding" in candidate,
+            "historical candidate has no repository policy binding; offline verification only")
+    require(documentation_identity() == candidate["documentationBinding"],
+            "repository documentation commit/policy bytes drift")
 
 
 def configuration_digest():
     """只输出摘要，防止 JVM/应用配置中的凭据落入候选或日志。"""
-    prefixes = ("SPRING_", "THINGS_CLOUD_", "EMQX_", "VITE_")
+    prefixes = ("SPRING_", "THINGS_LINK_", "EMQX_", "VITE_")
     names = {"JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "JAVA_HOME", "TEMP", "TMP", "TZ"}
     values = {key: value for key, value in os.environ.items()
               if key.startswith(prefixes) or key in names}
@@ -161,10 +198,40 @@ def require_combination_plan(candidate):
     return plan
 
 
+def require_current_durable_ingress(value):
+    """新资格必须完整绑定双规则；历史归档只在离线旧投影路径复算。"""
+    spec = importlib.util.spec_from_file_location("current_evidence_durable_contract", SCRIPTS / "verify-emqx-durable-ingress.py")
+    checker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checker)
+    expected = {"status": "PASS", "failures": [], **checker.contract_facts(checker.expected_rules()),
+                "legacyRawRuleHttpStatus": 404, "legacyCommandBridgeHttpStatus": 404}
+    actual = value.get("durableIngress")
+    require(isinstance(actual, dict)
+            and json.dumps(actual, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
+            == json.dumps(expected, sort_keys=True, ensure_ascii=True, separators=(",", ":")),
+            "invalid current EMQX dual durable ingress identity")
+
+
+def require_current_device_packet_bounds(value):
+    """当前资格拒绝旧全局1MiB或无设备zone证明；历史离线投影保持原样。"""
+    spec = importlib.util.spec_from_file_location("current_evidence_packet_contract", SCRIPTS / "verify-emqx-durable-ingress.py")
+    checker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(checker)
+    isolation = value.get("mqttIsolation")
+    require(isinstance(isolation, dict) and isolation.get("status") == "PASS" and isolation.get("contract") == "ADR0194",
+            "invalid current EMQX device packet boundary isolation")
+    enabled = isolation.get("enabledListeners")
+    require(isinstance(enabled, list) and enabled and all(isinstance(name, str) and re.fullmatch(r"(?:tcp|ssl|ws|wss):[^:]+", name) for name in enabled)
+            and enabled == sorted(set(enabled)), "invalid current EMQX device packet listener set")
+    expected = {**checker.DEVICE_PACKET_BOUNDS, "enabledListeners": enabled}
+    require(json.dumps(isolation.get("devicePacketBounds"), sort_keys=True, separators=(",", ":"))
+            == json.dumps(expected, sort_keys=True, separators=(",", ":")), "invalid current EMQX device packet boundary facts")
+
+
 def stable_emqx_environment(value):
     """冻结可复算身份；v2 比较完整 HOCON 语义，原始字节摘要只作诊断。"""
     projection_version = value.get("identityProjectionVersion", 1)
-    require(projection_version in (1, 2), "unsupported EMQX identity projection")
+    require(projection_version in (1, 2, 3), "unsupported EMQX identity projection")
     if projection_version == 1:
         keys = ("schemaVersion", "image", "imageDigest", "dataVolume", "baseSource",
                 "baseSha256", "clusterSha256", "illegalActionTimeouts", "health")
@@ -179,13 +246,34 @@ def stable_emqx_environment(value):
             "durableIngress", "runnerCallbackContract")
     diagnostic_keys = ("clusterSha256", "clusterSemanticSha256")
     require(all(key in value for key in keys + diagnostic_keys), "incomplete EMQX identity projection")
-    require(value["schemaVersion"] == 1 and value["identityProjectionVersion"] == 2,
+    require(value["schemaVersion"] == 1 and value["identityProjectionVersion"] in (2, 3),
             "invalid EMQX identity projection schema")
     for key in ("image", "dataVolume", "baseSource"):
         require(isinstance(value[key], str) and value[key], f"invalid EMQX identity field: {key}")
-    require(value["image"] == "emqx/emqx:6.2.3"
+    require(isinstance(value["imageDigest"], str)
             and re.fullmatch(r"sha256:[0-9a-f]{64}", value["imageDigest"]),
             "invalid EMQX image identity")
+    if projection_version == 2:
+        require(value["image"] == "emqx/emqx:6.2.3", "invalid historical EMQX image identity")
+    else:
+        identity = value.get("patchIdentity")
+        fields = {"release", "platform", "image", "configId", "baseReference",
+                  "patchSourceSha256", "beamSha256", "loadedMd5"}
+        require(isinstance(identity, dict) and set(identity) == fields
+                and all(isinstance(identity[key], str) for key in fields),
+                "incomplete EMQX patch identity")
+        require(identity["platform"] in ("linux/arm64", "linux/amd64")
+                and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+-health[0-9]+", identity["release"])
+                and identity["image"] == "thingslink/emqx:" + identity["release"] + "-"
+                    + identity["platform"].split("/")[1]
+                and identity["image"] == value["image"]
+                and identity["configId"] == value["imageDigest"]
+                and re.fullmatch(r"emqx/emqx@sha256:[0-9a-f]{64}", identity["baseReference"])
+                and all(re.fullmatch(r"[0-9a-f]{64}", identity[key])
+                        for key in ("patchSourceSha256", "beamSha256"))
+                and re.fullmatch(r"[0-9a-f]{32}", identity["loadedMd5"]),
+                "invalid EMQX patch identity")
+        keys += ("patchIdentity",)
     for key in ("baseSha256", "clusterSha256", "clusterSemanticSha256", "clusterIdentitySha256"):
         require(isinstance(value[key], str) and re.fullmatch(r"[0-9a-f]{64}", value[key]),
                 f"invalid EMQX identity digest: {key}")
@@ -201,6 +289,8 @@ def stable_emqx_environment(value):
                                 "function": "republish", "topic": "tc/internal/v1/ingress/uplink",
                                 "qos": 1, "retain": False, "directDispatch": False},
             "invalid EMQX durable ingress identity")
+    if "ruleContractVersion" in durable:
+        require_current_durable_ingress(value)
     callbacks = value["runnerCallbackContract"]
     require(isinstance(callbacks, dict) and callbacks.get("status") == "PASS"
             and callbacks.get("callbackPort") == 8080 and callbacks.get("ownedResourceCount") == 3
@@ -220,6 +310,10 @@ def stable_emqx_environment(value):
                 and re.fullmatch(r"[0-9a-f]{64}", route.get("contractSha256", "")),
                 "invalid EMQX lifecycle route identity")
         keys += ("lifecycleQualificationVersion", "lifecycleRouteContract")
+    isolation = value.get("mqttIsolation")
+    if isinstance(isolation, dict) and "devicePacketBounds" in isolation:
+        require_current_device_packet_bounds(value)
+        keys += ("mqttIsolation",)
     return {key: value[key] for key in keys}
 
 
@@ -230,12 +324,19 @@ def require_lifecycle_delivery(value):
     source = {key: value[key] for key in (
         "imageDigest", "dataVolume", "baseSource", "baseSha256", "clusterIdentitySha256",
         "runnerCallbackContract", "durableIngress", "lifecycleRouteContract")}
+    if value.get("identityProjectionVersion") == 3:
+        source["patchIdentity"] = value["patchIdentity"]
     source_sha = hashlib.sha256(json.dumps(source, ensure_ascii=True, sort_keys=True,
                                            separators=(",", ":")).encode("ascii")).hexdigest()
     proof = value.get("lifecycleDeliveryQualification")
     require(isinstance(proof, dict) and proof.get("version") == 1 and proof.get("status") == "PASS"
             and proof.get("sourceIdentitySha256") == source_sha and proof.get("imageDigest") == value["imageDigest"]
             and proof.get("callbackRestored") == "PASS", "lifecycle delivery source identity invalid")
+    if value.get("identityProjectionVersion") == 3:
+        require(proof.get("patchIdentity") == value["patchIdentity"]
+                and isinstance(proof.get("runtimeImageId"), str)
+                and re.fullmatch(r"sha256:[0-9a-f]{64}", proof["runtimeImageId"]),
+                "lifecycle current image binding invalid")
     cleanup = proof.get("cleanup")
     require(cleanup == {"containerRemoved": "PASS", "volumeRemoved": "PASS", "receiverClosed": "PASS",
                         "sharedRawUnchanged": "PASS", "sharedEffectiveUnchanged": "PASS",
@@ -252,6 +353,19 @@ def require_lifecycle_delivery(value):
     events = probe.get("events")
     require(isinstance(events, list) and len(events) == 2 and all(isinstance(e, dict) for e in events)
             and [e.get("event") for e in events] == ["connected", "disconnected"], "lifecycle receipt order/count invalid")
+    if value.get("identityProjectionVersion") == 3:
+        identity = probe.get("deviceIdentity")
+        fields = {"tc_auth_tenant_id", "tc_auth_project_id", "tc_auth_device_id",
+                  "tc_auth_credential_version", "tc_auth_config_version", "tc_auth_connection_id"}
+        require(isinstance(identity, dict) and set(identity) == fields
+                and all(isinstance(item, str) and item for item in identity.values()),
+                "lifecycle authenticated identity missing")
+        identity_sha = hashlib.sha256(json.dumps(identity, ensure_ascii=True, sort_keys=True,
+                                                 separators=(",", ":")).encode("ascii")).hexdigest()
+        require(probe.get("deviceIdentitySha256") == identity_sha
+                and all(event.get("deviceIdentityMatched") is True
+                        and event.get("deviceIdentitySha256") == identity_sha for event in events),
+                "lifecycle authenticated identity mismatch")
     previous = probe.get("startedAtNs")
     require(isinstance(previous, int) and previous > 0, "lifecycle probe start missing")
     for event in events:
@@ -267,7 +381,7 @@ def qualify_emqx_environment(batch):
     """在构件与 qualification-started 之前失败关闭，并保留脱敏诊断。"""
     directory = batch / "environment"
     result = subprocess.run([sys.executable, str(EMQX_QUALIFIER), "qualify",
-                             "--evidence-dir", str(directory), "--start-service"],
+                             "--evidence-dir", str(directory), "--start-service", "--current-image"],
                             cwd=REPO, capture_output=True, text=True, timeout=180)
     evidence = directory / "environment-qualification.json"
     require(evidence.is_file(), "EMQX qualification produced no evidence")
@@ -278,6 +392,8 @@ def qualify_emqx_environment(batch):
         write_new(batch / "prepare-failed.json", {"phase": "emqx-environment", "evidence": receipt})
         raise ValueError(f"EMQX environment qualification failed; preserved {evidence}")
     try:
+        require_current_durable_ingress(value)
+        require_current_device_packet_bounds(value)
         require_lifecycle_delivery(value)
         receipt["fingerprint"] = stable_emqx_environment(value)
     except (ValueError, TypeError, KeyError) as error:
@@ -287,14 +403,18 @@ def qualify_emqx_environment(batch):
 
 
 def current_emqx_environment():
-    result = command([sys.executable, str(EMQX_QUALIFIER), "fingerprint"])
-    return stable_emqx_environment(json.loads(result))
+    result = command([sys.executable, str(EMQX_QUALIFIER), "fingerprint", "--current-image"])
+    value = json.loads(result)
+    require_current_durable_ingress(value)
+    require_current_device_packet_bounds(value)
+    return stable_emqx_environment(value)
 
 
 def check_candidate(batch):
     candidate = load_candidate(batch)
     require(clean_head() == candidate["sourceCommit"], "source commit drift")
     require(tracked_files() == candidate["files"], "source/tool/deployment bytes drift")
+    check_documentation_identity(candidate)
     require(configuration_digest() == candidate["configurationSha256"], "environment config drift")
     require(sha(REPO / "deploy/.env") == candidate["deployEnvSha256"], "deploy environment drift")
     require(runtime() == candidate["runtime"], "runtime drift")
@@ -348,6 +468,7 @@ def runtime_lease(batch):
 
 def prepare():
     source_commit = clean_head()
+    private_docs = documentation_identity()
     batch = ROOT / str(uuid.uuid4())
     batch.mkdir(parents=True, exist_ok=False)
     with runtime_lease(batch):
@@ -363,8 +484,8 @@ def prepare():
             ([bash(), "-lc", "pnpm lint"], CONSOLE),
             ([bash(), "-lc", "pnpm lint:stylelint:check"], CONSOLE),
             ([bash(), "-lc", "pnpm test"], CONSOLE),
-            ([bash(), "-lc", "./mvnw -B -pl things-cloud-bootstrap,things-cloud-simulator -am package -DskipTests"],
-             REPO / "things-cloud"),
+            ([bash(), "-lc", "./mvnw -B -pl things-link-bootstrap,things-link-simulator -am package -DskipTests"],
+             REPO / "things-link"),
         ]
         for index, (args, cwd) in enumerate(steps):
             print(f"[evidence] prerequisite {index + 1}/{len(steps)}: {args[-1]}", flush=True)
@@ -387,17 +508,19 @@ def prepare():
         artifacts = {}
         (batch / "artifacts").mkdir()
         for role in ("bootstrap", "simulator"):
-            jars = list((REPO / f"things-cloud/things-cloud-{role}/target").glob(f"things-cloud-{role}-*.jar"))
+            jars = list((REPO / f"things-link/things-link-{role}/target").glob(f"things-link-{role}-*.jar"))
             require(len(jars) == 1, f"expected exactly one {role} JAR")
             target = batch / "artifacts" / f"{role}.jar"
             shutil.copyfile(jars[0], target)
             artifacts[role] = {"path": f"artifacts/{role}.jar", "sha256": sha(target)}
         require(clean_head() == source_commit, "source changed during prepare")
+        require(documentation_identity() == private_docs, "repository documentation changed during prepare")
         write_new(batch / "prerequisites.json", {"selector": "PASS", "selectorEvidence": selector_evidence,
                                                  "commands": prerequisites,
                                                  "emqxEnvironment": emqx_environment})
         candidate = {"schemaVersion": VERSION, "verdictVersion": VERSION, "batchId": batch.name,
                      "sourceCommit": source_commit, "files": tracked_files(), "plan": plan,
+                     "documentationBinding": private_docs,
                      "artifacts": artifacts, "runtime": environment,
                      "browser": {"path": browser_path, "sha256": sha(browser_path)},
                      "deployEnvSha256": sha(REPO / "deploy/.env"),
@@ -870,8 +993,8 @@ def archive_files(batch):
 
 def export_batch(batch):
     names = archive_files(batch)
-    target = REPO / "docs/delivery/verification" / f"G2-A4a-{batch.name}.zip"
-    require(target.parent.is_dir(), "verification directory missing")
+    target = REPO / "logs/ci/e2e-evidence-exports" / f"G2-A4a-{batch.name}.zip"
+    target.parent.mkdir(parents=True, exist_ok=True)
     checksums = {name: sha(inside(batch, name)) for name in names}
     with zipfile.ZipFile(target, "x", compression=zipfile.ZIP_DEFLATED) as archive:
         for name in names:
@@ -894,8 +1017,8 @@ def combination_archive_files(batch):
 
 def export_combination(batch):
     names = combination_archive_files(batch)
-    target = REPO / "docs/delivery/verification" / f"G2-A4c-{batch.name}.zip"
-    require(target.parent.is_dir(), "verification directory missing")
+    target = REPO / "logs/ci/e2e-evidence-exports" / f"G2-A4c-{batch.name}.zip"
+    target.parent.mkdir(parents=True, exist_ok=True)
     checksums = {name: sha(inside(batch, name)) for name in names}
     with zipfile.ZipFile(target, "x", compression=zipfile.ZIP_DEFLATED) as archive:
         for name in names:

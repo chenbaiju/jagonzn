@@ -1,7 +1,7 @@
 import {
   parseDashboardRuntimeResponse,
   isStrictJsonNumber
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import type { components } from '@/types/api/schema'
 import { useUserStore } from '@/store/modules/user'
 import { assertCurrentIdentity, currentIdentityEpoch } from '@/utils/http/identity-scope'

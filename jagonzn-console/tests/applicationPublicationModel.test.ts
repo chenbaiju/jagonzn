@@ -312,7 +312,7 @@ describe('应用发布管理意图与权威恢复', () => {
     await f.model.retry()
     expect(f.model.getSnapshot().deleted?.receipt).toBe('COMPLETION_MARKER')
   })
-  it.each(['1.0.0', '1.0.1'])(
+  it.each(['1.0.0', '1.0.1', '1.0.2'])(
     '读取精确组件版本%s且不自动改写发布快照',
     async (componentVersion) => {
       const f = fixture()

@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
-import { isAbsolute, relative, resolve } from 'node:path'
+import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 interface DatabaseScope {
@@ -37,7 +37,8 @@ export function readOwnedDatabaseMaterial(path: string): Buffer {
     const root = realpathSync(resolve('logs')),
       target = realpathSync(resolve(path)),
       suffix = relative(root, target)
-    if (!suffix || isAbsolute(suffix) || suffix === '..' || suffix.startsWith('../')) throw fail()
+    if (!suffix || isAbsolute(suffix) || suffix === '..' || suffix.startsWith(`..${sep}`))
+      throw fail()
     const stat = statSync(target)
     if (!stat.isFile() || stat.size > 16 * 1024) throw fail()
     return readFileSync(target)
@@ -48,7 +49,7 @@ export function readOwnedDatabaseMaterial(path: string): Buffer {
 const defaultIO: DatabaseFixtureIO = {
   ownedMaterial: readOwnedDatabaseMaterial,
   legacySettings() {
-    const settings = { user: 'thingscloud', database: 'thingscloud' }
+    const settings = { user: 'thingslink', database: 'thingslink' }
     const path = fileURLToPath(new URL('../../deploy/.env', import.meta.url))
     for (const line of (existsSync(path) ? readFileSync(path, 'utf8') : '').split(/\r?\n/)) {
       const match = /^(POSTGRES_USER|POSTGRES_DB)=(.*)$/.exec(line.trim())
@@ -141,7 +142,7 @@ export function executeDatabaseFixture(query: Query, env = process.env, io = def
         actual?.Image !== pg.imageDigest ||
         actual?.ConfigImage !== pg.image ||
         actual?.Running !== true ||
-        actual?.Labels?.['thingscloud.owner'] !== 'console-wp03' ||
+        actual?.Labels?.['thingslink.owner'] !== 'console-wp03' ||
         !Array.isArray(ports) ||
         ports.length !== 1 ||
         ports[0]?.HostIp !== '127.0.0.1' ||

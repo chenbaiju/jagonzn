@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page scene-page">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace scene-page"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="手动场景"
@@ -61,10 +63,8 @@
             prop="activeVersionId"
             label="活动版本"
           />
-          <ElTableColumn label="更新时间"
-            ><template #default="{ row }">{{
-              row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '—'
-            }}</template></ElTableColumn
+          <ElTableColumn min-width="190" label="更新时间"
+            ><template #default="{ row }">{{ formatTime(row.updatedAt) }}</template></ElTableColumn
           >
           <ElTableColumn class-name="console-table-actions-cell" min-width="64" label="操作"
             ><template #default="{ row }"
@@ -79,7 +79,7 @@
       >
     </template>
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-rule-dialog"
       v-model="visible"
       title="手动场景版本管理"
       width="850px"
@@ -92,11 +92,11 @@
         >状态 {{ selected.status }} · CAS {{ selected.version }} · 活动版本
         {{ selected.activeVersionId ?? '无' }}</p
       >
-      <ElForm label-position="top">
-        <ElFormItem class="scene-form-field" label="名称"
+      <ElForm class="rule-version-form" label-position="top">
+        <ElFormItem class="rule-form-field--half" label="名称"
           ><ElInput v-model="form.name" aria-label="场景名称" maxlength="128" :disabled="busy"
         /></ElFormItem>
-        <ElFormItem class="scene-form-field" label="说明"
+        <ElFormItem class="rule-form-field--half" label="说明"
           ><ElInput
             v-model="form.description"
             aria-label="场景说明"
@@ -154,32 +154,32 @@
           ><ElButton type="danger" :disabled="busy || !!pending" @click="remove">删除场景</ElButton>
         </div>
         <ElDivider content-position="left">手动执行</ElDivider>
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >DISPATCHED 表示动作已受理，不等于送达。结果未知时请使用同键重试。</ElAlert
-        >
-        <ElInput
-          v-model="deviceKeyword"
-          aria-label="搜索设备"
-          placeholder="设备名称或标识"
-          :disabled="busy"
-        />
-        <ElButton :disabled="busy" @click="searchDevices(false)">搜索设备</ElButton>
-        <ElSelect
-          v-model="deviceId"
-          aria-label="目标设备"
-          placeholder="选择目标设备"
-          :disabled="busy || !!pending"
-        >
-          <ElOption
-            v-for="device in devices"
-            :key="device.id"
-            :value="device.id!"
-            :label="device.name ?? device.id"
+
+        <div class="rule-device-picker">
+          <ElInput
+            v-model="deviceKeyword"
+            aria-label="搜索设备"
+            placeholder="设备名称或标识"
+            :disabled="busy"
           />
-        </ElSelect>
-        <ElButton v-if="deviceNext" :disabled="busy" @click="searchDevices(true)"
-          >更多设备</ElButton
-        >
+          <ElButton :disabled="busy" @click="searchDevices(false)">搜索设备</ElButton>
+          <ElSelect
+            v-model="deviceId"
+            aria-label="目标设备"
+            placeholder="选择目标设备"
+            :disabled="busy || !!pending"
+          >
+            <ElOption
+              v-for="device in devices"
+              :key="device.id"
+              :value="device.id!"
+              :label="device.name ?? device.id"
+            />
+          </ElSelect>
+          <ElButton v-if="deviceNext" :disabled="busy" @click="searchDevices(true)"
+            >更多设备</ElButton
+          >
+        </div>
         <ElInput
           v-model="inputJson"
           type="textarea"
@@ -209,6 +209,7 @@
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import ConsoleStatusTag from '@/components/ConsoleStatusTag.vue'
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
@@ -371,7 +372,8 @@
       const row = selected.value!
       await ElMessageBox.confirm(
         `将规则“${row.name}”发布为版本 ${version.versionNumber}？`,
-        '确认发布 / 回滚'
+        '确认发布 / 回滚',
+        { customClass: 'console-rule-feedback' }
       )
       if (!current()) return
       const result = await api.activateScene(pid, row.id!, version.id!, row.version!)
@@ -394,7 +396,9 @@
   function remove() {
     return run(async (current, pid) => {
       const row = selected.value!
-      await ElMessageBox.confirm(`删除场景“${row.name}”？历史执行将保留。`, '确认删除')
+      await ElMessageBox.confirm(`删除场景“${row.name}”？历史执行将保留。`, '确认删除', {
+        customClass: 'console-rule-feedback'
+      })
       if (!current()) return
       await api.deleteScene(pid, row.id!, row.version!)
       if (current()) {
@@ -461,7 +465,8 @@
     return run(async (current) => {
       await ElMessageBox.confirm(
         '本次执行可能已经受理。结束尝试不会取消执行，再次点击将产生新请求，是否继续？',
-        '结束结果未知的尝试'
+        '结束结果未知的尝试',
+        { customClass: 'console-rule-feedback' }
       )
       if (current()) pending.value = undefined
     })
@@ -485,14 +490,4 @@
   onBeforeUnmount(clear)
 </script>
 
-<style scoped lang="scss">
-  .scene-page :deep(.workspace-header > .console-actions) {
-    margin-bottom: 0;
-  }
-
-  .scene-form-field :deep(.el-form-item__label) {
-    height: 20px !important;
-    margin-bottom: 8px;
-    line-height: 20px !important;
-  }
-</style>
+<style scoped lang="scss"></style>

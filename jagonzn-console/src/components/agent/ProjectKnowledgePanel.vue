@@ -1,12 +1,7 @@
 <template>
   <ElCard v-if="readable" shadow="never" class="knowledge-panel" data-testid="project-knowledge">
     <template #header><h4 class="console-heading">受控项目知识</h4></template>
-    <ElAlert
-      type="info"
-      show-icon
-      :closable="false"
-      title="管理员逐次批准的项目共用资料；个人排查记录仍仅本人可见。这里只做本地字面检索，不调用模型、不发送外部服务。"
-    />
+
     <ElAlert v-if="error" type="error" :closable="false" show-icon :title="error" />
     <ElAlert v-if="notice" type="info" show-icon :closable="false" :title="notice" />
     <div class="console-toolbar">
@@ -22,7 +17,11 @@
     />
     <ul v-if="rows.length" class="knowledge-panel__sources">
       <li v-for="row in rows" :key="row.id">
-        <span>{{ row.sourceKey }}（版本 {{ row.versionNumber }}，{{ row.createdAt }}）</span>
+        <span
+          >{{ row.sourceKey }}（版本 {{ row.versionNumber }}，{{
+            formatTime(row.createdAt)
+          }}）</span
+        >
         <ElButton :disabled="busy" @click="open(row)">查看当前正文</ElButton>
       </li>
     </ul>
@@ -34,12 +33,6 @@
       >
     </template>
     <template v-if="manager">
-      <ElAlert
-        type="info"
-        show-icon
-        :closable="false"
-        title="最多100个来源，每来源20个版本；正文需人工筛选脱敏。项目归档或状态未知时不能发布。替换前先查看当前正文，提交结果不明时先刷新核对。"
-      />
       <ElDivider content-position="left">发布项目共享版本</ElDivider>
       <ElForm label-position="top" @submit.prevent>
         <ElFormItem label="知识来源标识">
@@ -113,6 +106,7 @@
   </ElCard>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { useUserStore } from '@/store/modules/user'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'
@@ -455,7 +449,7 @@
   }
   .knowledge-panel__metadata {
     margin: 0 0 10px;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--art-text-gray-500);
   }
   .knowledge-panel__text {

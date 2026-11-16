@@ -12,6 +12,7 @@
 | [jagonzn-service](jagonzn-service/README.md) | 复用平台运行时，承担设备接入、技术数据、告警、命令及事件转发 | 已有本地装配和隔离验证候选，正式制品与完整接收尚未完成 |
 | [jagonzn-cloud](jagonzn-cloud/README.md) | 承接人员、场所、权限和业务处置 | 已有私有签名事件 Inbox；人员、场所及开锁业务仍待开发 |
 | [jagonzn-console](jagonzn-console/README.md) | 统一呈现技术管理与业务操作 | 已完整复制上游 Console，独立 service 登录及16个主要页面读取通过；设备业务及正式接收仍未验收 |
+| [jagonzn-console-v1](jagonzn-console-v1/README.md) | 从 ThingsLink Console V1 复制的独立前端副本 | 源码、测试与配置已复制，包名为 `@jagonzn/console-v1`；仍直接依赖主仓 `things-link-console` 与 `things-link-client-contracts`，源工程在途测试未全部通过 |
 | [deploy](deploy/README.md) | 本机独立部署、网络实验及验证工具 | 用于隔离候选验证，不代表生产交付 |
 | [docs](docs/README.md) | 架构、进度、ADR、能力反馈与实施债务 | 当前状态以项目进度为准 |
 

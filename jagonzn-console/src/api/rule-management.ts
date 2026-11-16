@@ -11,16 +11,26 @@ export type RuleDescriptor = components['schemas']['Descriptor']
 export type RulePage = components['schemas']['RuleManagementPageMessageRuleView']
 export type VersionPage = components['schemas']['RuleManagementPageMessageRuleVersionView']
 export type DebugResult = components['schemas']['DebugResponse']
+export type RuleScriptHealth = components['schemas']['RuleScriptHealthView']
 
 const base = (project: string) => `/api/v1/projects/${project}/message-rules` as const
-export const ruleCatalog = (project: string) =>
-  request.get<RuleCatalog>({ url: `/api/v1/projects/${project}/rule-node-types` })
+export const ruleCatalog = (project: string, purpose?: 'MESSAGE_RULE' | 'SCENE') =>
+  request.get<RuleCatalog>({
+    url: `/api/v1/projects/${project}/rule-node-types`,
+    ...(purpose ? { params: { purpose } } : {})
+  })
 export const listRules = (
   project: string,
   params: { name?: string; status?: string; cursor?: string; limit?: number }
 ) => request.get<RulePage>({ url: base(project), params })
 export const getRule = (project: string, id: string) =>
   request.get<MessageRule>({ url: `${base(project)}/${id}` })
+export const getRuleScriptHealth = (project: string, id: string) =>
+  request.get<RuleScriptHealth>({
+    url: `${base(project)}/${id}/script-health`,
+    headers: { 'Cache-Control': 'no-cache' },
+    showErrorMessage: false
+  })
 export const ruleHistory = (project: string, id: string, cursor?: string) =>
   request.get<VersionPage>({ url: `${base(project)}/${id}/version-history`, params: { cursor } })
 export const saveRule = (project: string, id: string, params: RuleWrite) =>
@@ -32,12 +42,20 @@ export const activateRule = (
   id: string,
   version: string,
   expectedVersion: number
-) =>
-  request.post<MessageRule>({
+) => {
+  if (
+    !Number.isSafeInteger(expectedVersion) ||
+    expectedVersion < 1 ||
+    !Number.isSafeInteger(expectedVersion + 1)
+  )
+    throw new Error('规则版本无法安全提交，请重新查询并联系管理员核对。')
+  return request.post<MessageRule>({
     url: `${base(project)}/${id}/versions/${version}/activate`,
     params: { expectedVersion },
-    data: {}
+    data: {},
+    showErrorMessage: false
   })
+}
 export const pauseRule = (project: string, id: string, expectedVersion: number) =>
   request.post<MessageRule>({
     url: `${base(project)}/${id}/pause`,

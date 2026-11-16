@@ -3,7 +3,9 @@
   角色只用于界面展示，**不构成授权**：服务端对每个操作独立校验。
 -->
 <template>
-  <div class="console-page project-list">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-operations-workspace project-list"
+  >
     <section v-for="group in projectGroups" :key="group.key" class="project-list__section">
       <div class="project-list__header">
         <h2 class="console-heading">{{ group.title }}</h2>
@@ -22,7 +24,7 @@
           <p class="project-list__description">{{ group.description }}</p>
         </div>
       </div>
-      <div v-loading="loading" class="project-list__content" :aria-busy="loading">
+      <div v-loading="loading" class="project-list__content console-list-data" :aria-busy="loading">
         <ElTable
           :data="group.projects"
           row-key="id"
@@ -82,7 +84,7 @@
                 />
                 <ConsoleTableAction
                   type="primary"
-                  :disabled="!row.projectKey"
+                  :disabled="!row.projectCode"
                   @click="appEntryProject = row"
                   label="App 接入"
                   icon="ri:qr-code-line"
@@ -138,7 +140,7 @@
 
     <AppProjectEntryDialog :project="appEntryProject" @close="appEntryProject = undefined" />
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-alarm-dialog"
       v-model="editVisible"
       :title="$t('project.edit')"
       width="420px"
@@ -334,7 +336,8 @@
         {
           confirmButtonText: t('project.confirm'),
           cancelButtonText: t('project.cancel'),
-          type: 'warning'
+          type: 'warning',
+          customClass: 'console-studio-feedback'
         }
       )
 
@@ -381,7 +384,7 @@
     flex-direction: column;
     height: var(--art-full-height);
     min-height: 680px;
-    padding: 10px;
+
     &__header,
     &__links,
     &__actions {
@@ -392,17 +395,14 @@
     }
     &__header {
       flex-shrink: 0;
-      row-gap: 8px;
+      gap: 8px 16px;
       justify-content: space-between;
-      min-height: 36px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--console-line);
 
       > .console-heading {
-        margin-bottom: 0;
-        font-size: 28px;
+        margin: 0;
+        font-size: 20px;
         font-weight: 400;
-        line-height: 40px;
+        line-height: 28px;
       }
     }
     &__intro {
@@ -410,9 +410,9 @@
       min-width: 0;
     }
     &__description {
-      margin: 0 0 8px;
-      font-size: 12px;
-      line-height: 20px;
+      margin: 0;
+      font-size: 14px;
+      line-height: 22px;
       color: var(--el-text-color-secondary);
     }
     &__links {
@@ -425,15 +425,15 @@
       display: flex;
       flex: 1 1 0;
       flex-direction: column;
+      gap: 16px;
+      min-width: 0;
       min-height: 0;
-    }
-    &__section + &__section {
-      margin-top: 28px;
+      padding: 0;
+      background: var(--el-bg-color);
     }
     &__content {
       flex: 1;
       min-height: 0;
-      margin-top: 14px;
       overflow: auto;
     }
     :deep(.project-list__clickable-row) {
@@ -466,15 +466,24 @@
       padding: 12px;
     }
     &__empty {
-      padding: 8px 12px;
-      :deep(.el-empty__description p) {
-        font-size: 16px;
-        font-weight: 500;
-        color: var(--art-text-gray-800);
-      }
+      padding: 12px;
       p {
         margin: 0;
-        color: var(--art-text-gray-600);
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--el-text-color-secondary);
+      }
+    }
+    @media (width <= 640px) {
+      height: auto;
+      min-height: 0;
+      &__section {
+        flex: initial;
+        gap: 12px;
+      }
+      &__content {
+        flex: initial;
+        min-height: 220px;
       }
     }
   }

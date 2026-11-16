@@ -1,0 +1,109 @@
+/* 仅限类型功能定义及其传送到 body 的编辑弹窗，不改变共享表格和表单。 */
+.function-definitions{color:#4a4a4a;font-size:14px}
+.function-definitions.type-events,.function-definitions.type-commands{margin-top:30px}
+.function-definitions.type-properties>header,.function-definitions.type-events>header,.function-definitions.type-commands>header{height:32px;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between}
+.function-definitions.type-properties h3,.function-definitions.type-events h3,.function-definitions.type-commands h3{font-size:18px;line-height:25px;font-weight:600;color:#4a4a4a;margin:0}
+.function-definitions>header .el-button{height:32px;padding:8px 15px;font-size:12px}
+.function-definitions .definition-table{font-size:14px;color:#4a4a4a;--el-table-border-color:#eee;--el-table-header-bg-color:#f5f7fa}
+.function-definitions .definition-table th.el-table__cell{height:50px;padding:0;background:#f5f7fa;color:#4a4a4a;font-weight:700}
+.function-definitions .definition-table td.el-table__cell{height:50px;padding:0}
+.function-definitions .definition-table .cell{padding:0 10px;line-height:23px;word-break:normal}
+.function-definitions .definition-table .el-table-column--selection .cell{padding-right:0;overflow:visible}
+.function-definitions .definition-table .el-table__empty-block{display:none}
+.function-definitions .definition-table .definition-actions .cell{display:flex;justify-content:flex-end;gap:10px;white-space:nowrap}
+.function-definitions .definition-table .definition-actions .el-button{width:44px;height:28px;min-width:44px;padding:7px 10px;font-size:12px;margin:0;border-radius:2px}
+.definition-access{display:inline-block;font-size:12px;line-height:24px;padding:0 8px;border-radius:4px;color:#fff;background:#909399}
+.definition-access--report{background:#f39c12}.definition-access--down{background:#409eff}.definition-access--shared{background:#67c23a}.definition-access--cloud_private{background:#909399}
+.definition-option{font-size:14px;color:#909399;margin-right:16px}
+.definition-level{margin-right:6px;vertical-align:-2px;color:#909399;font-size:16px}.definition-level--info{color:#909399}.definition-level--success{color:#67c23a}.definition-level--warning{color:#e6c23b}.definition-level--error{color:#f56c6c}
+.definition-learn{margin-left:12px;color:#1e88e5;font-size:15px;font-weight:700;line-height:22px;text-decoration:none}
+@property --tl-definition-ai-angle{syntax:'<angle>';inherits:false;initial-value:0deg}
+.type-function-tools .definition-ai.el-button{
+  border:1px solid transparent;border-radius:5px;color:#4a4a4a;font-weight:600;line-height:18px;
+  background:linear-gradient(#fff,#fff) padding-box,conic-gradient(from var(--tl-definition-ai-angle,0deg),#f00,#ff7f00,#ff0,#0f0,#00f,#4b0082,#9400d3,#f00) border-box;
+  background-origin:border-box;
+}
+.type-function-tools .definition-ai>.el-icon+span{margin-left:5px}
+.type-function-tools .definition-ai.el-button:disabled{color:var(--el-disabled-text-color);border-color:var(--el-disabled-border-color);background:#fff}
+.type-function-tools .definition-ai:focus-visible{outline:2px solid var(--tl-primary);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){
+  .type-function-tools .definition-ai:not(:disabled){animation:tl-definition-ai-border 4s linear infinite;transition:transform .2s cubic-bezier(.4,0,.2,1)}
+  .type-function-tools .definition-ai:not(:disabled):active{transform:scale(.95)}
+}
+@keyframes tl-definition-ai-border{to{--tl-definition-ai-angle:360deg}}
+.function-definition-dialog{--el-component-size:32px;color:#606266}
+.function-definition-dialog .el-dialog__body{padding:31px 20px;color:#606266}
+.function-reference-dialog .el-dialog__body{padding:31px 20px 20px;color:#606266}
+.function-definition-dialog .el-form-item{margin-bottom:19px}
+.function-definition-dialog .el-form-item__label{height:auto;line-height:22px;padding-top:4px;margin-bottom:4px;font-size:14px;font-weight:600;color:#606266}
+.function-definition-dialog .el-form-item__content{line-height:32px;display:block;min-width:0}
+.function-definition-dialog .el-input__wrapper,.function-definition-dialog .el-select__wrapper{min-height:33px;padding-top:0;padding-bottom:0;font-size:14px}
+.function-definition-dialog .el-select{width:100%}
+.function-definition-dialog .el-input__inner{height:33px;line-height:33px}
+.function-definition-dialog .el-radio{height:32px;margin-right:24px}
+.function-definition-dialog .el-radio__label{padding-left:8px;font-size:14px}
+.function-definition-dialog .el-radio-group{display:flex;align-items:center;flex-wrap:wrap}
+.function-definition-dialog .el-textarea__inner{font-family:inherit;font-size:14px;line-height:20px;padding:3px 15px}
+.function-definition-dialog .el-dialog__footer{position:relative;padding:10px 20px 20px}
+.function-definition-dialog .el-dialog__footer .el-button{height:40px;padding:12px 20px;font-size:14px}
+.function-definition-dialog .el-dialog__footer .definition-continue{position:absolute;left:20px;margin-left:0}
+.definition-guide{display:flex;align-items:center;gap:8px;position:relative;background:#eaf0ff;border-radius:4px;border-left:2px solid #409eff;color:#409eff;padding:10px 14px;margin-bottom:21px;line-height:20px;font-size:14px}
+.definition-guide .definition-level{margin-right:0;color:#606266}.definition-guide a{display:inline-flex;align-items:center;gap:3px;color:#409eff;text-decoration:underline;font-weight:600}
+.definition-guide>.el-icon{font-size:16px}
+.definition-scope{margin-left:auto}.definition-scope .definition-help{margin-left:0;color:#909399}
+.definition-name-row{display:grid;grid-template-columns:minmax(0,1fr) 74px;gap:10px}
+.function-definition-dialog .el-table{font-size:12px;color:#606266;--el-table-border-color:#ebeef5;margin-bottom:10px}
+.function-definition-dialog .el-table th.el-table__cell{background:#fff;color:#606266;font-weight:700;height:50px;padding:0}
+.function-definition-dialog .el-table td.el-table__cell{height:50px;padding:0}
+.function-definition-dialog .el-table .cell{padding:0 10px;line-height:23px}
+.function-definition-dialog .el-table__empty-block{min-height:60px}
+.function-definition-dialog .el-table__empty-text{line-height:60px}
+.function-definition-dialog .el-form-item__content>.el-button,.function-definition-dialog .command-parameter-editor .el-button{height:32px;font-size:12px}
+.definition-advanced{font-size:12px;line-height:20px;margin:0 0 18px;color:#909399}
+.definition-advanced>summary{cursor:pointer;list-style:none;text-align:right;color:#909399}
+.definition-advanced>summary::after{content:'⌄';margin-left:5px}
+.definition-advanced[open]>summary{margin-bottom:12px}
+.function-definition-dialog .schema-help{font-size:12px;line-height:20px}
+@media(max-width:600px){.definition-name-row{grid-template-columns:minmax(0,1fr) 74px}.function-definition-dialog .el-radio{margin-right:12px}.function-definition-dialog .el-dialog__footer .definition-continue{position:static;margin-bottom:10px}.definition-option{display:block}}
+
+
+.function-definition-dialog .el-textarea__inner{min-height:50px}
+
+.function-definition-dialog .command-parameter-editor{position:relative}
+.function-definition-dialog .command-parameter-editor>.definition-advanced:not([open]){position:absolute;right:0;top:-31px;margin:0}
+.function-definition-dialog .definition-command-options:not([open]){height:0;margin:0;position:relative}
+.function-definition-dialog .definition-command-options:not([open])>summary{position:absolute;right:0;top:0}
+.function-definition-dialog .el-table td.el-table__cell{height:44px}
+.function-definition-dialog .definition-parameter-actions .cell{display:flex;justify-content:flex-end;gap:10px;white-space:nowrap}
+.function-definition-dialog .definition-parameter-actions .el-button{height:28px;width:44px;min-width:44px;padding:7px 10px;margin:0;font-size:12px}
+.definition-parameter-action-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.function-parameter-dialog .definition-advanced:not([open]){height:0;margin:0;position:relative}
+.function-parameter-dialog .definition-advanced:not([open])>summary{position:absolute;right:0;top:0}
+
+.function-property-dialog .el-form-item{margin-bottom:19.5px}
+.function-property-dialog .el-textarea__inner{line-height:22px}
+.function-tool-dialog .el-dialog__body{padding:30px 20px;color:#606266}
+.function-tool-dialog .el-input__wrapper,.function-tool-dialog .el-select__wrapper{min-height:33px;padding-top:0;padding-bottom:0}
+.function-tool-dialog .el-input__inner{height:33px;line-height:33px}
+.function-tool-dialog .el-dialog__footer .el-button{height:40px;padding:12px 20px;font-size:14px}
+
+.function-import-dialog .el-tabs__header{margin-bottom:24px}
+.function-import-dialog .el-select{width:100%}
+.function-import-dialog .el-select__wrapper{min-height:36px}
+.function-import-dialog .el-empty{height:295px;box-sizing:border-box;padding:40px 0}
+.function-import-dialog .el-empty__description p{font-size:14px;color:#909399}
+.function-import-dialog .el-dialog__body{max-height:calc(100vh - 240px);overflow:auto}
+.type-function-tools .function-tool-dialog .el-dialog__footer{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.type-function-tools .function-tool-dialog .el-dialog__footer .el-button{height:40px;padding:12px 20px;font-size:14px;margin-left:0}
+
+.function-definition-dialog .el-form-item .definition-help{font-size:12px;margin-left:8px}
+.definition-picker-drawer{max-width:100vw;--el-drawer-padding-primary:20px}
+.definition-color-drawer .el-drawer__header{padding:20px 20px 0;margin-bottom:32px;line-height:21px;color:#606266;font-size:14px;font-weight:400}
+.definition-color-drawer .el-drawer__title{font-size:14px;font-weight:400;line-height:21px}
+.definition-color-drawer .el-drawer__body{padding:20px 23px 30px 30px}
+.definition-icon-drawer .el-drawer__body{padding:20px}
+.definition-picker-drawer .el-input__wrapper{min-height:32px;padding-top:0;padding-bottom:0}
+.definition-picker-drawer .el-input__inner{height:32px}
+
+/* 子抽屉接管遮罩，避免与原属性弹窗的遮罩叠加变黑。 */
+body:has(.definition-picker-drawer[data-picker-open="true"]) .el-overlay:has(.function-definition-dialog){background-color:transparent}

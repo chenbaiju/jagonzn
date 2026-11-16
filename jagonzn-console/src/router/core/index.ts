@@ -2,7 +2,7 @@
  * 路由核心模块导出
  *
  * @module router/core
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 export { RouteRegistry } from './RouteRegistry'

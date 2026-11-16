@@ -66,7 +66,9 @@ test('实时票据工具：真实 WS/MQTT 首次签发、固定模型范围及�
     await expect(dialog).toContainText(fixture.modelVersionId)
     await dialog.getByRole('combobox', { name: '订阅属性', exact: true }).click()
     await page.getByRole('option', { name: 'temperature · NUMBER', exact: true }).click()
-    await dialog.getByText(/不可变模型版本：/).click()
+    const properties = dialog.getByRole('combobox', { name: '订阅属性', exact: true })
+    await properties.press('Escape')
+    await expect(properties).toHaveAttribute('aria-expanded', 'false')
     const responsePromise = page.waitForResponse(
       (response) =>
         response.request().method() === 'POST' &&

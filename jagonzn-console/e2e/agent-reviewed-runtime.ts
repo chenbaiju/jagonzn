@@ -34,12 +34,12 @@ export interface ReviewedSeed {
   }
 }
 const classNames = [
-  'com.things.cloud.assistant.application.FrozenSyntheticReview',
-  'com.things.cloud.assistant.application.SyntheticReviewedTransport',
-  'com.things.cloud.assistant.application.SyntheticReviewedTransport$Target',
-  'com.things.cloud.bootstrap.assistant.fixture.SyntheticReviewedFixtureProcess',
-  'com.things.cloud.bootstrap.assistant.fixture.SyntheticReviewedFixtureProcess$FixtureManifest',
-  'com.things.cloud.bootstrap.assistant.fixture.SyntheticReviewedFixtureProcess$FixtureConfiguration'
+  'com.things.link.assistant.application.FrozenSyntheticReview',
+  'com.things.link.assistant.application.SyntheticReviewedTransport',
+  'com.things.link.assistant.application.SyntheticReviewedTransport$Target',
+  'com.things.link.bootstrap.assistant.fixture.SyntheticReviewedFixtureProcess',
+  'com.things.link.bootstrap.assistant.fixture.SyntheticReviewedFixtureProcess$FixtureManifest',
+  'com.things.link.bootstrap.assistant.fixture.SyntheticReviewedFixtureProcess$FixtureConfiguration'
 ]
 const digest = (value: Buffer) => createHash('sha256').update(value).digest('hex')
 const uuid = (value: unknown) =>
@@ -130,7 +130,7 @@ export async function guardReviewedRuntime(baseURL: string): Promise<ReviewedSee
       command.includes(jar) &&
       command.includes(classRoot) &&
       command.includes(
-        'com.things.cloud.bootstrap.assistant.fixture.SyntheticReviewedFixtureProcess'
+        'com.things.link.bootstrap.assistant.fixture.SyntheticReviewedFixtureProcess'
       )
   )
   const consoleRoot = await realpath(resolve('.'))
@@ -158,8 +158,8 @@ export async function guardReviewedRuntime(baseURL: string): Promise<ReviewedSee
       pg.Id !== runtime.postgresContainerId ||
       pg.Image !== runtime.postgresImageDigest ||
       pg.State !== true ||
-      pg.Labels?.['thingscloud.owner'] !== 'console-010-c' ||
-      redis.Labels?.['thingscloud.owner'] !== 'console-010-c' ||
+      pg.Labels?.['thingslink.owner'] !== 'console-010-c' ||
+      redis.Labels?.['thingslink.owner'] !== 'console-010-c' ||
       !Array.isArray(pg.Ports?.['5432/tcp']) ||
       !pg.Ports['5432/tcp'].length ||
       pg.Ports['5432/tcp'].some((value: any) => value.HostPort !== '5548') ||

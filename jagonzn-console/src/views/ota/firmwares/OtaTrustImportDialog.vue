@@ -1,18 +1,12 @@
 <template>
   <ElDialog
-    class="console-dialog ota-firmware-feedback"
+    class="console-dialog console-developer-dialog ota-firmware-feedback"
     v-model="visible"
     title="导入受控信任包"
     width="640px"
     data-testid="ota-trust-import-dialog"
     destroy-on-close
   >
-    <ElAlert
-      title="只载入离线签发的公开包与签名；这里不接收或生成私钥，不配置受控根，不授予固件发布或设备升级资格。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
     <ElForm class="ota-trust-import-form" label-width="110px" label-position="left">
       <ElFormItem label="绑定信任域"
         ><ElInput
@@ -38,25 +32,14 @@
       <p data-testid="ota-trust-import-bundle-version">材料包版本：{{ materialVersion }}</p>
       <p data-testid="ota-trust-import-bundle-sha">材料规范包 SHA-256：{{ digest }}</p>
       <p v-if="materialRevision !== undefined">材料冻结的期望修订：{{ materialRevision }}</p>
-      <ElAlert
-        title="材料只经过结构与公开摘要检查；受控根签名及状态演进仍由服务端裁决。"
-        type="info"
-        :closable="false"
-        show-icon
-      />
-      <ElAlert
-        title="本次导入为完整包替换，历史键必须保留；撤销发布键可使相关活动安全暂停。请核对以下公开状态，页面不提供单键编辑。"
-        type="info"
-        :closable="false"
-        show-icon
-      />
+
       <ul data-testid="ota-trust-import-keys">
         <li v-for="key in previewKeys" :key="key.keyVersion">
           键版本：{{ key.keyVersion }}；签名规格：{{ key.signatureProfile }}；状态：{{
             key.state
-          }}；指纹：{{ key.fingerprint }}； 生效时刻（UTC）：{{
-            key.notBefore
-          }}；截止时刻（UTC）：{{ key.notAfter }}
+          }}；指纹：{{ key.fingerprint }}； 生效时刻：{{ formatTime(key.notBefore) }}；截止时刻：{{
+            formatTime(key.notAfter)
+          }}
         </li>
       </ul>
     </div>
@@ -79,7 +62,7 @@
       <p>当前包版本：{{ currentState.bundleVersion }}</p>
       <p>当前规范包 SHA-256：{{ currentState.bundleSha256 }}</p>
       <p>受控根指纹：{{ currentState.rootFingerprint }}</p>
-      <p>更新时刻（UTC）：{{ currentState.updatedAt }}</p>
+      <p>更新时刻：{{ formatTime(currentState.updatedAt) }}</p>
     </div>
     <template v-if="revision === '0'">
       <ElAlert
@@ -164,6 +147,7 @@
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import './ota-feedback.scss'
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import {

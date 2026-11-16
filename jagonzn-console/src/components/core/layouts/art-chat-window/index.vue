@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-  import dayjs from 'dayjs'
+  import { formatTime } from '@/utils/time'
   import { Picture, Paperclip, Close } from '@element-plus/icons-vue'
   import { mittBus } from '@/utils/sys'
   import meAvatar from '@/assets/images/avatar/avatar5.webp'
@@ -205,7 +205,7 @@
   const messages = ref<ChatMessage[]>(initializeMessages())
 
   // 工具函数
-  const formatCurrentTime = (): string => dayjs().format('HH:mm')
+  const formatCurrentTime = (): string => formatTime(new Date().toISOString())
 
   const scrollToBottom = (): void => {
     nextTick(() => {

@@ -19,7 +19,7 @@
  * - iframe 页面特殊处理
  *
  * @module utils/navigation/route
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { AppRouteRecord } from '@/types'

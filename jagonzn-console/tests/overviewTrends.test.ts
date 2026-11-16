@@ -56,6 +56,8 @@ it('reads the current project and explicitly marks simulation', async () => {
   await flushPromises()
   expect(fetchOverviewTrends).toHaveBeenCalledWith('p', 1)
   expect(page.text()).toContain('模拟统计')
+  expect(page.find('.overview-statistics__caption').exists()).toBe(false)
+  expect(page.text()).not.toContain('仅含完整小时')
   expect(page.findAll('overview-trend-chart-stub')).toHaveLength(1)
 })
 it('clears a changed range and refuses an old response', async () => {

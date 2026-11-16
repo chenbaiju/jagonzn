@@ -5,19 +5,15 @@
   与每项状态都由同一后端快照给出。刷新失败时保留上一次已知结果，避免瞬时网络错误清空事实。
 -->
 <template>
-  <div class="console-page system-status console-page--single-panel" v-loading="loading">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace system-status"
+    v-loading="loading"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="系统状态"
       description="查看平台组件当前状态与观测时间，用于定位服务可用性问题。"
       :links="[{ label: '项目列表', path: '/project/list' }]"
-    />
-    <ElAlert
-      type="info"
-      show-icon
-      :closable="false"
-      :title="$t('systemStatus.notice')"
-      class="system-status__notice"
     />
 
     <ElCard shadow="never" class="system-status__summary">
@@ -121,29 +117,7 @@
 
 <style lang="scss" scoped>
   .system-status {
-    padding: 10px;
-
-    &__header {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-      }
-
-      p {
-        margin: 0;
-        color: var(--art-text-gray-500);
-      }
-    }
-
-    &__notice,
-    &__summary {
-      margin-bottom: 10px;
-    }
+    min-width: 0;
 
     &__summary-skeleton {
       width: 50%;
@@ -152,64 +126,100 @@
     &__summary-content {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 16px;
 
       > div {
         display: flex;
         flex-direction: column;
         gap: 8px;
+        align-items: flex-start;
+        min-width: 0;
       }
 
-      span {
-        color: var(--art-text-gray-500);
+      > div > span:not(.el-tag) {
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--el-text-color-secondary);
+      }
+
+      strong {
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 22px;
+        overflow-wrap: anywhere;
       }
     }
 
     &__section-header {
-      padding-bottom: 18px;
-      margin: 10px 0 14px;
-      border-bottom: 1px solid var(--console-line);
+      min-width: 0;
+      padding: 0;
+      margin: 0;
 
       .console-description {
         margin: 0;
-        font-size: 12px;
+        font-size: 14px;
         line-height: 20px;
       }
     }
 
     &__section-title {
-      margin: 0 0 8px;
-      font-size: 28px;
-      font-weight: 400;
-      line-height: 40px;
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 24px;
       color: var(--el-text-color-primary);
     }
 
     &__grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+      gap: 16px;
+      min-width: 0;
     }
   }
 
   .dependency-card {
+    min-width: 0;
+
     &__content {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
       justify-content: space-between;
+      min-width: 0;
+
+      > div {
+        min-width: 0;
+      }
+
+      > .el-tag {
+        flex-shrink: 0;
+      }
+
+      strong {
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 22px;
+        overflow-wrap: anywhere;
+      }
 
       p {
-        margin: 6px 0 0;
-        font-family: monospace;
-        color: var(--art-text-gray-500);
+        margin: 4px 0 0;
+        font-family: var(--art-font-family-mono, monospace);
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--el-text-color-secondary);
       }
     }
   }
 
   @media (width <= 640px) {
     .system-status__summary-content {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .system-status__grid {
+      gap: 12px;
     }
   }
 </style>

@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page automation-page">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace automation-page"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="自动化"
@@ -75,13 +77,11 @@
             prop="activeVersionId"
             label="活动版本"
           />
-          <ElTableColumn show-overflow-tooltip label="下次执行"
+          <ElTableColumn min-width="190" show-overflow-tooltip label="下次执行"
             ><template #default="{ row }">{{ nextDescription(row) }}</template></ElTableColumn
           >
-          <ElTableColumn show-overflow-tooltip label="更新时间"
-            ><template #default="{ row }">{{
-              row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '—'
-            }}</template></ElTableColumn
+          <ElTableColumn min-width="190" show-overflow-tooltip label="更新时间"
+            ><template #default="{ row }">{{ formatTime(row.updatedAt) }}</template></ElTableColumn
           >
           <ElTableColumn class-name="console-table-actions-cell" min-width="64" label="操作"
             ><template #default="{ row }"
@@ -96,7 +96,7 @@
       >
     </template>
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-rule-dialog"
       v-model="visible"
       title="自动化版本管理"
       width="850px"
@@ -109,11 +109,11 @@
         >状态 {{ selected.status }} · CAS {{ selected.version }} · 活动版本
         {{ selected.activeVersionId ?? '无' }}</p
       >
-      <ElForm label-position="top">
-        <ElFormItem class="automation-form-field" label="名称"
+      <ElForm class="rule-version-form" label-position="top">
+        <ElFormItem class="rule-form-field--half" label="名称"
           ><ElInput v-model="form.name" aria-label="自动化名称" maxlength="128" :disabled="busy"
         /></ElFormItem>
-        <ElFormItem class="automation-form-field" label="说明"
+        <ElFormItem class="rule-form-field--half" label="说明"
           ><ElInput
             v-model="form.description"
             aria-label="自动化说明"
@@ -136,9 +136,6 @@
               :disabled="busy"
             />
           </ElFormItem>
-          <ElAlert class="console-hint" type="warning" show-icon :closable="false"
-            >必须为未来时间；已受理或已过期版本不能再次发布，请保存新的未来版本。</ElAlert
-          >
         </template>
         <template v-if="form.triggerType === 'CRON'">
           <ElFormItem label="周期表达式（秒 分 时 日 月 周，每分钟最多一次）">
@@ -152,10 +149,6 @@
               :disabled="busy"
             />
           </ElFormItem>
-          <ElAlert class="console-hint" type="info" show-icon :closable="false"
-            >时区随版本冻结。恢复不补暂停期间；停机只补一个已持久化的发生点。夏令时缺失时间跳过，重复时间按两个
-            UTC 发生点执行。</ElAlert
-          >
         </template>
         <ElFormItem
           v-if="form.triggerType !== 'PROPERTY_REPORTED'"
@@ -167,40 +160,32 @@
           >下次执行：{{ nextDescription(selected) }}</p
         >
         <ElDivider content-position="left">目标设备</ElDivider>
-        <ElInput
-          v-model="deviceKeyword"
-          aria-label="搜索设备"
-          placeholder="设备名称或标识"
-          :disabled="busy"
-        />
-        <ElButton :disabled="busy" @click="searchDevices(false)">搜索设备</ElButton>
-        <ElSelect
-          v-model="deviceId"
-          aria-label="目标设备"
-          placeholder="选择目标设备"
-          :disabled="busy"
-        >
-          <ElOption
-            v-for="device in devices"
-            :key="device.id"
-            :value="device.id!"
-            :label="device.name ?? device.id"
+        <div class="rule-device-picker">
+          <ElInput
+            v-model="deviceKeyword"
+            aria-label="搜索设备"
+            placeholder="设备名称或标识"
+            :disabled="busy"
           />
-        </ElSelect>
-        <ElButton v-if="deviceNext" :disabled="busy" @click="searchDevices(true)"
-          >更多设备</ElButton
-        >
-        <ElAlert
-          class="automation-form-notice"
-          :title="
-            (form.triggerType === 'PROPERTY_REPORTED'
-              ? '每次属性上报独立判断，条件持续成立可能重复执行；'
-              : '') + '属性设置仅支持 MQTT，其他协议将拒绝整组动作。'
-          "
-          type="info"
-          :closable="false"
-          show-icon
-        />
+          <ElButton :disabled="busy" @click="searchDevices(false)">搜索设备</ElButton>
+          <ElSelect
+            v-model="deviceId"
+            aria-label="目标设备"
+            placeholder="选择目标设备"
+            :disabled="busy"
+          >
+            <ElOption
+              v-for="device in devices"
+              :key="device.id"
+              :value="device.id!"
+              :label="device.name ?? device.id"
+            />
+          </ElSelect>
+          <ElButton v-if="deviceNext" :disabled="busy" @click="searchDevices(true)"
+            >更多设备</ElButton
+          >
+        </div>
+
         <ElDivider content-position="left">条件（全部满足；为空时总是执行）</ElDivider>
         <RuleNodeEditor
           :key="`conditions-${editorKey}`"
@@ -265,6 +250,7 @@
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import ConsoleStatusTag from '@/components/ConsoleStatusTag.vue'
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
@@ -344,23 +330,7 @@
   }
   function nextDescription(row: ManagedAutomation) {
     if (!row.nextFireAt) return '暂无未来计划（草稿、暂停或已结束）'
-    const value = new Date(row.nextFireAt),
-      zone = row.scheduleTimezone || 'UTC'
-    const parts = Object.fromEntries(
-      new Intl.DateTimeFormat('zh-CN', {
-        timeZone: zone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hourCycle: 'h23'
-      })
-        .formatToParts(value)
-        .map(({ type, value }) => [type, value])
-    )
-    return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`
+    return formatTime(row.nextFireAt)
   }
   function triggerConfig(): AutomationWrite['triggerConfig'] {
     if (form.triggerType === 'PROPERTY_REPORTED') return { deviceId: deviceId.value }
@@ -474,7 +444,10 @@
     if (config && 'timezone' in config) timezone.value = config.timezone ?? ''
     if (config && 'payload' in config) payload.value = JSON.stringify(config.payload ?? {}, null, 2)
     deviceId.value =
-      typeof version.triggerConfig?.deviceId === 'string' ? version.triggerConfig.deviceId : ''
+      version.triggerConfig && 'deviceId' in version.triggerConfig
+        && typeof version.triggerConfig.deviceId === 'string'
+        ? version.triggerConfig.deviceId
+        : ''
     conditions.value = JSON.parse(JSON.stringify(version.conditions ?? []))
     actions.value = JSON.parse(JSON.stringify(version.actions ?? []))
     editorKey.value++
@@ -496,8 +469,9 @@
   }
   function completeNodes(nodes: RuleAction[]) {
     return nodes.map(({ nodeType, config }) => {
-      if (config === undefined || !nodeType) throw new Error('节点配置缺失，请显式重建合规版本')
-      return { nodeType, config }
+      if (config === null || typeof config !== 'object' || Array.isArray(config) || !nodeType)
+        throw new Error('节点配置必须为对象，请显式重建合规版本')
+      return { nodeType, config: config as Record<string, unknown> }
     })
   }
   function save() {
@@ -525,7 +499,8 @@
       const row = selected.value!
       await ElMessageBox.confirm(
         `将规则“${row.name}”发布为版本 ${version.versionNumber}？`,
-        '确认发布 / 回滚'
+        '确认发布 / 回滚',
+        { customClass: 'console-rule-feedback' }
       )
       if (!current()) return
       const result = await api.activateAutomation(pid, row.id!, version.id!, row.version!)
@@ -548,7 +523,9 @@
   function remove() {
     return run(async (current, pid) => {
       const row = selected.value!
-      await ElMessageBox.confirm(`删除自动化“${row.name}”？历史执行将保留。`, '确认删除')
+      await ElMessageBox.confirm(`删除自动化“${row.name}”？历史执行将保留。`, '确认删除', {
+        customClass: 'console-rule-feedback'
+      })
       if (!current()) return
       await api.deleteAutomation(pid, row.id!, row.version!)
       if (current()) {
@@ -613,21 +590,11 @@
 </script>
 
 <style scoped lang="scss">
-  .automation-page :deep(.workspace-header > .console-actions) {
-    margin-bottom: 0;
-  }
-
-  .automation-form-field :deep(.el-form-item__label) {
-    height: 20px !important;
-    margin-bottom: 8px;
-    line-height: 20px !important;
-  }
-
   .automation-form-notice {
     margin: 10px 0;
 
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }

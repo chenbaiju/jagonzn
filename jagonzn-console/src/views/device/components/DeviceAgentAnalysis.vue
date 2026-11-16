@@ -1,10 +1,9 @@
 <template>
   <section class="agent-analysis" data-testid="agent-analysis">
     <ElDivider content-position="left">模型分析</ElDivider>
-    <ElAlert type="info" :closable="false" show-icon>
-      先选择证据属性并查看模型状态；Key 启用不代表分析可用，须经审核并手动确认。
-      <template v-if="allowed">{{ selectionLabel }} {{ !error ? statusLabel : '' }}</template>
-    </ElAlert>
+    <p v-if="allowed" class="console-description"
+      >{{ selectionLabel }} {{ !error ? statusLabel : '' }}</p
+    >
     <ElAlert
       v-if="!allowed"
       type="info"

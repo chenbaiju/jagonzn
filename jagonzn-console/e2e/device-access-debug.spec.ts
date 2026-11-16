@@ -81,7 +81,10 @@ test(
     await expect(deviceDetail).toBeVisible()
     await deviceDetail.getByRole('tab', { name: '接入配置', exact: true }).click()
     await expect(page.getByTestId('access-current')).toContainText('MQTT')
-    await deviceDetail.getByRole('button', { name: '消息调试', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: '设备开发入口', exact: true })
+      .getByRole('button', { name: '消息调试', exact: true })
+      .click()
     await expect(page).toHaveURL(/\/device\/messages/)
     await expect(page.getByText('日志仅保留报文摘要')).toBeVisible()
     await expect(page.getByText(/^来源设备：调试设备/)).toBeVisible()

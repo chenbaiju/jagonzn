@@ -1,0 +1,197 @@
+{
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/devices/01a1a506-da8d-73cd-a2fe-28bb962ae589": {
+    "id": "01a1a506-da8d-73cd-a2fe-28bb962ae589",
+    "deviceTypeId": "01a162c9-b4a4-7408-b205-e9359d6c8901",
+    "gatewayId": null,
+    "deviceKey": "device-01a1a506da3f72bea0e533f1eac44101",
+    "name": "温湿度传感器 A01（凭据测试）",
+    "description": "新凭据流程验证：检查首次签发的加密保存及重复读取，不重签旧设备凭据。",
+    "status": "INACTIVE",
+    "location": null,
+    "lastOnlineAt": null,
+    "createdAt": "2026-11-04T05:27:32.145756Z"
+  },
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/devices/01a1a506-da8d-73cd-a2fe-28bb962ae589/reference-profile": {
+    "deviceId": "01a1a506-da8d-73cd-a2fe-28bb962ae589",
+    "name": "温湿度传感器 A01（凭据测试）",
+    "description": "新凭据流程验证：检查首次签发的加密保存及重复读取，不重签旧设备凭据。",
+    "deviceTypeId": "01a162c9-b4a4-7408-b205-e9359d6c8901",
+    "businessKey": "design_sensor_1_v2",
+    "referenceVersion": "1",
+    "profileToken": "5a7c7386c5101ea6234821df9aecee6b4b5db78a9e206da8645e898af62d2727"
+  },
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/devices/01a1a506-da8d-73cd-a2fe-28bb962ae589/location-point": {
+    "longitude": 113.942682,
+    "latitude": 22.539812,
+    "version": "1"
+  },
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/devices/01a1a506-da8d-73cd-a2fe-28bb962ae589/location-observation": {
+    "source": "LEGACY_MANUAL",
+    "longitude": 113.942682,
+    "latitude": 22.539812,
+    "manualVersion": "1"
+  },
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/devices/01a1a506-da8d-73cd-a2fe-28bb962ae589/extension-values": {
+    "deviceId": "01a1a506-da8d-73cd-a2fe-28bb962ae589",
+    "deviceTypeId": "01a162c9-b4a4-7408-b205-e9359d6c8901",
+    "definitionRevision": 1,
+    "valueRevision": 1,
+    "fields": [
+      {
+        "definition": {
+          "id": "ef056bda-33ba-41bd-9974-d369424f92aa",
+          "name": "安装区域",
+          "description": "信息页测试字段；本次仅给温湿度传感器 A01（凭据测试）填值。",
+          "kind": "TEXT",
+          "enabled": true,
+          "options": [],
+          "defaultValue": null,
+          "onLabel": null,
+          "offLabel": null
+        },
+        "value": "深圳示例测试点 · A栋2层（非真实部署位置）",
+        "effectiveValue": "深圳示例测试点 · A栋2层（非真实部署位置）"
+      },
+      {
+        "definition": {
+          "id": "5bdfa33f-f694-4f59-b190-ab4da308cb20",
+          "name": "设备编号",
+          "description": "信息页测试字段；本次仅给温湿度传感器 A01（凭据测试）填值。",
+          "kind": "TEXT",
+          "enabled": true,
+          "options": [],
+          "defaultValue": null,
+          "onLabel": null,
+          "offLabel": null
+        },
+        "value": "TEST-TH-A01",
+        "effectiveValue": "TEST-TH-A01"
+      },
+      {
+        "definition": {
+          "id": "4fc9b06d-0d79-4a16-9788-86c5b4cb0e2d",
+          "name": "安装方式",
+          "description": "信息页测试字段；本次仅给温湿度传感器 A01（凭据测试）填值。",
+          "kind": "SELECT",
+          "enabled": true,
+          "options": [
+            "壁挂",
+            "桌面",
+            "机柜"
+          ],
+          "defaultValue": null,
+          "onLabel": null,
+          "offLabel": null
+        },
+        "value": "壁挂",
+        "effectiveValue": "壁挂"
+      },
+      {
+        "definition": {
+          "id": "e450dd5c-49d4-4a74-b7bc-c640947c2ef0",
+          "name": "维护周期（天）",
+          "description": "信息页测试字段；本次仅给温湿度传感器 A01（凭据测试）填值。",
+          "kind": "NUMBER",
+          "enabled": true,
+          "options": [],
+          "defaultValue": null,
+          "onLabel": null,
+          "offLabel": null
+        },
+        "value": "90",
+        "effectiveValue": "90"
+      },
+      {
+        "definition": {
+          "id": "106ceb9c-564a-438f-942b-70c932e0b2f7",
+          "name": "安装日期",
+          "description": "信息页测试字段；本次仅给温湿度传感器 A01（凭据测试）填值。",
+          "kind": "DATE",
+          "enabled": true,
+          "options": [],
+          "defaultValue": null,
+          "onLabel": null,
+          "offLabel": null
+        },
+        "value": "2026-11-04",
+        "effectiveValue": "2026-11-04"
+      },
+      {
+        "definition": {
+          "id": "cbe56624-70d6-40d6-9a91-0fbe5b02b4aa",
+          "name": "巡检时间",
+          "description": "信息页测试字段；本次仅给温湿度传感器 A01（凭据测试）填值。",
+          "kind": "TIME",
+          "enabled": true,
+          "options": [],
+          "defaultValue": null,
+          "onLabel": null,
+          "offLabel": null
+        },
+        "value": "09:30",
+        "effectiveValue": "09:30"
+      },
+      {
+        "definition": {
+          "id": "13d6479d-84e9-45a7-b7fd-fc52a222327f",
+          "name": "测试设备",
+          "description": "信息页测试字段；本次仅给温湿度传感器 A01（凭据测试）填值。",
+          "kind": "SWITCH",
+          "enabled": true,
+          "options": [],
+          "defaultValue": null,
+          "onLabel": "是",
+          "offLabel": "否"
+        },
+        "value": "true",
+        "effectiveValue": "true"
+      }
+    ]
+  },
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/devices/01a1a506-da8d-73cd-a2fe-28bb962ae589/planar-position": {
+    "deviceId": "01a1a506-da8d-73cd-a2fe-28bb962ae589",
+    "currentDeviceTypeId": "01a162c9-b4a4-7408-b205-e9359d6c8901",
+    "state": "DISABLED",
+    "coordinateSystem": "TYPE_LOCAL_CARTESIAN",
+    "unit": "UNSPECIFIED",
+    "storedFrameDeviceTypeId": null,
+    "storedX": null,
+    "storedY": null,
+    "positionVersion": "0",
+    "effectiveX": null,
+    "effectiveY": null
+  },
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/devices/01a1a506-da8d-73cd-a2fe-28bb962ae589/camera-reference": {
+    "deviceId": "01a1a506-da8d-73cd-a2fe-28bb962ae589",
+    "currentDeviceTypeId": "01a162c9-b4a4-7408-b205-e9359d6c8901",
+    "provider": "EZVIZ",
+    "state": "DISABLED",
+    "storedSerial": null,
+    "storedChannel": null,
+    "referenceVersion": "0",
+    "effectiveSerial": null,
+    "effectiveChannel": null
+  },
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/devices/01a1a506-da8d-73cd-a2fe-28bb962ae589/iccid-information": {
+    "deviceId": "01a1a506-da8d-73cd-a2fe-28bb962ae589",
+    "currentDeviceTypeId": "01a162c9-b4a4-7408-b205-e9359d6c8901",
+    "storedManualIccid": null,
+    "informationVersion": "0",
+    "source": "DISABLED",
+    "effectiveIccid": null,
+    "verification": "UNVERIFIED"
+  },
+  "/api/v1/projects/54504474-30a3-460a-bd24-f852489fd3e7/device-types/01a162c9-b4a4-7408-b205-e9359d6c8901": {
+    "id": "01a162c9-b4a4-7408-b205-e9359d6c8901",
+    "projectId": "54504474-30a3-460a-bd24-f852489fd3e7",
+    "typeKey": "environment_monitor",
+    "name": "环境监测传感器",
+    "deviceKind": "DIRECT",
+    "payloadProtocol": "STANDARD",
+    "networkType": "WIFI",
+    "version": 1,
+    "status": "PUBLISHED",
+    "productKey": null,
+    "createdAt": "2026-10-22T08:45:48.578079Z"
+  }
+}

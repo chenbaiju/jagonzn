@@ -5,7 +5,7 @@
  * 通过修改此配置文件可以快速启用或禁用顶部栏的功能按钮。
  *
  * @module config/headerBar
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { HeaderBarFeatureConfig } from '@/types'
@@ -28,8 +28,8 @@ export const headerBarConfig: HeaderBarFeatureConfig = {
     description: '快速入口功能（待接入真实业务入口后开启）'
   },
   breadcrumb: {
-    enabled: true,
-    description: '面包屑导航，显示当前页面路径'
+    enabled: false,
+    description: '面包屑导航（统一隐藏）'
   },
   globalSearch: {
     // 关闭。当前没有跨资源搜索接口，模板本地搜索只能搜菜单，容易误导为业务搜索。

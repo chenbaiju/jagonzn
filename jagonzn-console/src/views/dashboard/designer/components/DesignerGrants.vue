@@ -8,7 +8,7 @@
     >用户读取授权</el-button
   >
   <el-dialog
-    class="console-dialog"
+    class="console-dialog console-developer-dialog console-studio-dialog"
     v-if="canManage"
     data-testid="grants-dialog"
     v-model="opened"
@@ -18,12 +18,7 @@
     @close="closeDialog"
   >
     <slot name="context" />
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >本操作仅允许选定项目用户读取当前看板，不创建用户、不修改项目角色，也不授予设备访问或匿名分享能力。</ElAlert
-    >
-    <ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >实际运行还须应用包含该看板、用户角色有效并满足设备授权；单独授予READ不保证完整运行可用。</ElAlert
-    >
+
     <el-alert v-if="state.error" :title="state.error" type="error" :closable="false" show-icon />
     <el-alert v-if="state.notice" :title="state.notice" type="info" :closable="false" show-icon />
     <template v-if="!fixedUser">
@@ -299,7 +294,8 @@
         {
           confirmButtonText: status === 'ACTIVE' ? '授予读取权限' : '撤销读取权限',
           cancelButtonText: '取消',
-          type: 'warning'
+          type: 'warning',
+          customClass: 'console-studio-feedback'
         }
       )
       if (
@@ -331,7 +327,7 @@
     align-items: center;
     margin-block: 12px;
     > span:not(.el-tag) {
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-text-color-secondary);
     }
   }

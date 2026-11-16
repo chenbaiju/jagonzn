@@ -3,12 +3,12 @@
   import {
     serializeRuntimeValue,
     type RuntimeValue
-  } from '@things-cloud/client-contracts/dashboard/v1'
+  } from '@things-link/client-contracts/dashboard/v1'
   import {
     initiallyExpanded,
     runtimeChildren,
     runtimeContainer
-  } from '@things-cloud/client-contracts/dashboard/v1'
+  } from '@things-link/client-contracts/dashboard/v1'
 
   const props = withDefaults(
     defineProps<{ value: RuntimeValue; initialExpandDepth: number; depth?: number }>(),

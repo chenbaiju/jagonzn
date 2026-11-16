@@ -23,6 +23,9 @@ export type ProjectQuotaScopeResponse = components['schemas']['ProjectQuotaScope
 /** 单个配额指标在当前 UTC 日窗口内的使用情况。 */
 export type QuotaMetricUsageResponse = components['schemas']['QuotaMetricUsageResponse']
 
+/** 新消息单位的同源日池快照；占用包含未决受理，限额缺失表示不可用。 */
+export type MessageUnitQuotaResponse = components['schemas']['MessageUnitQuotaResponse']
+
 /**
  * 租户套餐摘要：订阅锁定的档位、服务期、冻结额度与功能权益。
  *

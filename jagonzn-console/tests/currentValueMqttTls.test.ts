@@ -12,7 +12,12 @@ it('MQTT受信TLS取得PUBACK，错误服务器名称在发送凭据前拒绝', 
   const sockets = new Set<TLSSocket>()
   let mqttConnections = 0
   try {
-    execFileSync('python3', ['scripts/emqx-test-tls.py', 'generate', '--directory', directory])
+    execFileSync(process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3'), [
+      'scripts/emqx-test-tls.py',
+      'generate',
+      '--directory',
+      directory
+    ])
   } catch (error) {
     rmSync(base, { recursive: true, force: true })
     throw error

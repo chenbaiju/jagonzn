@@ -1,8 +1,9 @@
 <template>
-  <div class="console-fragment">
+  <div class="console-fragment console-execution-fragment">
     <ElCard class="console-list-filter" shadow="never">
       <slot name="tabs" />
       <ConsoleFilterBar
+        label-position="top"
         :items="[
           { key: 'field0', label: '自动化 ID', labelWidth: 90, span: 8 },
           { key: 'field1', label: '执行状态', labelWidth: 90, span: 8 },
@@ -32,6 +33,7 @@
         ></template>
         <template #field2
           ><ElDatePicker
+            popper-class="console-operations-date-picker"
             v-model="range"
             type="datetimerange"
             start-placeholder="开始时间"
@@ -41,13 +43,6 @@
       </ConsoleFilterBar>
     </ElCard>
     <ElCard class="console-list-data" shadow="never">
-      <ElAlert
-        class="automation-executions__notice"
-        title="按冻结属性事件或时间发生点独立求值。DISPATCHED 表示动作已受理，不等于外部送达。"
-        type="info"
-        :closable="false"
-        show-icon
-      />
       <ElAlert v-if="error" :title="error" type="error" :closable="false" show-icon />
       <ElTable :data="items" v-loading="busy" row-key="id">
         <ElTableColumn min-width="190" show-overflow-tooltip prop="automationId" label="自动化" />
@@ -60,9 +55,15 @@
         <ElTableColumn show-overflow-tooltip prop="status" label="状态" />
         <ElTableColumn show-overflow-tooltip prop="reasonCode" label="原因" />
         <ElTableColumn show-overflow-tooltip prop="triggerType" label="触发类型" />
-        <ElTableColumn min-width="190" show-overflow-tooltip prop="acceptedAt" label="受理时间" />
+        <ElTableColumn min-width="190" show-overflow-tooltip prop="acceptedAt" label="受理时间">
+          <template #default="{ row }">{{ formatTime(row.acceptedAt) }}</template>
+        </ElTableColumn>
         <ElTableColumn show-overflow-tooltip prop="attemptCount" label="尝试次数" />
-        <ElTableColumn class-name="console-table-actions-cell" min-width="64" label="详情"
+        <ElTableColumn
+          class-name="console-table-actions-cell"
+          min-width="64"
+          label="详情"
+          fixed="right"
           ><template #default="{ row }"
             ><ConsoleTableAction
               :disabled="busy"
@@ -70,13 +71,17 @@
               label="运行详情"
               icon="ri:eye-line" /></template
         ></ElTableColumn>
+        <template #empty><ElEmpty description="还没有自动化执行记录" /></template>
       </ElTable>
       <ElButton v-if="next" :loading="busy" @click="load(true)">更多自动化日志</ElButton>
     </ElCard>
-    <ElDialog class="console-dialog" v-model="visible" title="自动化运行详情" destroy-on-close>
-      <ElAlert class="console-hint" type="info" show-icon :closable="false"
-        >只读状态摘要；不包含原始输入和配置。</ElAlert
-      >
+    <ElDialog
+      class="console-dialog console-developer-dialog console-execution-dialog"
+      v-model="visible"
+      title="自动化运行详情"
+      width="760px"
+      destroy-on-close
+    >
       <pre data-testid="automation-execution-detail">{{ JSON.stringify(detail, null, 2) }}</pre>
     </ElDialog>
   </div>
@@ -86,6 +91,7 @@
   import ConsoleTableAction from '@/components/ConsoleTableAction.vue'
 
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
+  import { formatTime } from '@/utils/time'
   import { useUserStore } from '@/store/modules/user'
   import { HttpError } from '@/utils/http/error'
   import { listAutomationExecutions, getAutomationExecution } from '@/api/automation-management'
@@ -194,7 +200,7 @@
     margin-bottom: 10px;
 
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }

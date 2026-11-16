@@ -16,6 +16,7 @@
  * @module features/plan/plan-summary-model
  */
 
+import { formatTime } from '@/utils/time'
 import type { PlanIdentityResponse, ProjectPlanSummaryResponse } from '@/api/quota'
 import {
   type PlanCapabilityRow,
@@ -139,7 +140,7 @@ export interface PlanAdditionRow {
   readonly amount: number
   /** 追加额度的单位（运行时单位，例如对象存储为 BYTE）。 */
   readonly unit: string
-  /** 自身有效期中文文案（UTC）；端点缺失时为中性占位符。 */
+  /** 自身有效期中文文案（东八区）；端点缺失时为中性占位符。 */
   readonly periodText: string
   /** 生命周期状态原值；缺失或未知原样透传。 */
   readonly status: string
@@ -208,18 +209,10 @@ export interface ProjectPlanSummaryModel {
 /** 服务期无终点时的文案；FREE 长期有效档必须显示它，不能让缺省看起来像加载失败。 */
 export const PERPETUAL_PERIOD_TEXT = '长期有效（无终止时间）'
 
-/**
- * RFC3339 时刻 → 稳定的 UTC 文案（`YYYY-MM-DD HH:mm UTC`）。
- *
- * 直接用 `Date#toISOString`，不受浏览器时区影响；非法输入原样透传而不是显示成当前时间。
- *
- * @param value RFC3339 时刻
- */
+/** 套餐展示时间沿用平台东八区秒级格式；非法值保持原始事实。 */
 export const formatUtcMinute = (value?: string | null): string => {
   if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`
+  return formatTime(value, value)
 }
 
 /** 按编码排序的只读副本；编码缺失时保留空串，排序保持稳定。 */
@@ -239,7 +232,7 @@ const toIdentity = (identity: PlanIdentityResponse): PlanIdentityModel => ({
 })
 
 /**
- * 服务期文案：无终点时给出明确说明，否则拼接起止 UTC 时刻。
+ * 服务期文案：无终点时给出明确说明，否则拼接东八区起止时刻。
  *
  * @param perpetual 是否无终点
  * @param startsAt 起始时刻

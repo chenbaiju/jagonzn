@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+  import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
   import {
     deviceVariableReferences,
     type TextEnumInput,
@@ -134,10 +134,7 @@
 </script>
 <template>
   <section class="console-fragment" aria-label="枚举文本编辑"
-    ><ElDivider content-position="left">文本枚举变量</ElDivider
-    ><ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >选项值是稳定标识，文本组件仅展示标签。默认选项写入草稿，预览选择不会写回默认。</ElAlert
-    >
+    ><ElDivider content-position="left">文本枚举变量</ElDivider>
     <div class="console-actions">
       <button :disabled="disabled" @click="newVariable">新建文本变量</button
       ><button

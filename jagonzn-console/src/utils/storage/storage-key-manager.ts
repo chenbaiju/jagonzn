@@ -27,7 +27,7 @@
  * 4. 返回当前版本的存储键供使用
  *
  * @module utils/storage/storage-key-manager
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import { StorageConfig } from '@/utils/storage'
 

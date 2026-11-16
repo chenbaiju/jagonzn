@@ -26,7 +26,7 @@
  * - 提供便捷的显示/隐藏方法
  *
  * @module utils/ui/loading
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import { fourDotsSpinnerSvg } from '@/assets/svg/loading'
 

@@ -29,7 +29,7 @@
  * ```
  *
  * @module types/api/api
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 declare namespace Api {

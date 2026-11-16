@@ -4,11 +4,7 @@
       <ElTabPane v-if="canManage" name="definitions" label="当前自动化" />
       <ElTabPane name="history" label="执行历史" />
     </ElTabs>
-    <ElAlert type="info" :closable="false" show-icon>{{
-      mode === 'definitions'
-        ? '仅显示当前发布版本的设备关系，含暂停配置；定时触发使用设备上下文，不是设备主动上报。'
-        : '保留原执行版本；动作意图受理及设备动作记录数均不代表设备物理执行成功。'
-    }}</ElAlert>
+
     <ElAlert
       v-if="failed"
       type="error"

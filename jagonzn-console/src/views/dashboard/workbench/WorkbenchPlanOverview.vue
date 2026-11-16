@@ -2,27 +2,54 @@
   import { computed } from 'vue'
   import type { ProjectQuotaOverviewResponse, QuotaMetricUsageResponse } from '@/api/quota'
   import { subscriptionStatusLabel } from '@/features/plan/plan-summary-model'
+  import { buildMessageUnitQuotaRows } from '@/features/quota/message-unit-model'
 
   const props = defineProps<{
     overview?: ProjectQuotaOverviewResponse
     loading: boolean
     failed: boolean
-    showDetails: boolean
   }>()
-  defineEmits<{ retry: []; resources: []; details: [] }>()
+  defineEmits<{ retry: []; resources: [] }>()
 
   const summary = computed(() => props.overview?.planSummary)
+  const unitRows = computed(() => buildMessageUnitQuotaRows(props.overview?.messageUnitQuotas))
   const number = (value?: number) =>
     typeof value === 'number' ? value.toLocaleString('zh-CN') : '—'
   // 用共享池已用值对照共享上限，不能把当前项目贡献当成共享池总用量。
   const rows = computed(() => {
     const pool = props.overview?.tenantSharedPool
     const metric = (code: string) => pool?.dailyMetrics?.find((item) => item.metric === code)
+    const legacy = (label: string, usage?: QuotaMetricUsageResponse) => ({
+      label,
+      text: usageText(usage),
+      percentage: percentage(usage),
+      progressStatus: progressStatus(usage),
+      statusText: undefined,
+      statusType: undefined,
+      snapshotText: undefined
+    })
+    const message = (direction: 'UPLINK' | 'DOWNLINK') => {
+      const quota = unitRows.value.find((row) => row.direction === direction)
+      return quota
+        ? {
+            label: quota.label,
+            text: quota.sharedUsageText,
+            percentage: quota.percentage,
+            progressStatus: quota.progressStatus,
+            statusText: quota.statusText,
+            statusType: quota.statusType,
+            snapshotText: quota.snapshotText
+          }
+        : legacy(
+            `${direction === 'UPLINK' ? '上行' : '下行'}消息 / 日`,
+            metric(`${direction}_MESSAGE`)
+          )
+    }
     return [
-      { label: '设备数', usage: pool?.deviceCount },
-      { label: '上行消息 / 日', usage: metric('UPLINK_MESSAGE') },
-      { label: '下行消息 / 日', usage: metric('DOWNLINK_MESSAGE') },
-      { label: '通知投递 / 日', usage: metric('NOTIFICATION_DELIVERY') }
+      legacy('设备数', pool?.deviceCount),
+      message('UPLINK'),
+      message('DOWNLINK'),
+      legacy('通知投递 / 日', metric('NOTIFICATION_DELIVERY'))
     ]
   })
   const usageText = (usage?: QuotaMetricUsageResponse) =>
@@ -32,7 +59,7 @@
     typeof usage?.used === 'number' && typeof usage.limit === 'number' && usage.limit > 0
       ? Math.min(100, Math.max(0, (usage.used / usage.limit) * 100))
       : undefined
-  const progressStatus = (usage?: QuotaMetricUsageResponse) =>
+  const progressStatus = (usage?: QuotaMetricUsageResponse): 'exception' | 'warning' | undefined =>
     usage?.status === 'HARD_LIMIT' || usage?.status === 'DEGRADED'
       ? 'exception'
       : usage?.status === 'SOFT_LIMIT'
@@ -45,7 +72,7 @@
     <div class="workbench-plan__header">
       <h2 id="plan-overview-heading">套餐概况</h2>
       <ElButton text aria-label="查看用量与项目资源" @click="$emit('resources')">
-        <ArtSvgIcon icon="ri:arrow-right-line" />
+        <ArtSvgIcon icon="tl:chevron-right" />
       </ElButton>
     </div>
     <ElSkeleton :loading="loading" animated :rows="5">
@@ -63,16 +90,19 @@
             <dd>{{ subscriptionStatusLabel(summary.subscriptionStatus) }}</dd>
           </div>
           <div v-for="row in rows" :key="row.label" class="workbench-plan__row">
-            <dt>{{ row.label }}</dt>
+            <dt :title="row.snapshotText">{{ row.label }}</dt>
             <dd>
-              <span>{{ usageText(row.usage) }}</span>
+              <span>{{ row.text }}</span>
+              <ElTag v-if="row.statusText" :type="row.statusType" size="small" disable-transitions>
+                {{ row.statusText }}
+              </ElTag>
               <ElProgress
-                v-if="percentage(row.usage) !== undefined"
-                :percentage="percentage(row.usage)"
+                v-if="row.percentage !== undefined"
+                :percentage="row.percentage"
                 :show-text="false"
                 :stroke-width="4"
-                :status="progressStatus(row.usage)"
-                :aria-label="`${row.label}：${usageText(row.usage)}`"
+                :status="row.progressStatus"
+                :aria-label="`${row.label}：${row.text}`"
               />
             </dd>
           </div>
@@ -82,25 +112,28 @@
           </div>
         </dl>
         <p class="workbench-plan__caption">设备及日用量为租户共享池，成员数为当前项目人数。</p>
+        <p v-if="unitRows.length" class="workbench-plan__caption">
+          消息按每个原报文每 4KiB 向上取整，按 UTC
+          日计量；共享占用包含未决受理，余额不是本项目独享。
+        </p>
         <p v-if="summary?.effectiveMatchesSubscribed === false" class="workbench-plan__warning"
           >当前生效额度与订阅套餐不同，详见项目资源。</p
         >
       </template>
     </ElSkeleton>
-    <div v-if="showDetails" class="workbench-plan__details">
-      <h3>接入更多设备？</h3>
-      <p>查看各套餐的资源额度与功能权益。</p>
-      <ElButton type="primary" @click="$emit('details')">了解详情</ElButton>
-    </div>
   </section>
 </template>
 
 <style scoped lang="scss">
   .workbench-plan {
-    padding: 20px 24px;
-    background: color-mix(in srgb, #329fd7 10%, var(--el-bg-color));
-    border: 1px solid var(--el-color-primary-light-8);
-    border-radius: 10px;
+    padding: 20px;
+    background: #eaf5fb;
+    border: 1px solid var(--console-line);
+    border-radius: 4px;
+
+    .dark & {
+      background: var(--el-color-primary-light-9);
+    }
 
     &__header {
       display: flex;
@@ -111,8 +144,8 @@
 
       h2 {
         margin: 0;
-        font-size: 17px;
-        font-weight: 600;
+        font-size: 14px;
+        font-weight: 500;
       }
 
       .el-button {
@@ -156,7 +189,7 @@
     &__caption,
     &__warning {
       margin: 16px 0 0;
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.6;
       color: var(--el-text-color-secondary);
     }
@@ -165,25 +198,5 @@
       color: var(--el-color-warning-dark-2);
     }
 
-    &__details {
-      margin-top: 24px;
-      text-align: center;
-
-      h3 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 600;
-      }
-
-      p {
-        margin: 10px 0 16px;
-        font-size: 13px;
-        color: var(--el-text-color-regular);
-      }
-
-      .el-button {
-        width: 100%;
-      }
-    }
   }
 </style>

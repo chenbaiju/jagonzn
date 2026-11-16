@@ -83,7 +83,7 @@ describe('设备命令历史', () => {
     expect(api.fetchDeviceCommandHistory.mock.calls[2][2]).toBeUndefined()
     await click('刷新历史')
     expect(wrapper.text()).toContain('第 1 页')
-    expect(wrapper.text()).toContain('不代表设备执行成功')
+    expect(wrapper.findComponent(table).props('data')).toEqual([item])
   })
   it('换设备取消旧请求，旧响应不能落到新设备详情', async () => {
     let finish!: (v: unknown) => void

@@ -1,0 +1,44 @@
+<script setup lang="ts">
+import {computed,onScopeDispose,ref,shallowRef,watch} from 'vue'
+import {ApiError,IdentityChanged,errorMessage,identityEpoch,onIdentityChange} from '@/core/http'
+import {can,currentProject,projectId,session} from '@/core/session'
+import {formatTime} from '@/core/time'
+import {typeDeviceUuid} from '../device-types/type-devices-api'
+import {mqttDataTransport,mqttOriginalHex,mqttOriginalText,type MqttDataTransport,type MqttDataSession,type MqttDataMessage} from './mqtt-data-runtime-api'
+import {dataStreamPublishTopic,dataStreamSubscribeTopic} from '../device-types/data-stream-publication-api'
+import DeviceMqttDataDownlinks from './DeviceMqttDataDownlinks.vue'
+const props=withDefaults(defineProps<{deviceId:string;disabled?:boolean;transport?:MqttDataTransport}>(),{disabled:false,transport:()=>mqttDataTransport})
+const emit=defineEmits<{locked:[value:boolean];changed:[]}>(),downlinkLocked=ref(false)
+watch(downlinkLocked,value=>emit('locked',value),{flush:'sync'})
+const roles=['OWNER','ADMIN','OPERATOR','VIEWER'],denied=ref(false),member=computed(()=>session.ready&&!session.transitioning&&!!session.user?.accountId&&typeDeviceUuid.test(projectId.value)&&typeDeviceUuid.test(props.deviceId)&&can('device:read')&&currentProject.value?.id===projectId.value&&roles.includes(session.user?.projectRole||'')&&roles.includes(currentProject.value?.myRole||'')),readable=computed(()=>member.value&&!denied.value)
+const currentPin=shallowRef<MqttDataSession>(),rows=shallowRef<readonly MqttDataMessage[]>(),selected=shallowRef<MqttDataMessage>(),loading=ref(false),pinError=ref(''),historyError=ref('')
+const statusNames:Record<string,string>={NO_CONNECTION:'没有开放的MQTT连接',RECONNECT_REQUIRED:'原连接没有固定DATA发布，需要重新认证连接',STALE:'原连接资格已变化，当前不可受理新DATA',PUBLISHED:'原连接已固定DATA发布',NO_TYPE:'认证时没有设备类型',UNSUPPORTED_TYPE:'认证时类型不支持MQTT DATA',NO_PUBLICATION:'认证时没有DATA发布',PUBLICATION_BUSY:'认证时发布读取争用，本连接保持无发布',CAPACITY:'认证时DATA固定容量不足，本连接保持无发布'}
+let generation=0,alive=true,controller:AbortController|undefined
+function capture(){return{generation,identity:identityEpoch(),project:projectId.value,device:props.deviceId,actor:session.user?.accountId}}
+function current(value:ReturnType<typeof capture>){return alive&&readable.value&&value.generation===generation&&value.identity===identityEpoch()&&value.project===projectId.value&&value.device===props.deviceId&&value.actor===session.user?.accountId}
+function clear(){generation++;controller?.abort();currentPin.value=undefined;rows.value=undefined;selected.value=undefined;loading.value=false;pinError.value='';historyError.value=''}
+function failure(cause:unknown){return cause instanceof ApiError&&cause.status===404?'未取得本次事实（404）：当前环境可能未开放此读取接口，或此设备资源不可读；不按空记录处理。':errorMessage(cause)}
+async function load(){if(!readable.value||props.disabled||loading.value||downlinkLocked.value)return;const state=capture();controller=new AbortController();loading.value=true;currentPin.value=undefined;rows.value=undefined;selected.value=undefined;pinError.value='';historyError.value=''
+ const [pin,history]=await Promise.allSettled([props.transport.current(state.project,state.device,controller.signal),props.transport.history(state.project,state.device,controller.signal)]);if(!current(state))return
+ if([pin,history].some(result=>result.status==='rejected'&&result.reason instanceof ApiError&&[401,403].includes(result.reason.status))){clear();denied.value=true;return}
+ if(pin.status==='fulfilled')currentPin.value=pin.value;else if(!(pin.reason instanceof IdentityChanged))pinError.value=failure(pin.reason)
+ if(history.status==='fulfilled')rows.value=history.value;else if(!(history.reason instanceof IdentityChanged))historyError.value=failure(history.reason)
+ loading.value=false
+}
+function inspect(row:MqttDataMessage){if(!readable.value||props.disabled||loading.value||downlinkLocked.value||!rows.value?.includes(row))return;selected.value=row}
+watch([()=>props.deviceId,()=>projectId.value,()=>session.user?.accountId,member,()=>props.transport],()=>{clear();denied.value=false;if(member.value)void load()},{immediate:true,flush:'sync'})
+watch(()=>props.disabled,value=>{if(!value&&readable.value&&!loading.value&&!currentPin.value&&!rows.value)void load()})
+const dispose=onIdentityChange(clear);onScopeDispose(()=>{alive=false;clear();dispose()})
+</script>
+<template><section v-if="member" class="mqtt-data-runtime"><h2>MQTT 数据流</h2><p>读取原认证连接固定的 DATA 发布及最近上行原件。记录保留原格式与原字节，不按当前最新发布重新解释。</p>
+ <p v-if="denied" role="alert">MQTT DATA 读取权限已失效，原会话、记录和原文已清除。</p><template v-else>
+ <el-button :loading="loading" :disabled="disabled||loading||downlinkLocked" @click="load">刷新MQTT DATA会话与记录</el-button>
+ <p v-if="pinError" role="alert">固定会话未取得：{{pinError}}</p><template v-if="currentPin"><p role="status">{{statusNames[currentPin.status]}} · {{currentPin.available?'本次快照可受理':'本次快照不可受理'}}。读取不是实际消息已送达或执行证明。</p><dl><dt>固定连接</dt><dd>{{currentPin.connectionId||'无固定连接'}}</dd><dt>固定类型</dt><dd>{{currentPin.deviceTypeId||'无固定类型'}}</dd><dt>固定发布</dt><dd>{{currentPin.publicationId||'无固定发布'}} · {{currentPin.publicationRevision||'无发布代次'}}</dd><dt>定义摘要</dt><dd>{{currentPin.definitionDigest||'无摘要'}}</dd><dt>发布时间</dt><dd>{{currentPin.publicationPublishedAt||'无发布时间'}}</dd></dl><el-table v-if="currentPin.streams.length" :data="currentPin.streams" row-key="identifier"><el-table-column prop="identifier" label="固定流标识"/><el-table-column prop="name" label="流名称"/><el-table-column prop="format" label="原格式"/><el-table-column label="发布 Topic"><template #default="{row}"><code>{{dataStreamPublishTopic(row)}}</code></template></el-table-column><el-table-column label="订阅 Topic"><template #default="{row}"><code>{{dataStreamSubscribeTopic(row)}}</code></template></el-table-column></el-table></template>
+ <DeviceMqttDataDownlinks :device-id="deviceId" :pin="currentPin" :disabled="disabled||loading||!!selected" @locked="downlinkLocked=$event" @changed="emit('changed')"/>
+ <h3>最近上行原件</h3><p>最多最近 20 条，按实际受理时间读取，不代表完整历史。当前无连接也可能保留旧连接原件。</p><p v-if="historyError" role="alert">原件历史未取得：{{historyError}}</p>
+ <el-table v-if="rows" :data="[...rows]" row-key="messageId" empty-text="本次读取没有近期MQTT DATA原件"><el-table-column prop="messageId" label="消息 ID" min-width="220"/><el-table-column prop="streamIdentifier" label="原固定流"/><el-table-column prop="format" label="原格式"/><el-table-column prop="payloadBytes" label="原字节数"/><el-table-column label="原发布 QoS" width="110"><template #default="{row}">QoS {{row.originalQos}}</template></el-table-column><el-table-column prop="decodeStatus" label="解码状态" min-width="130"/><el-table-column label="受理时间" min-width="170"><template #default="{row}"><span :title="row.acceptedAt">{{formatTime(row.acceptedAt)}}</span></template></el-table-column><el-table-column label="原文"><template #default="{row}"><el-button link :disabled="disabled||loading" @click="inspect(row)">查看MQTT原文</el-button></template></el-table-column></el-table>
+ <el-dialog :model-value="!!selected" title="MQTT DATA上行原件" width="min(780px,94vw)" @close="selected=undefined"><template v-if="selected"><p>消息 {{selected.messageId}} · {{selected.payloadBytes}} 原字节</p><p>原连接：{{selected.connectionId}}<br>原发布：{{selected.publicationId}}<br>原流：{{selected.streamIdentifier}} / {{selected.format}} · {{selected.decodeStatus}}<br>原发布 QoS：<span aria-label="MQTT DATA原发布QoS">QoS {{selected.originalQos}}</span></p><p v-if="selected.topic">实际Topic：<code>{{selected.topic}}</code></p><p v-if="selected.params">Topic参数：{{JSON.stringify(selected.params)}}</p><p>原接收时间：{{selected.receivedAt}}<br>受理时间：{{selected.acceptedAt}}</p><p>原字节 SHA-256：<code>{{selected.rawDigest}}</code></p>
+  <p v-if="selected.payloadBase64===null" role="status">原文已按保留策略到期；当前仅显示原件头和摘要，不能恢复为空原文。</p><template v-else><h3>HEX 原字节</h3><pre aria-label="MQTT DATA原件HEX">{{mqttOriginalHex(selected)}}</pre><template v-if="selected.format!=='HEX'"><h3>UTF-8 原文</h3><p v-if="mqttOriginalText(selected)===undefined" role="alert">原字节不是有效 UTF-8，请查看 HEX；未替换损坏字节。</p><template v-else><p v-if="selected.decodeStatus==='INVALID_JSON'">JSON 校验未通过，以下仍按原文展示。</p><pre aria-label="MQTT DATA原件UTF8">{{mqttOriginalText(selected)}}</pre></template></template></template>
+ </template></el-dialog></template>
+</section></template>
+<style scoped>.mqtt-data-runtime{margin-top:24px;padding-top:18px;border-top:1px solid var(--tl-border);font-size:13px;line-height:22px}.mqtt-data-runtime h2{font-size:18px}.mqtt-data-runtime h3{font-size:15px;margin:20px 0 10px}.mqtt-data-runtime p{overflow-wrap:anywhere}.mqtt-data-runtime [role=alert]{color:var(--el-color-danger)}.mqtt-data-runtime dl{display:grid;grid-template-columns:90px minmax(0,1fr);gap:6px 12px}.mqtt-data-runtime dd{margin:0;overflow-wrap:anywhere}.mqtt-data-runtime pre{max-height:340px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:12px;background:var(--tl-bg-base)}.mqtt-data-runtime code{overflow-wrap:anywhere}</style>

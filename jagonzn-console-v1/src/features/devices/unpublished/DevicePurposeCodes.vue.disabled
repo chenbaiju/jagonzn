@@ -1,0 +1,21 @@
+<script setup lang="ts">
+import {ref,watch,onScopeDispose,computed} from 'vue'
+import QrcodeVue from 'qrcode.vue'
+import {api,errorMessage,IdentityChanged,onIdentityChange} from '@/core/http'
+import {projectId,currentProject,can} from '@/core/session'
+import {formatTime} from '@/core/time'
+import type {Schema} from '@/core/contracts'
+import {devicePath} from './api'
+import {useDeviceGuard} from './use-device-guard'
+import {devicePurposeCode,devicePurposeOrigin} from './purpose-code'
+import {defaultAppProjectAddress} from './app-project-entry'
+const props=defineProps<{deviceId:string}>(),capture=useDeviceGuard(()=>props.deviceId)
+const address=ref(defaultAppProjectAddress(window.location.hostname)),payload=ref(''),payloadIsClaim=ref(false),code=ref<Schema<'DeviceClaimCodeResponse'>>(),error=ref(''),busy=ref(false)
+let generation=0,timer:ReturnType<typeof setTimeout>|undefined
+function clear(){generation++;payload.value='';code.value=undefined;error.value='';if(timer)clearTimeout(timer)}
+const dispose=onIdentityChange(clear);onScopeDispose(()=>{clear();dispose()})
+watch(()=>[props.deviceId,projectId.value,can('enduser:manage')],clear)
+async function issue(claim:boolean){if(busy.value||!can('enduser:manage')||!currentProject.value)return;const check=capture(),current=generation;busy.value=true;payload.value='';error.value='';try{devicePurposeOrigin(currentProject.value,address.value);const base=devicePath(projectId.value,props.deviceId);const value=claim?await api<Schema<'DeviceClaimCodeResponse'>>(`${base}/purpose-codes/claim`,{method:'post',headers:{'Idempotency-Key':crypto.randomUUID()}}):await api<Schema<'DeviceLocationCodeResponse'>>(`${base}/purpose-codes/location`);check();if(current!==generation)return;payloadIsClaim.value=claim;payload.value=devicePurposeCode(currentProject.value,address.value,props.deviceId,value);if(claim){code.value=value as Schema<'DeviceClaimCodeResponse'>;timer=setTimeout(()=>{payload.value='';code.value=undefined},Math.max(0,Date.parse(code.value.expiresAt)-Date.now()))}}catch(e){if(current===generation&&!(e instanceof IdentityChanged))error.value=errorMessage(e)}finally{busy.value=false}}
+async function revoke(){if(!code.value||!can('enduser:manage')||busy.value)return;const check=capture();busy.value=true;error.value='';try{await api<void>(`${devicePath(projectId.value,props.deviceId)}/purpose-codes/claim/${code.value.codeId}`,{method:'delete'});check();clear()}catch(e){if(!(e instanceof IdentityChanged))error.value=errorMessage(e)}finally{busy.value=false}}
+</script>
+<template><section v-if="can('enduser:manage')"><el-alert v-if="error" :title="error" type="error" :closable="false"/><el-form label-position="top"><el-form-item label="扫码端可访问的平台根地址"><el-input v-model="address" :disabled="busy" placeholder="https://平台域名"/></el-form-item></el-form><div class="tl-toolbar"><el-button :loading="busy" @click="issue(false)">显示设备定位码</el-button><el-popconfirm title="签发一次性设备认领码，确认继续？" @confirm="issue(true)"><template #reference><el-button type="primary" :disabled="busy||!!code">签发认领码</el-button></template></el-popconfirm><el-button v-if="code" type="danger" plain :disabled="busy" @click="revoke">撤销认领码</el-button></div><template v-if="payload"><QrcodeVue :value="payload" :size="240" level="M" render-as="svg"/><p>{{payloadIsClaim?'一次性认领码，请勿转发。':'设备定位码，扫码后仍需当前项目访问权限。'}}</p><el-button @click="payload=''">关闭展示</el-button></template><p v-if="code">到期时间 {{formatTime(code.expiresAt)}}；关闭展示不会撤销，请撤销或等待到期。</p></section></template>

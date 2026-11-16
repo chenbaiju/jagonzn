@@ -38,7 +38,7 @@
  * - openChat: 打开聊天窗口
  *
  * @module utils/sys/mittBus
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import mitt, { type Emitter } from 'mitt'
 

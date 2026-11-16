@@ -3,7 +3,7 @@
 # 默认模式构建并启动后端 → 跑 openapi-fetch 行为契约 → 收尾。
 #
 # 用法（仓库根或 console 目录均可）：
-#   ./things-cloud-console/scripts/run-contract-tests.sh
+#   ./jagonzn-console/scripts/run-contract-tests.sh
 #
 # 环境变量（可选）：
 #   CONTRACT_BASE_URL   后端基地址，默认 http://localhost:8080
@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONSOLE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$CONSOLE_DIR/.." && pwd)"
 DEPLOY_DIR="$REPO_ROOT/deploy"
-BACKEND_DIR="$REPO_ROOT/things-cloud"
+BACKEND_DIR="$REPO_ROOT/things-link"
 
 BASE_URL="${CONTRACT_BASE_URL:-http://localhost:8080}"
 # 固定专用测试库；不支持外部覆盖（覆盖即可能误清共享 dev 的 DB 0）
@@ -49,7 +49,7 @@ trap cleanup EXIT
 flush_test_redis_db() {
   local password out rc
   password="$(grep -E '^REDIS_PASSWORD=' "${DEPLOY_DIR}/.env" 2>/dev/null | cut -d= -f2- || true)"
-  password="${password:-thingscloud}"
+  password="${password:-thingslink}"
   log "清空专用 Redis DB ${REDIS_TEST_DB}（只清测试库，不碰 dev 的 DB 0）"
   # 用 -e REDISCLI_AUTH 而不是 -a：-a 会在输出里混入密码命令行警告，破坏「输出严格为 OK」的判定
   local redis_cli=(docker exec -e "REDISCLI_AUTH=${password}" tc-redis redis-cli -n "${REDIS_TEST_DB}")
@@ -115,8 +115,8 @@ log "预置成员账号 ${MEMBER_EMAIL}"
 # 5. 默认模式：构建并启动后端（专用 Redis DB），等待健康检查。
 if [[ "${SKIP_BACKEND:-0}" != "1" ]]; then
   log "构建后端胖 jar（package 在 reactor 内完成，无需 install 到 ~/.m2）"
-  (cd "${BACKEND_DIR}" && ./mvnw -q -pl things-cloud-bootstrap -am package -DskipTests)
-  JAR="$(ls "${BACKEND_DIR}"/things-cloud-bootstrap/target/things-cloud-bootstrap-*.jar | head -1)"
+  (cd "${BACKEND_DIR}" && ./mvnw -q -pl things-link-bootstrap -am package -DskipTests)
+  JAR="$(ls "${BACKEND_DIR}"/things-link-bootstrap/target/things-link-bootstrap-*.jar | head -1)"
   log "启动后端 ${JAR}（SPRING_DATA_REDIS_DATABASE=${REDIS_TEST_DB}）"
   SPRING_DATA_REDIS_DATABASE="${REDIS_TEST_DB}" java -jar "${JAR}" >"${BACKEND_LOG}" 2>&1 &
   BACKEND_PID=$!

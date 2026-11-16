@@ -3,7 +3,11 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { reactive, nextTick } from 'vue'
 import Page from '@/views/rule/messages/index.vue'
 import * as api from '@/api/rule-management'
-const mocks = vi.hoisted(() => ({ user: {} as any }))
+const mocks = vi.hoisted(() => ({ user: {} as any, push: vi.fn() }))
+vi.mock('vue-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vue-router')>()),
+  useRouter: () => ({ push: mocks.push })
+}))
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => mocks.user }))
 vi.mock('@/api/rule-management', () => ({ ruleCatalog: vi.fn(), listRules: vi.fn() }))
 vi.mock('element-plus', () => ({ ElMessageBox: { confirm: vi.fn() } }))
@@ -23,6 +27,41 @@ beforeEach(() => {
   vi.mocked(api.ruleCatalog).mockResolvedValue({ actions: [] })
 })
 describe('消息规则页面身份变更边界', () => {
+  it('执行记录入口按读取权限显示并进入上行规则标签', async () => {
+    vi.mocked(api.listRules).mockResolvedValue({ items: [] })
+    const page = shallowMount(Page, {
+      global: {
+        stubs: {
+          ...Object.fromEntries(
+            [
+              'ElCard',
+              'ElAlert',
+              'ElInput',
+              'ElSelect',
+              'ElOption',
+              'ElTable',
+              'ElTableColumn',
+              'ElDialog',
+              'ElForm',
+              'ElFormItem',
+              'ElDivider'
+            ].map((name) => [name, true])
+          ),
+          ConsoleWorkspaceHeader: false,
+          ElButton: { template: '<button><slot /></button>' }
+        }
+      }
+    })
+    expect(page.find('nav').exists()).toBe(false)
+    mocks.user.info.buttons.push('rule:read')
+    await nextTick()
+    await page.get('nav button').trigger('click')
+    expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/rule/executions?source=rule')
+    mocks.user.info.buttons = ['rule:manage']
+    await nextTick()
+    expect(page.find('nav').exists()).toBe(false)
+    page.unmount()
+  })
   it('切换项目后旧请求迟到不得覆盖新列表', async () => {
     const old = deferred()
     vi.mocked(api.listRules).mockImplementation((id) =>
@@ -50,6 +89,8 @@ describe('消息规则页面身份变更边界', () => {
     mocks.user.info.currentProjectId = 'b'
     await nextTick()
     await flushPromises()
+    expect(api.ruleCatalog).toHaveBeenCalledWith('a', 'MESSAGE_RULE')
+    expect(api.ruleCatalog).toHaveBeenCalledWith('b', 'MESSAGE_RULE')
     old.resolve({ items: [{ id: 'secret', name: '旧项目私有规则' }] })
     await flushPromises()
     expect((page.vm as any).$.setupState.items).toEqual([{ id: 'new', name: '新项目' }])

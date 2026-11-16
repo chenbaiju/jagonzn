@@ -21,7 +21,8 @@ test('应用组合：创建、固定版本排序入口、保存重开、CAS冲�
   const second = await dashboard(page, '组合看板二')
   await page.goto('/#/dashboard/applications')
   const catalog = page.getByRole('region', { name: '应用目录' })
-  await expect(catalog.getByRole('heading', { name: '应用目录', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '应用管理', exact: true })).toBeVisible()
+  await expect(catalog).toBeVisible()
   await page.getByLabel('管理名称', { exact: true }).fill('组合验收应用')
   await page.getByRole('button', { name: '创建应用', exact: true }).click()
   const draft = page.getByRole('region', { name: '应用草稿' })
@@ -91,7 +92,7 @@ test('应用组合：创建、固定版本排序入口、保存重开、CAS冲�
   await page.getByRole('dialog').getByRole('button', { name: '确定' }).click()
   await expect(page.getByLabel('公开展示名')).toHaveValue('另一客户端已保存')
   await expect(page.getByRole('dialog')).toBeHidden()
-  await catalog.getByRole('heading', { name: '应用目录', exact: true }).scrollIntoViewIfNeeded()
+  await catalog.scrollIntoViewIfNeeded()
   await page.screenshot({ path: test.info().outputPath('application-editor.png'), fullPage: true })
   // 真实VIEWER写入边界，不能仅证明按钮隐藏。
   // 这里只准备只读角色；同一矩阵可已存在成员，不重复制造待接受邀请。

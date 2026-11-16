@@ -24,6 +24,7 @@
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import type { OverviewTrend } from '@/api/overview-trends'
   import { useChart } from '@/hooks/core/useChart'
   import type { EChartsOption } from '@/plugins/echarts'
@@ -49,10 +50,6 @@
   const hasValues = computed(() =>
     props.chart.series?.some((s) => s.values?.some((v) => typeof v === 'number'))
   )
-  const formatTime = (time: string) => {
-    const date = new Date(time)
-    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:00`
-  }
   const option = (): EChartsOption => ({
     animation: false,
     color: palette,
@@ -68,10 +65,10 @@
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: props.times.map(formatTime),
+      data: props.times.map((time) => formatTime(time)),
       axisLine: { lineStyle: { color: isDark.value ? '#3c4350' : '#dce4ee' } },
       axisTick: { show: false },
-      axisLabel: { color: isDark.value ? '#a3afc0' : '#8796ac', fontSize: 11, hideOverlap: true }
+      axisLabel: { color: isDark.value ? '#a3afc0' : '#8796ac', fontSize: 14, hideOverlap: true }
     },
     yAxis: {
       type: 'value',
@@ -80,7 +77,7 @@
       splitNumber: 5,
       axisLabel: {
         color: isDark.value ? '#a3afc0' : '#8796ac',
-        fontSize: 11,
+        fontSize: 14,
         formatter: (value: number) => formatTrendValue(value, props.chart.unit)
       },
       splitLine: { lineStyle: { color: isDark.value ? '#303744' : '#edf1f6' } }
@@ -89,7 +86,9 @@
       id: s.key,
       name: s.label,
       type: 'line',
-      symbol: 'none',
+      symbol: 'circle',
+      symbolSize: 5,
+      showSymbol: true,
       connectNulls: false,
       data: hidden.value.has(s.key ?? '') ? (s.values ?? []).map(() => null) : (s.values ?? []),
       lineStyle: { width: 2, color: seriesColor(s.key, index) },
@@ -128,7 +127,7 @@
       top: 44%;
       left: 50%;
       padding: 6px 12px;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-text-color-secondary);
       background: var(--el-bg-color);
       transform: translate(-50%, -50%);
@@ -145,7 +144,7 @@
       gap: 5px;
       align-items: center;
       padding: 0;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-text-color-secondary);
       cursor: pointer;
       background: transparent;

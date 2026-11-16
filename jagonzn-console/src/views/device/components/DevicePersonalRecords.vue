@@ -1,9 +1,7 @@
 <template>
   <section class="personal-records" data-testid="personal-records">
     <ElDivider content-position="left">个人事实记录</ElDivider>
-    <ElAlert type="info" :closable="false" show-icon
-      >仅本人且当前仍有项目权限可读；历史事实不代表设备当前状态，不是模型诊断。记录30天后不可读，文本与对象值不保存。</ElAlert
-    >
+
     <div class="console-toolbar">
       <ElButton :disabled="!canSave" :loading="busy" @click="save">重新取证并保存</ElButton>
       <ElButton :disabled="!readable || busy" @click="refresh">刷新本人记录</ElButton>
@@ -19,7 +17,7 @@
     />
     <ul v-if="rows.length">
       <li v-for="row in rows" :key="row.id">
-        <span>{{ row.createdAt }}（可见至 {{ row.expiresAt }}）</span>
+        <span>{{ formatTime(row.createdAt) }}（可见至 {{ formatTime(row.expiresAt) }}）</span>
         <ElButton :disabled="busy || !readable" @click="open(row.id)">查看</ElButton>
         <ElButton :disabled="busy || !readable" @click="generate(row.id)">生成事实报告</ElButton>
         <ElButton :disabled="busy || !readable" @click="generate(row.id, true)">
@@ -30,8 +28,8 @@
     </ul>
     <template v-if="detail">
       <p
-        >历史采集区间：{{ detail.snapshot.collectionStartedAt }} 至
-        {{ detail.snapshot.collectionFinishedAt }}</p
+        >历史采集区间：{{ formatTime(detail.snapshot.collectionStartedAt) }} 至
+        {{ formatTime(detail.snapshot.collectionFinishedAt) }}</p
       >
       <p>采集时模型：{{ detail.snapshot.modelVersionId }}</p>
       <p
@@ -48,21 +46,22 @@
                 ? '缺少可用值'
                 : JSON.stringify(property.value)
           }}
-          （来源：{{ property.availability }}；上报：{{ property.occurredAt ?? '未提供' }}）
+          （来源：{{ property.availability }}；上报：{{
+            formatTime(property.occurredAt, '未提供')
+          }}）
         </li>
       </ul>
     </template>
     <section v-if="report" aria-label="个人历史事实报告" data-testid="personal-fact-report">
       <ElDivider content-position="left">个人历史事实报告</ElDivider>
-      <ElAlert type="info" :closable="false" show-icon
-        >仅汇编本条历史记录，未做模型诊断；下载会再次核验当前权限与来源有效期。</ElAlert
-      >
+
       <p>来源记录：{{ report.sourceRecord.id }}；报告摘要：{{ report.contentSha256 }}</p>
       <pre>{{ report.markdown }}</pre>
     </section>
   </section>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { useUserStore } from '@/store/modules/user'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'

@@ -1,0 +1,16 @@
+import {describe,it,expect,vi,beforeEach} from 'vitest'
+import {readStaticGroups,readStaticGroup,prepareStaticGroup,changeStaticGroup,decodeStaticGroups,decodeStaticGroup} from '../../src/features/devices/static-group-membership-api'
+const state=vi.hoisted(()=>({api:vi.fn()}))
+vi.mock('../../src/core/http',()=>({api:state.api}))
+const project='00000000-0000-4000-8000-000000000001',device='00000000-0000-4000-8000-000000000002',group='00000000-0000-4000-8000-000000000003',scope={project,device}
+const bytes=(v:unknown)=>new TextEncoder().encode(JSON.stringify(v)),row=(id=group,member=true)=>({projectId:project,deviceId:device,groupId:id,name:'当前设备组',member})
+const page=(items=[row()],extra:Record<string,unknown>={})=>({projectId:project,deviceId:device,membersOnly:true,items,hasMore:false,nextAfterGroupId:null,...extra})
+describe('设备静态归属公开当前事实与有界读写',()=>{
+ beforeEach(()=>{vi.clearAllMocks()})
+ it('单边PUT和DELETE无正文，不携其它设备列表，未知仅读原组',async()=>{const signal=new AbortController().signal;for(const member of [true,false]){const intent=prepareStaticGroup(scope,group,member);await changeStaticGroup(intent,signal);expect(state.api.mock.lastCall![0]).toContain(`/devices/${device}/static-groups/${group}`);expect(state.api.mock.lastCall![1]).toMatchObject({method:member?'put':'delete',maxResponseBytes:8192,responseType:'bytes',headers:{'Idempotency-Key':intent.key}});expect(state.api.mock.lastCall![1]).not.toHaveProperty('body')}await readStaticGroup(scope,group,signal);expect(state.api.mock.lastCall![1]).not.toHaveProperty('method')})
+ it('位置是明确公开UUID键集位置，固定50及有限字节，不伪造不透明cursor',async()=>{await readStaticGroups(scope,false,group,new AbortController().signal);expect(state.api.mock.lastCall![1]).toMatchObject({query:{membersOnly:false,afterGroupId:group,limit:50},maxResponseBytes:131072});expect(()=>prepareStaticGroup(scope,'bad',true)).toThrow()})
+ it('同原设备同原组单项只接受完整五字段与明确boolean',()=>{expect(decodeStaticGroup(bytes(row()),scope,group).member).toBe(true);for(const bad of [{...row(),deviceId:project},{...row(),groupId:device},{...row(),extra:1},{...row(),member:'true'},{...row(),name:null}])expect(()=>decodeStaticGroup(bytes(bad),scope,group)).toThrow()})
+ it('页上下文、位置顺序、重复和已有边筛选均严格，不返回部分坏帧',()=>{expect(decodeStaticGroups(bytes(page()),scope,true).items).toHaveLength(1);for(const bad of [page([row(),row()]),page([row(group,false)]),page([row()],{membersOnly:false}),page([row()],{projectId:device}),page([row()],{hasMore:true,nextAfterGroupId:group}),page([row()],{nextAfterGroupId:group})])expect(()=>decodeStaticGroups(bytes(bad),scope,true)).toThrow();expect(()=>decodeStaticGroups(bytes(page()),scope,true,group)).toThrow()})
+ it('真实探测页只有50行才允许下一位置，末页显式null',()=>{const items=Array.from({length:50},(_,i)=>row(`00000000-0000-4000-8000-${String(i+10).padStart(12,'0')}`));const result=decodeStaticGroups(bytes(page(items,{hasMore:true,nextAfterGroupId:items.at(-1)!.groupId})),scope,true);expect(result.nextAfterGroupId).toBe(items.at(-1)!.groupId);expect(decodeStaticGroups(bytes(page([])),scope,true).hasMore).toBe(false)})
+ it('重复JSON键及非法UTF8不能伪装有效资源回执',()=>{const text=JSON.stringify(row()).replace('"member":true','"member":true,"member":true');expect(()=>decodeStaticGroup(new TextEncoder().encode(text),scope,group)).toThrow();expect(()=>decodeStaticGroup(new Uint8Array([0xc3,0x28]),scope,group)).toThrow()})
+})

@@ -5,7 +5,7 @@ const groups = [
     id: 'workbench',
     title: '工作台',
     icon: 'ri:home-smile-2-line',
-    matches: (path: string) => ['/dashboard/workbench', '/dashboard/overview'].includes(path)
+    matches: (path: string) => path === '/dashboard/workbench'
   },
   {
     id: 'device',
@@ -52,6 +52,10 @@ export function workspaceNavigation(routes: readonly AppRouteRecord[]): AppRoute
   return groups.flatMap((group) => {
     const children = leaves.filter((item) => !used.has(item) && group.matches(item.path))
     children.forEach((item) => used.add(item))
+    if (group.id === 'workbench' && children.length === 1) {
+      const home = children[0]
+      return [{ ...home, meta: { ...home.meta, title: group.title, icon: group.icon } }]
+    }
     return children.length
       ? [
           {
@@ -69,5 +73,7 @@ export function activeWorkspace(
   routes: readonly AppRouteRecord[],
   path: string
 ): AppRouteRecord | undefined {
-  return routes.find((group) => group.children?.some((child) => child.path === path))
+  return routes.find(
+    (group) => group.path === path || group.children?.some((child) => child.path === path)
+  )
 }

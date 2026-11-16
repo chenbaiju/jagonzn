@@ -44,7 +44,7 @@ test('quota fixture refuses foreign identifiers and unbounded budget', () => {
   for (const method of [installQuotaSql, restoreQuotaSql]) {
     assert.throws(() => method({ ...scope, tenantId: "' OR TRUE --" }))
     assert.throws(() => method({ ...scope, policyId: originalPolicyId }))
-    assert.throws(() => method({ ...scope, role: 'thingscloud_app' }))
+    assert.throws(() => method({ ...scope, role: 'thingslink_app' }))
   }
   for (const limit of [-1, 3, Infinity, 0.5])
     assert.throws(() => setQuotaSql(scope, operationId, 1, limit))
@@ -58,7 +58,7 @@ test('fixture copies complete existing limits, leaves default zero and guards li
   assert.match(sql, /to_jsonb\(q\)/)
   assert.match(sql, /'automation_execution_daily_limit',0/)
   assert.match(sql, /CREATE ROLE aq_e2e_[a-f0-9]+ NOLOGIN/)
-  assert.match(sql, /GRANT thingscloud_quota_operator TO aq_e2e_/)
+  assert.match(sql, /GRANT thingslink_quota_operator TO aq_e2e_/)
   assert.ok(sql.includes(`WHERE id='${tenantId}' AND quota_policy_id='${originalPolicyId}'`))
 })
 test('real operator CAS and cleanup preserve immutable audit; unknown assignment is refused', () => {

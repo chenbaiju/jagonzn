@@ -6,7 +6,7 @@
       <ElTableColumn label="删除时间" width="190">
         <template #default="{ row }">{{ formatTime(row.deletedAt) }}</template>
       </ElTableColumn>
-      <ElTableColumn label="恢复截止（本地时间）" width="220">
+      <ElTableColumn label="恢复截止" width="220">
         <template #default="{ row }">{{ formatTime(row.restoreDeadline) }}</template>
       </ElTableColumn>
       <ElTableColumn prop="timezone" label="项目时区" width="170" />
@@ -39,6 +39,7 @@
       </template>
     </ElTable>
     <ElDialog
+      class="console-dialog console-developer-dialog console-rule-dialog console-studio-dialog console-integration-dialog console-retention-dialog"
       :model-value="!!exportProjectId"
       title="留存导出"
       width="min(760px, calc(100vw - 32px))"
@@ -100,7 +101,12 @@
       await ElMessageBox.confirm(
         `确认恢复项目「${row.name}」？恢复不会重新启用旧设备凭据、旧分享或已撤销能力。`,
         '恢复项目',
-        { type: 'warning', confirmButtonText: '确认恢复', cancelButtonText: '取消' }
+        {
+          type: 'warning',
+          confirmButtonText: '确认恢复',
+          cancelButtonText: '取消',
+          customClass: 'console-studio-feedback'
+        }
       )
       if (epoch !== currentIdentityEpoch() || sequence !== generation) return
       submitted = true
@@ -142,12 +148,26 @@
   .project-recycle-bin {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+
+    > .el-alert {
+      flex-shrink: 0;
+      margin: 0;
+    }
+
+    > .el-table {
+      min-height: 0;
+    }
 
     &__actions {
       display: flex;
       flex-wrap: nowrap;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
 
       .el-button {

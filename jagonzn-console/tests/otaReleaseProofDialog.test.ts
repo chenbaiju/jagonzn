@@ -95,13 +95,14 @@ it('关闭时不请求，打开按当前资格读取并显示精确原始公开�
   await flushPromises()
   expect(fetchOtaRelease).toHaveBeenCalledExactlyOnceWith(projectId, firmwareId)
   expect(content().text()).toContain('512 字节')
+  expect(content().text()).toContain('2026-10-07 08:00:00')
   expect(content().text()).toContain(response.artifactSha256)
   expect(wrapper!.get('textarea[aria-label="Manifest Base64"]').element).toHaveProperty(
     'value',
     'e30='
   )
-  expect(wrapper!.text()).toContain('不代表设备验签通过')
-  expect(wrapper!.text()).toContain('公钥本身不是设备信任来源')
+  expect(wrapper!.text()).not.toContain('不代表设备验签通过')
+  expect(wrapper!.text()).not.toContain('公钥本身不是设备信任来源')
 })
 it.each(['ADMIN', 'OWNER'])('%s在当前项目管理角色下可读取', async (role) => {
   state.user.info.roles = [role]

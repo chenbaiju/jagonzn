@@ -1,18 +1,12 @@
 <template>
   <ElDialog
-    class="console-dialog ota-firmware-feedback"
+    class="console-dialog console-developer-dialog ota-firmware-feedback"
     v-model="visible"
     title="登记受控类型基线"
     width="720px"
     data-testid="ota-baseline-registration-dialog"
     destroy-on-close
   >
-    <ElAlert
-      title="仅登记服务器为本租户、项目与精确类型预配的受控基线。页面不接收基线JSON、能力开关或制造证据，不显示无法获知的待登记配置版本。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
     <div class="ota-baseline-type-field">
       <label for="ota-baseline-registration-type-input">已发布设备类型</label>
       <ElSelect
@@ -78,20 +72,14 @@
       <p data-testid="ota-baseline-registration-hash"
         >已登记规范基线 SHA-256：{{ currentState.baselineHash }}</p
       >
-      <p>首次登记（UTC）：{{ currentState.registeredAt }}</p>
-      <p>最近登记（UTC）：{{ currentState.updatedAt }}</p>
+      <p>首次登记：{{ formatTime(currentState.registeredAt) }}</p>
+      <p>最近登记：{{ formatTime(currentState.updatedAt) }}</p>
       <dl
         ><div v-for="row in baselineRows" :key="row.label"
           ><dt>{{ row.label }}</dt
           ><dd>{{ row.value }}</dd></div
         ></dl
       >
-      <ElAlert
-        title="以上是已登记的受控声明，不代表本进程当前配置匹配、制造证据已验真或设备当前升级资格。缺能力的 false/0 不会被页面提升。"
-        type="info"
-        :closable="false"
-        show-icon
-      />
     </div>
     <ElCheckbox
       v-if="revision !== undefined && phase === 'idle'"
@@ -157,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import './ota-feedback.scss'
   import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
   import { fetchDeviceTypeDetail, fetchDeviceTypePage, type DeviceTypeResponse } from '@/api/device'

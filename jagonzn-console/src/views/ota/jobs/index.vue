@@ -9,7 +9,9 @@
   以免把状态机外的人工操作伪装成受控流程。
 -->
 <template>
-  <div class="console-page ota-jobs console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace ota-jobs console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="设备升级作业"
@@ -41,14 +43,6 @@
         ></template>
       </ConsoleFilterBar>
     </ElCard>
-
-    <ElAlert
-      class="ota-jobs__notice"
-      title="作业状态以服务端为准；重试、对账恢复与超时由冻结策略和设备事实驱动，页面仅展示。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="jobs" row-key="id">
@@ -100,7 +94,13 @@
       </div>
     </ElCard>
 
-    <ElDrawer v-model="detailOpen" title="作业详情" size="760px" destroy-on-close>
+    <ElDrawer
+      class="console-developer-drawer"
+      v-model="detailOpen"
+      title="作业详情"
+      size="760px"
+      destroy-on-close
+    >
       <ElDescriptions :column="2" border>
         <ElDescriptionsItem label="状态">
           <ElTag :type="jobStatusTag(detail?.status)">{{ jobStatusLabel(detail?.status) }}</ElTag>
@@ -343,7 +343,7 @@
       margin-bottom: 10px;
 
       :deep(.el-alert__title) {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: normal;
         line-height: 20px;
       }
@@ -363,7 +363,7 @@
 
     &__mono {
       font-family: var(--art-font-mono, monospace);
-      font-size: 12px;
+      font-size: 14px;
       word-break: break-all;
     }
   }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
-  import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+  import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
   import type { AlarmComponentInput } from '@/features/dashboard/designer-model'
   const props = defineProps<{
     schema: DashboardSchemaV1
@@ -73,10 +73,7 @@
 </script>
 <template>
   <section class="console-fragment" aria-label="告警列表编辑"
-    ><ElDivider content-position="left">告警列表</ElDivider
-    ><ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >按设备变量与过滤条件读取告警；确认状态不等于个人已读。本组件不确认或清除告警。</ElAlert
-    >
+    ><ElDivider content-position="left">告警列表</ElDivider>
     <fieldset :disabled="disabled">
       <label>告警标题<input v-model="title" aria-label="告警标题" maxlength="80" /></label>
       <label

@@ -108,7 +108,12 @@ describe('受权只读设备证据', () => {
     page()
     expect(fetchBindingMetadata).not.toHaveBeenCalled()
     expect(readDeviceEvidence).not.toHaveBeenCalled()
-    expect(panel.text()).toContain('读取证据不会调用外部模型')
+    expect(
+      panel
+        .findAll('button')
+        .find((button) => button.text() === '读取证据')
+        ?.attributes('disabled')
+    ).toBeDefined()
     await ready()
     await vm().read()
     expect(readDeviceEvidence).toHaveBeenCalledExactlyOnceWith(

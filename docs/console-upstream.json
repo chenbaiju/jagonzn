@@ -11,5 +11,29 @@
     "package": "@things-cloud/client-contracts",
     "verifiedSourceRevision": "fb349e1f80649a2f795c6645e291fc90cb31a3b8",
     "mode": "direct-local-reference"
+  },
+  "localSync": {
+    "sourceRepository": "chenbaiju/thingslink",
+    "sourcePath": "things-link-console/",
+    "sourceRevision": "eea85d47d",
+    "date": "2026-11-16",
+    "sharedContractDependency": {
+      "path": "../../things-link-client-contracts",
+      "package": "@things-link/client-contracts"
+    },
+    "preserved": [
+      "login-left-image-and-company-text",
+      "header-and-sidebar-logo",
+      "user-avatar",
+      "plan-catalog-menu-removal",
+      "port-and-api-proxy",
+      "package-contract-path",
+      "vite-vitest-local-config",
+      "config-system-name-and-theme",
+      "jpf-005-session-permission",
+      "refresh-lock-and-recent-namespace",
+      "help-links-font-console-banner-excel-author",
+      "docs-readme-agents-pnpm-workspace"
+    ]
   }
 }

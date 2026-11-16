@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
   import { useUserStore } from '@/store/modules/user'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'
@@ -146,20 +147,13 @@
 </script>
 <template>
   <ElDialog
-    class="console-dialog"
+    class="console-dialog console-developer-dialog"
     :model-value="true"
     title="短期实时订阅票据"
     width="min(720px, 94vw)"
     :close-on-click-modal="false"
     @close="close"
   >
-    <ElAlert
-      class="realtime-ticket__hint"
-      title="选择一个当前项目设备及 1 至 50 个属性，生成仅供调试的连接参数。票据最长 5 分钟，未使用也占用共享额度；本工具不自动连接，现有实时页面不受影响。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
     <ElForm label-position="top">
       <ElFormItem label="订阅协议">
         <ElRadioGroup v-model="protocol" aria-label="订阅协议" :disabled="state.attempted">
@@ -235,7 +229,9 @@
       />
       <ElDescriptions :column="1" border>
         <ElDescriptionsItem label="票据 ID">{{ state.ticket.ticketId }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="过期时间">{{ state.ticket.expiresAt }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="过期时间">{{
+          formatTime(state.ticket.expiresAt)
+        }}</ElDescriptionsItem>
         <ElDescriptionsItem label="协议">{{ state.ticket.protocol }}</ElDescriptionsItem>
         <ElDescriptionsItem v-if="state.ticket.protocol === 'WS'" label="WS endpoint">{{
           state.ticket.endpoint
@@ -257,19 +253,6 @@
         autocomplete="off"
         aria-label="本次短期秘密"
       />
-      <ElAlert
-        v-if="state.ticket.protocol === 'WS'"
-        class="console-hint"
-        type="info"
-        show-icon
-        :closable="false"
-        >通过 Sec-WebSocket-Protocol 同时发送上述子协议与短期秘密，不得将秘密放入
-        URL。连接地址须使用部署环境允许的安全入口。</ElAlert
-      >
-      <ElAlert v-else class="console-hint" type="info" show-icon :closable="false"
-        >Broker 地址请向管理员获取独立应用 Listener 配置；本接口不返回地址。password
-        使用短期秘密，仅订阅上述精确 Topic，QoS 1；不能发布或使用设备 Topic。</ElAlert
-      >
     </section>
     <ElAlert v-if="state.attempted" class="console-hint" type="warning" show-icon :closable="false"
       >再次签发属于新意图，旧票据仍可能有效并占用额度；系统不自动重试或恢复首次秘密。</ElAlert
@@ -289,11 +272,11 @@
 <style scoped lang="scss">
   .realtime-ticket__hint {
     margin-bottom: 10px;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 20px;
 
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }

@@ -1,4 +1,4 @@
-import { createRuntimeNumber } from '@things-cloud/client-contracts/dashboard/v1'
+import { createRuntimeNumber } from '@things-link/client-contracts/dashboard/v1'
 import type {
   DeviceBindingProperty,
   DeviceComponentInput

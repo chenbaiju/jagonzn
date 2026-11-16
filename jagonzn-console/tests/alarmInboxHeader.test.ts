@@ -54,10 +54,10 @@ vi.mock('@/hooks/core/useHeaderBar', () => ({
         'shouldShowSettings',
         'shouldShowThemeToggle',
         'fastEnterMinWidth'
-      ].map((key) => [key, ref(key === 'shouldShowNotification')])
+      ].map((key) => [key, ref(key === 'shouldShowNotification' || key === 'shouldShowBreadcrumb')])
     )
 }))
-vi.mock('@/config', () => ({ default: { systemInfo: { name: 'ThingsCloud' } } }))
+vi.mock('@/config', () => ({ default: { systemInfo: { name: 'ThingsLink' } } }))
 vi.mock('@/locales', () => ({ languageOptions: [] }))
 vi.mock('@/utils/sys', () => ({ mittBus: { emit: vi.fn() } }))
 vi.mock('@/utils/ui/animation', () => ({ themeAnimation: vi.fn() }))
@@ -124,6 +124,12 @@ afterEach(() => {
 })
 
 describe('告警通知顶栏的认证与前台轮询', () => {
+  it('在刷新按钮侧恢复菜单路径，项目选择器仍可用', () => {
+    const header = mountHeader()
+    expect(header.findComponent({ name: 'ArtBreadcrumb' }).exists()).toBe(true)
+    expect(header.findComponent({ name: 'ArtProjectSwitcher' }).exists()).toBe(true)
+  })
+
   it('持久化info不足以发请求，登录且有内存令牌后才拉取', async () => {
     const header = mountHeader()
     expect(mocks.count).not.toHaveBeenCalled()

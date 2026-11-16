@@ -1,5 +1,5 @@
 <template>
-  <div class="console-page">
+  <div class="console-page console-developer-workspace">
     <ConsoleWorkspaceHeader
       project-style
       title="自部署申请 · 责任审核"
@@ -9,12 +9,6 @@
       ]"
     />
     <ElCard v-if="allowed" shadow="never">
-      <ElAlert
-        type="warning"
-        :closable="false"
-        title="一名授权责任人核验是签发前置；第二人复核可选。审核记录仍不代表客户归属已确认，也不会自动签发。"
-        show-icon
-      />
       <ElAlert
         v-if="error"
         class="spacing"
@@ -42,9 +36,7 @@
         <p>修订 SHA-256：{{ detail.revisionSha256 }}</p>
         <p>现有审核事实：{{ detail.attestationCount }}（至少 1 份；最多 2 份）</p>
         <ElDivider content-position="left">独立核对后的记录</ElDivider>
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >请对照外部组织材料和原申请核验上述标识及摘要，再填写材料索引、摘要和档位。</ElAlert
-        >
+
         <ElInput
           v-model.trim="organizationReference"
           data-testid="review-organization"

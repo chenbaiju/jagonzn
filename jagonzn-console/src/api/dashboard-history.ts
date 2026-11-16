@@ -2,7 +2,7 @@ import {
   decodeHistoryResponse,
   type HistoryQuery,
   type HistoryResult
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import type { DesignerReadScope } from './designer-read-scope'
 
 /** Console严格历史沿自身成员身份读取，不适配App路径或降低最终点数预算。 */

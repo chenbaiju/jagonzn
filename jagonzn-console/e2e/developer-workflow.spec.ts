@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import {
   enterProject,
   login,
@@ -8,6 +8,163 @@ import {
   OWNER_PASSWORD
 } from './helpers'
 import { simulatorRuntime } from './mqtt-runtime'
+
+/** 只旁路读取实际刷新响应；不重放请求、不改响应，也不把凭据带出浏览器。 */
+async function readClickedCurrentSnapshot(page: Page, pathname: string) {
+  const button = page.getByRole('button', { name: '刷新草稿数据', exact: true })
+  const observer = await button.evaluateHandle((element, targetPath) => {
+    const originalFetch = window.fetch
+    const state: {
+      result?: { status: number; body: unknown }
+      error?: string
+      disposed: boolean
+    } = { disposed: false }
+    let restoreBody = () => {}
+    let restoreReader = () => {}
+    let chunks: Uint8Array[] = []
+    let bytes = 0
+    const restore = () => {
+      if (window.fetch === observeFetch) window.fetch = originalFetch
+    }
+    const observeFetch: typeof fetch = async (...args) => {
+      const [input, init] = args
+      const url = new URL(input instanceof Request ? input.url : String(input), location.href)
+      const method = init?.method ?? (input instanceof Request ? input.method : 'GET')
+      const matches = method.toUpperCase() === 'POST' && url.pathname === targetPath
+      // 只观察点击后的第一个精确请求，其他请求仍由原生 fetch 处理。
+      if (matches) restore()
+      let response: Response
+      try {
+        response = await originalFetch.apply(window, args)
+      } catch (error) {
+        if (matches && !state.disposed) state.error = '实际刷新请求未返回响应'
+        throw error
+      }
+      if (matches && !state.disposed) {
+        const stream = response.body
+        if (!stream) state.error = '实际刷新响应正文缺失'
+        else {
+          const originalGetReader = stream.getReader
+          const observeReader = ((...readerArgs: Parameters<typeof stream.getReader>) => {
+            restoreBody()
+            const originalReader = originalGetReader.apply(stream, readerArgs)
+            if (readerArgs[0]?.mode === 'byob') {
+              state.error = '实际刷新响应读取器模式不受取证支持'
+              return originalReader
+            }
+            const reader = originalReader as ReadableStreamDefaultReader<Uint8Array>
+            const originalRead = reader.read
+            const observeRead: typeof reader.read = async (...readArgs) => {
+              let chunk: ReadableStreamReadResult<Uint8Array>
+              try {
+                chunk = await originalRead.apply(reader, readArgs)
+              } catch (error) {
+                if (!state.disposed) state.error = '实际刷新响应正文读取失败'
+                chunks = []
+                restoreReader()
+                throw error
+              }
+              if (chunk.done) {
+                restoreReader()
+                if (!state.disposed && !state.error) {
+                  try {
+                    const received = new Uint8Array(bytes)
+                    let offset = 0
+                    for (const part of chunks) {
+                      received.set(part, offset)
+                      offset += part.byteLength
+                    }
+                    state.result = {
+                      status: response.status,
+                      body: JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(received))
+                    }
+                  } catch {
+                    state.error = '实际刷新响应已消费正文不是有效JSON'
+                  }
+                }
+                chunks = []
+              } else if (!state.disposed && !state.error) {
+                bytes += chunk.value.byteLength
+                if (bytes > 4 * 1024 * 1024) {
+                  state.error = '实际刷新响应取证超过4MiB上限'
+                  chunks = []
+                } else chunks.push(chunk.value.slice())
+              }
+              // 只观察生产已经读取的字节；原chunk、done及异常保持不变。
+              return chunk
+            }
+            restoreReader = () => {
+              if (reader.read === observeRead) reader.read = originalRead
+            }
+            reader.read = observeRead
+            return reader
+          }) as typeof stream.getReader
+          restoreBody = () => {
+            if (stream.getReader === observeReader) stream.getReader = originalGetReader
+          }
+          stream.getReader = observeReader
+        }
+      }
+      // 原Response立即交还；不clone、tee、提前读取或改变锁/取消流程。
+      return response
+    }
+    const arm = () => {
+      window.fetch = observeFetch
+    }
+    element.addEventListener('click', arm, { capture: true, once: true })
+    return {
+      read: () => state,
+      dispose: () => {
+        state.disposed = true
+        delete state.result
+        delete state.error
+        chunks = []
+        restoreReader()
+        restoreBody()
+        element.removeEventListener('click', arm, true)
+        restore()
+      }
+    }
+  }, pathname)
+  let responseTimer: ReturnType<typeof setTimeout> | undefined
+  try {
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (request) => request.method() === 'POST' && new URL(request.url()).pathname === pathname,
+        { timeout: 20_000 }
+      ),
+      button.click()
+    ])
+    const response = await Promise.race([
+      request.response(),
+      new Promise<never>((_, reject) => {
+        responseTimer = setTimeout(() => reject(new Error('实际刷新响应头等待超时')), 20_000)
+      })
+    ])
+    clearTimeout(responseTimer)
+    expect(response, '显式刷新请求必须返回响应').not.toBeNull()
+    expect(response!.status()).toBe(200)
+    await expect
+      .poll(
+        () =>
+          observer.evaluate((capture) => {
+            const state = capture.read()
+            return state.error ? 'failed' : state.result ? 'captured' : 'pending'
+          }),
+        { timeout: 20_000, message: '实际刷新响应必须在有限时间内完成旁路读取' }
+      )
+      .not.toBe('pending')
+    const captured = await observer.evaluate((capture) => capture.read())
+    if (captured.error) throw new Error(captured.error)
+    expect(captured.result?.status).toBe(200)
+    await expect(page.getByTestId('preview-rest-state')).toHaveAttribute('data-state', 'REST_READY')
+    return captured.result!.body
+  } finally {
+    clearTimeout(responseTimer)
+    await observer.evaluate((capture) => capture.dispose())
+    await observer.dispose()
+  }
+}
 
 // 一次性设备凭据只在内存中消费；禁止默认失败产物把密钥或认证请求写入附件。
 test.use({ trace: 'off', video: 'off', screenshot: 'off', actionTimeout: 20_000 })
@@ -77,7 +234,10 @@ test(
       await page.goto('/#/device/list')
       await page.getByRole('button', { name: '创建设备', exact: true }).click()
       const deviceDialog = page.getByRole('dialog', { name: '创建设备', exact: true })
-      await deviceDialog.getByRole('combobox', { name: '设备类型', exact: true }).click()
+      await deviceDialog
+        .locator('.el-select')
+        .filter({ has: page.getByRole('combobox', { name: '设备类型', exact: true }) })
+        .click()
       await page.getByRole('option', { name: typeName, exact: true }).click()
       await expect(deviceDialog.locator('.el-select')).toContainText(typeName)
       await deviceDialog.getByRole('textbox', { name: '设备名称', exact: true }).fill(deviceName)
@@ -162,7 +322,7 @@ test(
       )
       await ruleDialog.getByRole('button', { name: '保存新版本', exact: true }).click()
       const saved = await ruleSaved
-      expect(saved.ok()).toBeTruthy()
+      expect(saved.ok(), `消息规则保存必须成功，实际 HTTP ${saved.status()}`).toBeTruthy()
       ruleId = ((await saved.json()) as { id: string }).id
       await ruleDialog.getByRole('button', { name: '发布此版本', exact: true }).click()
       await page.getByRole('button', { name: '确定', exact: true }).click()
@@ -262,7 +422,7 @@ test(
 
       // 同一设备从下一步入口进入看板，显式选择绑定；来源提示不会偷偷写入草稿。
       await page.goto(`/#/device/list?resourceId=${device.id}&contextProjectId=${projectId}`)
-      await expect(page.locator('.device-detail')).toContainText(deviceName)
+      await expect(page.locator('.device-detail__header h2')).toHaveText(deviceName)
       await page.getByRole('button', { name: '看板设计', exact: true }).click()
       await expect(page.getByRole('region', { name: '来源设备', exact: true })).toContainText(
         deviceName
@@ -285,15 +445,15 @@ test(
       await expect(page.getByTestId('designer-save-state')).toHaveAttribute('data-status', 'saved')
       await page.reload()
       await expect(page.locator('[data-kind="VALUE_CARD"]')).toHaveCount(1)
-      const currentResponse = page.waitForResponse(
-        (response) =>
-          response.request().method() === 'POST' &&
-          new URL(response.url()).pathname ===
-            `/api/v1/projects/${projectId}/devices/current-value-snapshots/query` &&
-          response.ok()
+      // 重载会自动首读；先等该轮完成，再监听显式刷新，避免误取随后被取消的旧响应。
+      await expect(page.getByTestId('preview-rest-state')).toHaveAttribute(
+        'data-state',
+        'REST_READY'
       )
-      await page.getByRole('button', { name: '刷新草稿数据', exact: true }).click()
-      const current = (await (await currentResponse).json()) as {
+      const current = (await readClickedCurrentSnapshot(
+        page,
+        `/api/v1/projects/${projectId}/devices/current-value-snapshots/query`
+      )) as {
         devices: {
           deviceId: string
           status: string

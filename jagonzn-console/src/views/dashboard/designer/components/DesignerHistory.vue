@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, watch, onBeforeUnmount } from 'vue'
-  import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+  import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
   import {
     fetchDesignerDeviceCatalog,
     fetchBindingMetadata,
@@ -312,10 +312,7 @@
 </script>
 <template>
   <section class="console-fragment" aria-label="历史曲线编辑">
-    <ElDivider content-position="left">时间预设变量</ElDivider
-    ><ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >仅支持三个固定预设；默认值写入草稿，预览选择不会改写默认值。</ElAlert
-    >
+    <ElDivider content-position="left">时间预设变量</ElDivider>
     <div class="console-actions">
       <button :disabled="disabled" @click="newTime">新建时间变量</button>
       <button v-for="time in times" :key="time.key" :disabled="disabled" @click="editTime(time.key)"

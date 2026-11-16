@@ -174,10 +174,13 @@ it('只读展示公开域、发布键及基线，epoch秒窗口不推断当前�
   await flushPromises()
   await selectType()
   expect(table('ota-trust-keys').text()).toContain('使用中')
-  expect(table('ota-trust-keys').text()).toContain('1970-01-01T00:00:00.000Z')
+  expect(table('ota-trust-keys').text()).toContain('1970-01-01 08:00:00')
   expect(table('ota-trust-keys').text()).toContain('不含终点')
   expect(table('ota-baseline-versions').text()).toContain(hash)
-  expect(wrapper!.text()).toContain('不代表当前设备升级资格')
+  expect(wrapper!.find('[data-testid="ota-baseline-versions"]').text()).toContain(
+    '2026-10-06 08:00:00'
+  )
+  expect(wrapper!.text()).not.toContain('不代表当前设备升级资格')
   expect(localStorage.setItem).not.toHaveBeenCalled()
   expect(sessionStorage.setItem).not.toHaveBeenCalled()
 })

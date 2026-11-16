@@ -79,7 +79,7 @@ test('概要真实快照与环图按设备最高活动告警互斥分类，删�
       WARNING: 1,
       INFO: 1
     })
-    await page.goto('/#/dashboard/overview')
+    await page.goto('/#/dashboard/workbench')
     await page.reload()
     const card = page.locator('.overview-card--rate').filter({ hasText: '告警设备分布' })
     await expect(
@@ -96,7 +96,7 @@ test('概要真实快照与环图按设备最高活动告警互斥分类，删�
       [375, 1]
     ]) {
       await page.setViewportSize({ width: width!, height: 1200 })
-      const grid = page.locator('.project-overview__cards--counts')
+      const grid = page.locator('.project-device-counts')
       await expect(grid).toHaveCSS('display', 'grid')
       await expect
         .poll(() =>

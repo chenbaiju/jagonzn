@@ -4,7 +4,7 @@ import {
   parseDashboardRuntimeResponse,
   type AlarmQuery,
   type AlarmResult
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import { loadDesignerDevicePreview } from '@/features/dashboard/device-preview'
 const id = (n: number) => `11111111-1111-4111-8111-${String(n).padStart(12, '0')}`
 const versionId = id(90)

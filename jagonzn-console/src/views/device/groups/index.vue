@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page device-groups console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace device-groups console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="设备组"
@@ -14,6 +16,7 @@
     </ConsoleWorkspaceHeader>
 
     <ElCard shadow="never" class="console-table-panel console-page__main-panel">
+      <h2 class="console-panel-title">设备组列表</h2>
       <ElTable v-loading="loading" :data="groups" row-key="id">
         <ElTableColumn show-overflow-tooltip prop="name" label="名称" min-width="160" />
         <ElTableColumn label="类型" width="110">
@@ -61,12 +64,12 @@
             />
           </template>
         </ElTableColumn>
-        <template #empty><ElEmpty description="还没有设备组" /></template>
+        <template #empty><ElEmpty :image-size="80" description="还没有设备组" /></template>
       </ElTable>
     </ElCard>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="formVisible"
       :title="editingId ? '编辑设备组' : '创建设备组'"
       width="680px"
@@ -81,13 +84,6 @@
             <ElRadioButton value="STATIC">静态组</ElRadioButton>
             <ElRadioButton value="DYNAMIC">动态组</ElRadioButton>
           </ElRadioGroup>
-          <ElAlert
-            class="device-groups-type-hint"
-            title="创建后类型不可修改，避免静态成员被静默解释为动态结果。"
-            type="info"
-            :closable="false"
-            show-icon
-          />
         </ElFormItem>
         <template v-if="form.type === 'DYNAMIC'">
           <ElDivider content-position="left">动态规则（条件之间为 AND）</ElDivider>
@@ -152,19 +148,13 @@
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="membersVisible"
       :title="`${selectedGroup?.name ?? ''} · ${selectedGroup?.type === 'STATIC' ? '静态成员' : '动态匹配设备'}`"
       width="720px"
     >
       <div v-loading="membersLoading">
         <template v-if="selectedGroup?.type === 'STATIC' && hasAuth('device:update')">
-          <ElAlert
-            class="member-alert"
-            type="info"
-            :closable="false"
-            title="保存会原子替换该组的完整成员集合，未选中的设备会被移出。"
-          />
           <ElSelect
             v-model="memberIds"
             class="form-control"
@@ -349,6 +339,7 @@
   }
 
   const openCreate = () => {
+    if (!hasAuth('device:create')) return
     editingId.value = ''
     resetForm()
     formVisible.value = true
@@ -356,7 +347,7 @@
 
   /** 编辑时回填结构化规则；组类型由后端冻结，界面同步禁用切换。 */
   const openEdit = (group: DeviceGroupResponse) => {
-    if (!group.id || !group.type) return
+    if (!group.id || !group.type || !hasAuth('device:update')) return
     editingId.value = group.id
     Object.assign(form, {
       name: group.name ?? '',
@@ -392,9 +383,11 @@
   }
 
   const submitGroup = async () => {
-    if (!formRef.value || !projectId.value) return
+    const permission = editingId.value ? 'device:update' : 'device:create'
+    if (!formRef.value || !projectId.value || !formVisible.value || !hasAuth(permission)) return
     try {
       await formRef.value.validate()
+      if (!formVisible.value || !hasAuth(permission)) return
       const body: SaveDeviceGroupRequest = {
         name: form.name,
         description: form.description || undefined,
@@ -423,6 +416,7 @@
     if (!projectId.value || !group.id) return
     try {
       await ElMessageBox.confirm(`确定删除设备组“${group.name ?? ''}”吗？`, '删除设备组', {
+        customClass: 'console-studio-feedback',
         type: 'warning'
       })
       await fetchDeleteDeviceGroup(projectId.value, group.id)
@@ -475,7 +469,7 @@
 
   /** 后端在同一事务中整集替换，前端成功后再刷新展示事实。 */
   const saveMembers = async () => {
-    if (!projectId.value || !selectedGroup.value?.id) return
+    if (!projectId.value || !selectedGroup.value?.id || !hasAuth('device:update')) return
     membersSaving.value = true
     try {
       await fetchReplaceDeviceGroupMembers(projectId.value, selectedGroup.value.id, {
@@ -487,6 +481,14 @@
       membersSaving.value = false
     }
   }
+
+  watch(
+    () => hasAuth(editingId.value ? 'device:update' : 'device:create'),
+    (allowed) => {
+      if (!allowed) formVisible.value = false
+    },
+    { flush: 'sync' }
+  )
 
   onMounted(load)
 </script>
@@ -503,11 +505,11 @@
   }
   .device-groups-type-hint {
     margin-top: 8px;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 20px;
 
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }

@@ -5,7 +5,9 @@
   界面不自行计算 cron，避免浏览器时区、DST 规则或 cron 方言差异造成“看起来正确、实际错发”。
 -->
 <template>
-  <div class="console-page task-jobs console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace task-jobs console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="任务调度"
@@ -17,14 +19,6 @@
         </ElButton>
       </template>
     </ConsoleWorkspaceHeader>
-
-    <ElAlert
-      class="task-jobs__notice"
-      :title="`周期任务按项目时区 ${projectTimezone || '加载中'} 解释，触发时刻保存为 UTC；设备组或设备状态变化不改写既有执行记录。`"
-      type="info"
-      :closable="false"
-      show-icon
-    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="jobs" row-key="id">
@@ -105,7 +99,7 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog task-form-dialog"
+      class="console-dialog console-developer-dialog task-form-dialog"
       v-model="formVisible"
       :title="editing ? '编辑任务' : '创建任务'"
       width="760px"
@@ -135,28 +129,15 @@
           </ElFormItem>
           <ElFormItem v-if="form.scheduleType === 'ONCE'" label="执行时刻" prop="runAt">
             <ElDatePicker
+              popper-class="console-operations-date-picker"
               v-model="form.runAt"
               type="datetime"
               class="task-form-control"
               placeholder="请选择执行时刻"
             />
-            <ElAlert
-              class="task-form-help"
-              title="按浏览器本地时间选择，提交时转换为 UTC。"
-              type="info"
-              :closable="false"
-              show-icon
-            />
           </ElFormItem>
           <ElFormItem v-else label="Cron 表达式（Spring 六字段）" prop="cronExpression">
             <ElInput v-model.trim="form.cronExpression" placeholder="0 0 9 * * *" maxlength="128" />
-            <ElAlert
-              class="task-form-help"
-              :title="`依次为秒、分、时、日、月、星期；按项目时区 ${projectTimezone || '—'} 解释。`"
-              type="info"
-              :closable="false"
-              show-icon
-            />
           </ElFormItem>
         </div>
 
@@ -181,13 +162,6 @@
               :value="group.id ?? ''"
             />
           </ElSelect>
-          <ElAlert
-            class="task-form-help"
-            title="动态组按每次执行创建时的设备事实冻结匹配结果。"
-            type="info"
-            :closable="false"
-            show-icon
-          />
         </ElFormItem>
         <ElFormItem label="命令标识" prop="commandKey">
           <ElInput v-model.trim="form.commandKey" maxlength="64" placeholder="reboot" />
@@ -200,13 +174,6 @@
             placeholder="{}"
             class="task-form__json"
           />
-          <ElAlert
-            class="task-form-help"
-            title="页面校验 JSON 格式，服务端按目标设备类型校验命令参数。"
-            type="info"
-            :closable="false"
-            show-icon
-          />
         </ElFormItem>
       </ElForm>
       <template #footer>
@@ -216,14 +183,12 @@
     </ElDialog>
 
     <ElDrawer
+      class="console-developer-drawer console-execution-drawer"
       v-model="executionsVisible"
       :title="`${selectedJob?.name ?? ''} · 执行记录`"
       size="900px"
       destroy-on-close
     >
-      <ElAlert type="info" :closable="false" show-icon class="task-executions__notice">
-        成功、失败和跳过数量以设备命令最终状态聚合；执行中的记录会在刷新后更新。
-      </ElAlert>
       <ElTable v-loading="executionsLoading" :data="executions" row-key="id">
         <ElTableColumn label="触发方式" width="100">
           <template #default="{ row }">{{ triggerLabel(row.triggerType) }}</template>
@@ -413,7 +378,7 @@
     return group?.name ?? '设备组'
   }
   const triggerLabel = (value?: string) =>
-    ({ SCHEDULE: '计划触发', MANUAL: '手动触发' })[value ?? ''] ?? value ?? '—'
+    ({ SCHEDULE: '计划触发', MANUAL: '手动触发', SCENE: '场景触发', APP_USER: '终端用户触发' })[value ?? ''] ?? value ?? '—'
   const executionLabel = (value?: string) =>
     ({
       EXPANDING: '展开目标中',
@@ -474,12 +439,14 @@
   }
 
   const openCreate = () => {
+    if (!hasAuth('task:manage')) return
     editing.value = undefined
     resetForm()
     formVisible.value = true
   }
 
   const openEdit = (job: TaskJobResponse) => {
+    if (!hasAuth('task:manage')) return
     editing.value = job
     Object.assign(form, {
       name: job.name ?? '',
@@ -503,9 +470,10 @@
   }
 
   const submit = async () => {
-    if (!formRef.value || !projectId.value) return
+    if (!formRef.value || !projectId.value || !formVisible.value || !hasAuth('task:manage')) return
     try {
       await formRef.value.validate()
+      if (!formVisible.value || !hasAuth('task:manage')) return
       const body: SaveTaskJobRequest = {
         name: form.name,
         description: form.description || undefined,
@@ -543,7 +511,7 @@
       await ElMessageBox.confirm(
         `将立即为任务“${job.name ?? ''}”创建一次执行快照，并按配额限速下发。是否继续？`,
         '立即执行',
-        { type: 'warning' }
+        { customClass: 'console-rule-feedback', type: 'warning' }
       )
       await fetchRunTaskJob(projectId.value, job.id)
       ElMessage.success('执行已创建，可在执行记录中查看进度')
@@ -562,7 +530,7 @@
         await ElMessageBox.confirm(
           `确定删除任务“${job.name ?? ''}”吗？既有执行记录仍会保留。`,
           '删除任务',
-          { type: 'warning' }
+          { customClass: 'console-rule-feedback', type: 'warning' }
         )
         await fetchDeleteTaskJob(projectId.value, job.id, job.version)
         ElMessage.success('任务已删除')
@@ -596,17 +564,19 @@
     }
   }
 
+  watch(
+    () => hasAuth('task:manage'),
+    (allowed) => {
+      if (!allowed) formVisible.value = false
+    },
+    { flush: 'sync' }
+  )
+
   onMounted(() => void load())
 </script>
 
 <style lang="scss" scoped>
   .task-jobs {
-    padding: 10px;
-
-    :deep(.workspace-header > .console-actions) {
-      margin-bottom: 0;
-    }
-
     &__notice {
       margin-bottom: 10px;
     }
@@ -618,7 +588,12 @@
 
   .task-form-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+
+    > .el-form-item {
+      min-width: 0;
+    }
   }
 
   .task-form-control {
@@ -636,7 +611,7 @@
 
   :is(.task-jobs__notice, .task-form-help) {
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }
@@ -653,24 +628,21 @@
   }
 
   @media screen and (width <= 640px) {
-    .task-jobs {
-      padding: 16px;
+    .task-form-grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>
 
 <style lang="scss">
-  .task-form-dialog {
-    .el-dialog__body {
-      max-height: calc(90dvh - 140px);
-      padding-right: 6px;
-      overflow-y: auto;
-    }
-
+  .el-dialog.task-form-dialog {
     .el-form-item__label {
-      height: 20px !important;
-      margin-bottom: 8px;
+      display: block;
+      max-width: 100%;
+      height: auto !important;
+      margin-bottom: 6px;
       line-height: 20px !important;
+      overflow-wrap: anywhere;
     }
 
     .el-form-item__content {
@@ -678,7 +650,33 @@
     }
 
     .el-divider {
-      margin: 14px 0 20px;
+      margin: 8px 0 20px;
+    }
+
+    .el-divider__text {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 24px;
+    }
+
+    .el-textarea__inner {
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .el-radio-button__inner {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      font-size: 14px;
+    }
+
+    .el-switch {
+      height: 32px;
+    }
+
+    .task-form-help {
+      margin-bottom: 0;
     }
 
     .el-date-editor {

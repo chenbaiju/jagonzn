@@ -8,7 +8,9 @@
   只读页面不提供任何"修改/删除审计"的入口：审计修正应写补偿动作，历史不可覆盖。
 -->
 <template>
-  <div class="console-page ota-audits console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace ota-audits console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="升级审计"
@@ -38,14 +40,6 @@
         ></template>
       </ConsoleFilterBar>
     </ElCard>
-
-    <ElAlert
-      class="ota-audits__notice"
-      title="审计记录由业务事务写入，仅供读取，不可修改或删除；历史修正须追加补偿动作。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="records" row-key="id">
@@ -92,7 +86,13 @@
       </div>
     </ElCard>
 
-    <ElDrawer v-model="detailVisible" title="审计明细" size="720px" destroy-on-close>
+    <ElDrawer
+      class="console-developer-drawer"
+      v-model="detailVisible"
+      title="审计明细"
+      size="720px"
+      destroy-on-close
+    >
       <ElDescriptions :column="1" border>
         <ElDescriptionsItem label="动作">{{ otaActionLabel(detail?.action) }}</ElDescriptionsItem>
         <ElDescriptionsItem label="动作编码">
@@ -191,7 +191,7 @@
       margin-bottom: 10px;
 
       :deep(.el-alert__title) {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: normal;
         line-height: 20px;
       }
@@ -211,7 +211,7 @@
 
     &__mono {
       font-family: var(--art-font-mono, monospace);
-      font-size: 12px;
+      font-size: 14px;
       word-break: break-all;
     }
 
@@ -220,9 +220,9 @@
       padding: 12px;
       overflow: auto;
       font-family: var(--art-font-mono, monospace);
-      font-size: 12px;
+      font-size: 14px;
       background: var(--art-main-bg-color);
-      border-radius: 6px;
+      border-radius: 4px;
     }
   }
 </style>

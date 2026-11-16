@@ -45,14 +45,16 @@
           @click="reload"
         />
 
+        <!-- 当前菜单路径与刷新按钮相邻。 -->
+        <ArtBreadcrumb v-if="!hideNavigation" />
+
         <!-- 快速入口 -->
         <ArtFastEnter v-if="shouldShowFastEnter && width >= headerBarFastEnterMinWidth">
           <ArtIconButton icon="ri:function-line" class="ml-3" />
         </ArtFastEnter>
 
-        <!-- 面包屑 -->
+        <!-- 无项目时保留平台入口。 -->
         <ArtProjectListNavigation v-if="hideNavigation" />
-        <ArtBreadcrumb v-else-if="shouldShowBreadcrumb && (isLeftMenu || isDualMenu)" />
 
         <!-- 顶部菜单 -->
         <ArtHorizontalMenu v-if="!hideNavigation && isTopMenu" :list="menuList" />
@@ -61,9 +63,8 @@
         <ArtMixedMenu v-if="!hideNavigation && isTopLeftMenu" :list="menuList" />
       </div>
 
-      <div class="flex-c gap-2.5">
-        <ArtProjectSwitcher v-if="!hideNavigation" class="max-md:!hidden" />
-
+      <div class="flex-c shrink-0 gap-2.5">
+        <ArtProjectSwitcher v-if="!hideNavigation" class="min-w-0 max-md:!hidden" />
         <!-- 搜索 -->
         <div
           v-if="shouldShowGlobalSearch"
@@ -218,7 +219,6 @@
     shouldShowMenuButton,
     shouldShowRefreshButton,
     shouldShowFastEnter,
-    shouldShowBreadcrumb,
     shouldShowGlobalSearch,
     shouldShowFullscreen,
     shouldShowNotification,
@@ -308,7 +308,6 @@
 
   // 菜单类型判断
   const isLeftMenu = computed(() => menuType.value === MenuTypeEnum.LEFT)
-  const isDualMenu = computed(() => menuType.value === MenuTypeEnum.DUAL_MENU)
   const isTopMenu = computed(() => menuType.value === MenuTypeEnum.TOP)
   const isTopLeftMenu = computed(() => menuType.value === MenuTypeEnum.TOP_LEFT)
 

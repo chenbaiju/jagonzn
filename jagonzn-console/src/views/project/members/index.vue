@@ -12,7 +12,9 @@
   而未选项目时没有任何项目角色），所以正常进不到这里；真进来了就提示去选一个。
 -->
 <template>
-  <div class="console-page project-members">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace project-members"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="项目成员与邀请"
@@ -46,7 +48,7 @@
     />
 
     <ElCard v-else shadow="never" class="console-table-panel project-members__list">
-      <ElTable v-loading="loading" :data="members" row-key="accountId" :height="420">
+      <ElTable v-loading="loading" :data="members" row-key="accountId" :max-height="420">
         <ElTableColumn :label="$t('member.column.user')" min-width="220">
           <template #default="{ row }">
             <div class="project-members__user">
@@ -122,18 +124,11 @@
     />
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-alarm-dialog"
       v-model="inviteVisible"
       :title="$t('member.add')"
       width="460px"
     >
-      <ElAlert
-        type="info"
-        show-icon
-        :closable="false"
-        class="mb-4"
-        :title="$t('member.addNotice')"
-      />
       <ElForm ref="inviteFormRef" :model="inviteForm" :rules="inviteRules" label-position="top">
         <ElFormItem prop="email" :label="$t('member.column.email')">
           <ElInput
@@ -163,7 +158,7 @@
     </ElDialog>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-alarm-dialog"
       v-model="roleVisible"
       :title="$t('member.changeRole')"
       width="420px"
@@ -379,6 +374,7 @@
         t('member.remove'),
         {
           type: 'warning',
+          customClass: 'console-studio-feedback',
           confirmButtonText: t('member.confirm'),
           cancelButtonText: t('member.cancel')
         }
@@ -411,6 +407,7 @@
         t('member.transferOwner'),
         {
           type: 'warning',
+          customClass: 'console-studio-feedback',
           confirmButtonText: t('member.confirm'),
           cancelButtonText: t('member.cancel')
         }
@@ -437,6 +434,7 @@
     try {
       await ElMessageBox.confirm(t('member.leaveConfirm'), t('member.leave'), {
         type: 'warning',
+        customClass: 'console-studio-feedback',
         confirmButtonText: t('member.confirm'),
         cancelButtonText: t('member.cancel')
       })
@@ -473,14 +471,37 @@
 
 <style lang="scss" scoped>
   .project-members {
-    padding: 10px;
-
     :deep(.workspace-header > .console-actions > nav) {
       margin-bottom: 0;
     }
 
     &__list :deep(.el-table__inner-wrapper::before) {
       display: none;
+    }
+
+    :deep(.el-card__body) {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+      padding: var(--console-page-spacing);
+    }
+    :deep(.project-invitations .console-toolbar) {
+      justify-content: space-between;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      border: 0;
+    }
+    :deep(.project-invitations h4) {
+      margin: 0;
+      font-size: 14px;
+      line-height: 24px;
+    }
+    :deep(.project-invitations__notice),
+    &__header,
+    &__actions {
+      margin: 0;
     }
 
     &__header {
@@ -493,7 +514,7 @@
     &__actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
       justify-content: flex-end;
     }
 
@@ -505,29 +526,29 @@
 
     &__subtitle {
       margin: 6px 0 0;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--art-text-gray-600);
     }
 
     &__user {
       display: flex;
       flex-direction: column;
-      line-height: 1.4;
+      line-height: 22px;
     }
 
     &__email {
-      font-size: 12px;
+      font-size: 14px;
       color: var(--art-text-gray-600);
     }
 
     &__target {
       margin: 0 0 12px;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--art-text-gray-600);
     }
 
     &__hint {
-      font-size: 12px;
+      font-size: 14px;
       color: var(--art-text-gray-500);
     }
   }

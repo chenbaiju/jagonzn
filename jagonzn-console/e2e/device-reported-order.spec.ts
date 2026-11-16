@@ -303,10 +303,19 @@ test('设备详情迟到真实 REST 不覆盖同时间新 WS 接受事实', asyn
         await expect(reported).not.toHaveAttribute('data-regressed', 'true')
         await expect(async () => {
           expect(JSON.parse(await reported.inputValue()).temperature).toBe(14.75)
-          const text = await page.getByTestId('reported-property-sources').innerText()
-          const revision = text.match(/接受序号\s+(\d+)/)?.[1]
-          expect(revision).toBeDefined()
-          expect(BigInt(revision!)).toBeGreaterThan(BigInt(oldRevision))
+          const sources = page.getByTestId('reported-property-sources')
+          const columns = await sources.getByRole('columnheader').allTextContents()
+          const revisionColumn = columns.findIndex((name) => name.trim() === '接受序号')
+          expect(revisionColumn).toBeGreaterThanOrEqual(0)
+          const propertyRow = sources
+            .locator('tbody tr')
+            .filter({ has: page.getByText('temperature', { exact: true }) })
+          await expect(propertyRow).toHaveCount(1)
+          const revision = (
+            await propertyRow.getByRole('cell').nth(revisionColumn).innerText()
+          ).trim()
+          expect(revision).toMatch(/^[1-9][0-9]*$/)
+          expect(BigInt(revision)).toBeGreaterThan(BigInt(oldRevision))
         }).toPass({ timeout: remaining() })
       },
       { timeout: 14_000 }

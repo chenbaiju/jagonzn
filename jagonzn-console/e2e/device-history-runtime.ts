@@ -101,8 +101,8 @@ export async function guardDeviceHistoryRuntime(
     !/^[0-9a-f]{64}$/.test(runtime.jarSha256) ||
     !/^[0-9a-f]{64}$/.test(runtime.postgresContainerId) ||
     !/^sha256:[0-9a-f]{64}$/.test(runtime.postgresImageDigest) ||
-    runtime.emqxContainerLabels?.['thingscloud.owner'] !== 'console-016-c' ||
-    runtime.kafkaContainerLabels?.['thingscloud.owner'] !== 'console-016-c'
+    runtime.emqxContainerLabels?.['thingslink.owner'] !== 'console-016-c' ||
+    runtime.kafkaContainerLabels?.['thingslink.owner'] !== 'console-016-c'
   )
     throw new Error('EVENT_RUNTIME_SCOPE_REJECTED')
   const jar = await ownedPath(runtime.frozenJar),

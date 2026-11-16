@@ -1,9 +1,7 @@
 <template>
-  <section v-if="canManage" class="notification-contact">
+  <section v-if="canManage" class="notification-contact console-end-user-section">
     <ElDivider content-position="left">本项目接收号码</ElDivider>
-    <ElAlert type="info" show-icon :closable="false" class="console-hint"
-      >仅用于本项目通知，不修改其他项目号码或账号登录信息。电话、短信渠道暂不可用。</ElAlert
-    >
+
     <ElAlert
       v-if="notice"
       :title="notice"
@@ -34,9 +32,7 @@
           />
         </ElFormItem>
       </div>
-      <ElAlert type="info" show-icon :closable="false" class="console-hint"
-        >使用 +国家码和号码，共 7～15 位数字。保存只校验格式，不代表号码已验证或渠道可用。</ElAlert
-      >
+
       <div class="console-actions">
         <ElButton
           type="primary"
@@ -172,24 +168,30 @@
   .notification-contact {
     width: 100%;
   }
+  .notification-contact form {
+    display: grid;
+    gap: 16px;
+  }
   .notification-contact__fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
   }
-  @media (width <= 680px) {
+  .notification-contact .console-hint,
+  .notification-contact .console-actions,
+  .notification-contact p {
+    margin: 0;
+  }
+  .notification-contact .console-actions {
+    gap: 10px;
+  }
+  @media (width <= 640px) {
+    .notification-contact form,
     .notification-contact__fields {
-      grid-template-columns: 1fr;
-      gap: 0;
+      gap: 12px;
     }
-  }
-  .console-hint {
-    margin-block: 12px;
-    color: var(--el-text-color-secondary);
-  }
-  .console-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    .notification-contact__fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>

@@ -84,17 +84,20 @@ test('设备六类关联页签使用真实设备端点，空目录保留候选�
     await expect(detail.getByText(/项目规则候选未绑定此设备/)).toBeVisible()
     for (const entry of [
       {
-        button: '执行尝试',
+        tab: '执行尝试',
         endpoint: 'message-rule-executions',
         text: '暂无已知设备身份的执行尝试'
       },
-      { button: '设备动作', endpoint: 'message-rule-actions', text: '暂无该设备消息规则动作记录' }
+      { tab: '设备动作', endpoint: 'message-rule-actions', text: '暂无该设备消息规则动作记录' }
     ]) {
       const response = page.waitForResponse(
         (r) =>
           r.request().method() === 'GET' && new URL(r.url()).pathname === prefix + entry.endpoint
       )
-      await detail.getByRole('button', { name: entry.button, exact: true }).click()
+      await detail
+        .locator('.device-message-rule-tabs')
+        .getByRole('tab', { name: entry.tab, exact: true })
+        .click()
       expect((await response).status()).toBe(200)
       await expect(detail.getByText(entry.text, { exact: true })).toBeVisible()
     }

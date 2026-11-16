@@ -803,3 +803,186 @@ describe('接收号码修改单次发送', () => {
     }
   )
 })
+
+describe('短信接收设置新增PUT单次发送', () => {
+  it.each([
+    '/api/v1/tenant/notification-recipients/QUOTA_WARNING',
+    '/api/v1/tenant/notification-recipients/SUBSCRIPTION_EXPIRING',
+    '/api/v1/projects/11111111-2222-4333-8444-555555555555/alarm-sms-recipient'
+  ] as const)('%s在401及网络结果未知时均不恢复或重发旧号码', async (url) => {
+    const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+    axios.defaults.adapter = refresh
+    for (const kind of ['401', 'network'] as const) {
+      const adapter = vi.fn<AxiosAdapter>(async (config) => {
+        if (kind === '401') throw unauthorized(config)
+        throw new AxiosError('PRIVATE_PHONE', 'ERR_NETWORK', config)
+      })
+      const result = await outcome(http.put({ url, adapter, showErrorMessage: false }))
+      await vi.advanceTimersByTimeAsync(4000)
+      expect(result).toBeInstanceOf(HttpError)
+      expect(adapter).toHaveBeenCalledOnce()
+      expect(refresh).not.toHaveBeenCalled()
+      expect(JSON.stringify(result)).not.toContain('PRIVATE_PHONE')
+      expect(user.accessToken).toBe('initial-token')
+    }
+  })
+})
+
+describe('项目告警策略HTTP单次保存', () => {
+  it.each(['401', 'network'] as const)('%s不认证恢复或重放原CAS命令', async (kind) => {
+    const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+    axios.defaults.adapter = refresh
+    const adapter = vi.fn<AxiosAdapter>(async (config) => {
+      if (kind === '401') throw unauthorized(config)
+      throw new AxiosError('CONTROLLED_UNKNOWN', 'ERR_NETWORK', config)
+    })
+    const task = outcome(
+      http.put({
+        url: '/api/v1/projects/11111111-2222-4333-8444-555555555555/alarm-notification-policy',
+        data: { muted: true, expectedRevision: '9007199254740993' },
+        adapter,
+        showErrorMessage: false
+      })
+    )
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(await task).toBeInstanceOf(HttpError)
+    expect(adapter).toHaveBeenCalledOnce()
+    expect(refresh).not.toHaveBeenCalled()
+  })
+})
+
+describe('设备用途码HTTP单次能力操作', () => {
+  it.each([
+    { method: 'POST', url: '/api/v1/projects/project-a/devices/device-a/purpose-codes/claim' },
+    {
+      method: 'DELETE',
+      url: '/api/v1/projects/project-a/devices/device-a/purpose-codes/claim/code'
+    }
+  ] as const)('$method遇401不刷新/重放能力，不传播不可信错误正文', async (request) => {
+    const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+    axios.defaults.adapter = refresh
+    const adapter = vi.fn<AxiosAdapter>(async (config) => {
+      const error = unauthorized(config)
+      error.response!.data = { code: 20020, message: 'untrusted-secret-response' }
+      throw error
+    })
+    const result = await outcome(
+      request.method === 'POST'
+        ? http.post({ url: request.url, adapter, showErrorMessage: false })
+        : http.del({ url: request.url, adapter, showErrorMessage: false })
+    )
+    expect(result).toBeInstanceOf(HttpError)
+    expect(adapter).toHaveBeenCalledOnce()
+    expect(refresh).not.toHaveBeenCalled()
+    expect(String(result)).not.toContain('untrusted-secret-response')
+  })
+})
+
+describe('设备图片HTTP单次写入', () => {
+  it.each(['PUT', 'DELETE'] as const)('%s遇401不刷新重发，不保留不可信错误正文', async (method) => {
+    const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+    axios.defaults.adapter = refresh
+    const adapter = vi.fn<AxiosAdapter>(async (config) => {
+      throw unauthorized(config)
+    })
+    const config = {
+      url: '/api/v1/projects/project-a/devices/device-a/image' as const,
+      adapter,
+      showErrorMessage: false
+    }
+    expect(await outcome(method === 'PUT' ? http.put(config) : http.del(config))).toBeInstanceOf(
+      HttpError
+    )
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(adapter).toHaveBeenCalledOnce()
+    expect(refresh).not.toHaveBeenCalled()
+  })
+})
+
+it('设备图片原始正文保留File与精确修订', async () => {
+  const photo = new File([new Uint8Array([137, 80, 78, 71])], 'photo.png', {
+    type: 'image/png'
+  })
+  const adapter = vi.fn<AxiosAdapter>(async (config) => {
+    expect(config.data).toBe(photo)
+    expect(config.headers.getContentType()).toBe('image/png')
+    expect(config.params).toEqual({ expectedRevision: '9007199254740993' })
+    return success(config, { present: true })
+  })
+  await http.put({
+    url: '/api/v1/projects/project-a/devices/device-a/image',
+    params: { expectedRevision: '9007199254740993' },
+    data: photo,
+    headers: { 'Content-Type': 'image/png', 'Idempotency-Key': 'single-image-intent' },
+    adapter,
+    showErrorMessage: false
+  })
+  expect(adapter).toHaveBeenCalledOnce()
+})
+
+describe('租户治理HTTP单次写入', () => {
+  it.each([401, 503])('治理POST在%s时不刷新重放或网络重试', async (status) => {
+    const adapter = vi.fn<AxiosAdapter>().mockImplementation(async (config) => {
+      throw new AxiosError('governance rejection', AxiosError.ERR_BAD_RESPONSE, config, undefined, {
+        data: { code: status === 401 ? 20020 : 10000, message: 'private error' },
+        status,
+        statusText: 'Rejected',
+        headers: {},
+        config
+      })
+    })
+    const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+    axios.defaults.adapter = refresh
+    const result = outcome(
+      http.post({
+        adapter,
+        showErrorMessage: false,
+        url: '/api/v1/operations/tenants/0199aabb-0000-7000-8000-000000000001/governance/operations',
+        data: { operationId: '0199aabb-0000-7000-8000-000000000002' }
+      })
+    )
+    await vi.runAllTimersAsync()
+    expect(await result).toBeInstanceOf(HttpError)
+    expect(adapter).toHaveBeenCalledTimes(1)
+    expect(fetch).not.toHaveBeenCalled()
+    expect(refresh).not.toHaveBeenCalled()
+  })
+})
+
+describe('规则发布恢复HTTP单次操作', () => {
+  it.each([{ status: 401 }, { status: 503 }, { status: 'network' }] as const)(
+    '$status不刷新/重放且不传播不可信正文',
+    async ({ status }) => {
+      const adapter = vi.fn<AxiosAdapter>().mockImplementation(async (config) => {
+        if (status === 'network')
+          throw new AxiosError('private payload', AxiosError.ERR_NETWORK, config)
+        throw new AxiosError('private payload', AxiosError.ERR_BAD_RESPONSE, config, undefined, {
+          data: { code: status === 401 ? 20020 : 10000, message: 'private payload' },
+          status,
+          statusText: 'Rejected',
+          headers: {},
+          config
+        })
+      })
+      const refresh = vi.fn<AxiosAdapter>(async (config) => success(config, { accessToken: 'new' }))
+      axios.defaults.adapter = refresh
+      const result = outcome(
+        http.post({
+          adapter,
+          showErrorMessage: false,
+          url: '/api/v1/projects/project-a/message-rules/rule-a/versions/version-a/activate',
+          params: { expectedVersion: 9 },
+          data: {}
+        })
+      )
+      await vi.runAllTimersAsync()
+      const error = await result
+      expect(error).toBeInstanceOf(HttpError)
+      expect((error as HttpError).outcomeUnknown).toBe(status !== 401)
+      expect((error as HttpError).message).not.toContain('private payload')
+      expect(adapter).toHaveBeenCalledTimes(1)
+      expect(fetch).not.toHaveBeenCalled()
+      expect(refresh).not.toHaveBeenCalled()
+    }
+  )
+})

@@ -17,7 +17,7 @@
  * - 权限控制
  *
  * @module types/router/index
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { RouteRecordRaw } from 'vue-router'

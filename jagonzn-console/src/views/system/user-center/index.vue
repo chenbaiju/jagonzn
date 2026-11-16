@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page user-center-page">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace user-center-page"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="个人中心"
@@ -15,14 +17,6 @@
         </div>
       </div>
     </ElCard>
-
-    <ElAlert
-      class="user-center-page__notice"
-      type="info"
-      show-icon
-      :closable="false"
-      :title="$t('userCenter.readOnly')"
-    />
 
     <ElCard shadow="never" class="user-center-page__details">
       <template #header>
@@ -59,6 +53,15 @@
         </div>
       </dl>
     </ElCard>
+    <ElCard shadow="never" class="user-center-page__notifications" aria-label="租户通知接收设置">
+      <template #header><h4>租户通知接收设置</h4></template>
+      <p class="console-description"
+        >维护当前账号归属租户的套餐通知号码，不随选中的外部项目转移。</p
+      >
+      <SmsRecipientEditor purpose="QUOTA_WARNING" />
+      <ElDivider />
+      <SmsRecipientEditor purpose="SUBSCRIPTION_EXPIRING" />
+    </ElCard>
     <ProjectInvitations :table-height="520" />
   </div>
 </template>
@@ -67,6 +70,7 @@
   import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { storeToRefs } from 'pinia'
   import ProjectInvitations from '@/components/ProjectInvitations.vue'
+  import SmsRecipientEditor from '@/components/business/SmsRecipientEditor.vue'
   import defaultAvatar from '@imgs/brand/jagonzn-original.png'
   import { useUserStore } from '@/store/modules/user'
 
@@ -81,76 +85,40 @@
 
 <style lang="scss" scoped>
   .user-center-page {
-    display: flex;
-    flex-direction: column;
+    min-width: 0;
     height: auto;
-    padding: 10px;
-    padding-bottom: 10px !important;
 
-    > :not(.project-invitations) {
-      flex-shrink: 0;
+    :deep(.el-card__header h4) {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 24px;
     }
 
-    :deep(.project-invitations) {
+    :deep(.project-invitations .el-card__header .console-toolbar) {
       display: flex;
-      flex: 1 0 auto;
-      flex-direction: column;
-
-      .el-card__header {
-        flex-shrink: 0;
-      }
-
-      .el-card__body {
-        display: flex;
-        flex: 1;
-        flex-direction: column;
-        min-height: 0;
-      }
-
-      .el-table,
-      .console-description,
-      .el-alert {
-        flex-shrink: 0;
-      }
-    }
-
-    &__header {
-      margin-bottom: 10px;
-
-      h3 {
-        margin: 0 0 6px;
-      }
-
-      p {
-        margin: 0;
-        color: var(--art-text-gray-500);
-      }
-    }
-
-    &__profile,
-    &__notice {
-      margin-bottom: 10px;
-    }
-
-    &__details {
-      h4 {
-        margin: 0;
-      }
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0;
+      margin: 0;
+      background: none;
+      border: 0;
     }
   }
 
   .profile-identity {
     display: flex;
-    gap: 10px;
+    gap: 16px;
     align-items: center;
 
     &__avatar {
-      width: 64px;
-      height: 64px;
-      object-fit: contain;
-      padding: 5px;
-      background: #fff;
-      border-radius: 10px;
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 50%;
     }
 
     &__text {
@@ -165,12 +133,16 @@
       }
 
       h4 {
-        margin-bottom: 6px;
-        font-size: 18px;
+        margin-bottom: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 24px;
       }
 
       p {
-        color: var(--art-text-gray-500);
+        font-size: 14px;
+        line-height: 22px;
+        color: var(--el-text-color-secondary);
       }
     }
   }
@@ -178,21 +150,23 @@
   .profile-details {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px 32px;
+    gap: 16px 24px;
     margin: 0;
 
     &__item {
       min-width: 0;
 
       dt {
-        margin-bottom: 8px;
-        font-size: 13px;
-        color: var(--art-text-gray-500);
+        margin-bottom: 6px;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--el-text-color-secondary);
       }
 
       dd {
         margin: 0;
         font-size: 14px;
+        line-height: 22px;
         overflow-wrap: anywhere;
       }
 
@@ -206,14 +180,125 @@
     }
   }
 
-  @media (width <= 640px) {
-    .user-center-page {
-      padding: 10px;
+  .user-center-page__notifications :deep(.el-card__body) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    gap: 16px 24px;
+    min-width: 0;
+
+    > .console-description {
+      grid-column: 1 / -1;
+      margin: 0;
+      font-size: 14px;
+      line-height: 20px;
     }
 
+    > .sms-recipient-editor {
+      grid-row: 2;
+    }
+
+    > .sms-recipient-editor:first-of-type {
+      grid-column: 1;
+    }
+
+    > .sms-recipient-editor:last-of-type {
+      grid-column: 3;
+    }
+
+    > .el-divider {
+      grid-area: 2 / 2;
+      height: auto;
+      margin: 0;
+      border-top: 0;
+      border-left: 1px solid var(--console-line);
+    }
+  }
+
+  .user-center-page :deep(.sms-recipient-editor) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    padding: 0;
+
+    h4 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 22px;
+    }
+
+    > .el-alert {
+      margin: 0;
+    }
+
+    .el-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .el-form-item,
+    .console-description {
+      margin: 0;
+    }
+
+    .el-form-item__label {
+      height: auto !important;
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 20px !important;
+    }
+
+    .el-checkbox {
+      align-items: flex-start;
+      min-height: 22px;
+      margin: 0;
+    }
+
+    .el-checkbox__input {
+      margin-top: 4px;
+    }
+
+    .el-checkbox__label {
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .console-description {
+      font-size: 14px;
+      line-height: 20px;
+    }
+
+    .console-actions {
+      margin: 0;
+    }
+  }
+
+  @media (width <= 1100px) {
+    .user-center-page__notifications :deep(.el-card__body) {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+
+      > .sms-recipient-editor:first-of-type,
+      > .sms-recipient-editor:last-of-type,
+      > .el-divider {
+        grid-area: auto / 1;
+      }
+
+      > .el-divider {
+        height: 1px;
+        border-top: 1px solid var(--console-line);
+        border-left: 0;
+      }
+    }
+  }
+
+  @media (width <= 640px) {
     .profile-details {
       grid-template-columns: minmax(0, 1fr);
-      gap: 10px;
+      gap: 12px;
     }
 
     .profile-details__item--roles {

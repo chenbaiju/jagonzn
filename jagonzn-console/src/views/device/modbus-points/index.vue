@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page modbus-points console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace modbus-points console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="Modbus 点位"
@@ -22,6 +24,8 @@
 
     <ElCard class="console-list-filter" shadow="never">
       <ConsoleFilterBar
+        class="modbus-points__gateway-filter"
+        label-position="top"
         :items="[{ key: 'field0', label: '网关' }]"
         :show-expand="false"
         :show-reset="false"
@@ -50,6 +54,7 @@
     </ElCard>
 
     <ElCard shadow="never" class="modbus-points__card console-list-data console-page__main-panel">
+      <h2 class="console-panel-title">点位列表</h2>
       <ElTable v-loading="loading" :data="points" empty-text="还没有点位，先选择网关并添加">
         <ElTableColumn show-overflow-tooltip prop="slaveAddress" label="从站" width="70" />
         <ElTableColumn label="功能码" width="150">
@@ -101,7 +106,7 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="dialogVisible"
       :title="editingId ? '编辑点位' : '添加点位'"
       width="560px"
@@ -337,6 +342,7 @@
   }
 
   const openCreate = () => {
+    if (!hasAuth('device:update')) return
     editingId.value = ''
     Object.assign(form, {
       subDeviceId: '',
@@ -355,6 +361,7 @@
   }
 
   const openEdit = async (point: ModbusPoint) => {
+    if (!hasAuth('device:update')) return
     editingId.value = point.id
     Object.assign(form, {
       subDeviceId: point.subDeviceId ?? '',
@@ -369,11 +376,13 @@
       pollingIntervalMs: point.pollingIntervalMs ?? 1000
     })
     await onSubDeviceChange(point.subDeviceId ?? '')
+    if (!hasAuth('device:update')) return
     dialogVisible.value = true
   }
 
   const submit = async () => {
-    if (!projectId.value || !gatewayId.value) return
+    if (!projectId.value || !gatewayId.value || !dialogVisible.value || !hasAuth('device:update'))
+      return
     if (!form.subDeviceId || !form.propertyKey) {
       ElMessage.warning('请选择子设备和属性')
       return
@@ -399,7 +408,10 @@
   const remove = async (point: ModbusPoint) => {
     if (!projectId.value || !gatewayId.value) return
     try {
-      await ElMessageBox.confirm('确定删除该草稿点位吗？', '删除点位', { type: 'warning' })
+      await ElMessageBox.confirm('确定删除该草稿点位吗？', '删除点位', {
+        customClass: 'console-studio-feedback',
+        type: 'warning'
+      })
       await deleteModbusPoint(projectId.value, gatewayId.value, point.id)
       ElMessage.success('已删除')
       await loadPoints()
@@ -413,6 +425,7 @@
     if (!projectId.value || !gatewayId.value) return
     try {
       await ElMessageBox.confirm('发布后点位将冻结为不可变版本，确定发布吗？', '发布点位', {
+        customClass: 'console-studio-feedback',
         type: 'warning'
       })
       publishing.value = true
@@ -426,6 +439,14 @@
       publishing.value = false
     }
   }
+
+  watch(
+    () => hasAuth('device:update'),
+    (allowed) => {
+      if (!allowed) dialogVisible.value = false
+    },
+    { flush: 'sync' }
+  )
 
   onMounted(async () => {
     if (!projectId.value) return
@@ -441,8 +462,11 @@
     :deep(.workspace-header .console-actions) {
       margin-bottom: 0;
     }
-    &__filter {
-      margin-bottom: 10px;
+    :deep(.modbus-points__gateway-filter .el-form-item__label) {
+      height: auto !important;
+      margin: 0 0 2px;
+      font-size: 14px;
+      line-height: 18px !important;
     }
   }
   .gateway-select {

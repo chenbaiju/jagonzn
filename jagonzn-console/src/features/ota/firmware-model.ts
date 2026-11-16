@@ -32,7 +32,7 @@ export const FIRMWARE_STATUS_TAGS: Record<string, 'info' | 'success' | 'warning'
 
 /** 上传会话状态中文标签。 */
 export const UPLOAD_STATUS_LABELS: Record<string, string> = {
-  PENDING: '待接收',
+  WAITING: '待接收',
   RECEIVING: '接收中',
   VERIFYING: '对象复验中',
   VERIFIED: '对象已复验',

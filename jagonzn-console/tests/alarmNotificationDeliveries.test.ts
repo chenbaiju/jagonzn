@@ -93,7 +93,7 @@ it.each([
   render()
   await flushPromises()
   expect(panel.text()).toContain(status)
-  expect(panel.text()).toContain('执行成功不代表收件人或供应商已确认送达')
+  expect(panel.text()).toContain('2026-10-06 08:00:00')
   expect(panel.findAll('button').map((b) => b.text())).toEqual(['刷新投递记录'])
   expect(fetchAlarmNotificationDeliveries).toHaveBeenCalledWith(
     projectId,

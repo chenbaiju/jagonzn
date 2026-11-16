@@ -27,7 +27,7 @@ test('actual private mail parser separates invitation and verification and waits
   assert.equal(parseIdentityLink([mail()], recipient, origin, 'verification', id), undefined)
   assert.deepEqual(
     parseIdentityLink(
-      [mail(), mail(verification, '验证你的 ThingsCloud 邮箱')],
+      [mail(), mail(verification, '验证你的 ThingsLink 邮箱')],
       recipient,
       origin,
       'verification',

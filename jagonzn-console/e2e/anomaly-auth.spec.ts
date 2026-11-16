@@ -17,7 +17,7 @@ test('异常矩阵：401 同标签单飞且双标签刷新串行', async ({ page
       new URL(response.url()).pathname === '/api/v1/auth/refresh',
     { timeout: 30_000 }
   )
-  await secondPage.goto('/#/dashboard/overview')
+  await secondPage.goto('/#/dashboard/workbench')
   expect((await initialRefresh).status()).toBe(200)
   await secondPage.waitForURL((url) => !url.hash.includes('/auth/login'), { timeout: 30_000 })
 

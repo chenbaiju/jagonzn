@@ -4,9 +4,6 @@
     <p>{{ categoryLabel }}</p>
     <p v-if="value.call">调用编号：{{ value.call.id }}</p>
     <template v-if="value.result">
-      <ElAlert class="console-hint" type="info" show-icon :closable="false"
-        >以下为模型生成内容，需人工核对；引用编号不证明结论正确。</ElAlert
-      >
       <p class="analysis-text">{{ value.result.summary }}</p>
       <div v-for="group in groups" :key="group.kind">
         <ElDivider content-position="left">{{ group.label }}</ElDivider>
@@ -36,9 +33,6 @@
         {{ value.result.usage.totalTokens }}；输入缓存命中
         {{ value.result.usage.cacheHitTokens }}，未命中
         {{ value.result.usage.cacheMissTokens }}。用量不等于费用结算。</p
-      >
-      <ElAlert class="console-hint" type="info" show-icon :closable="false"
-        >正文只在当前页面暂存，刷新或切换身份及设备后消失；不能从原调用状态恢复正文。</ElAlert
       >
     </template>
     <ElAlert v-else class="console-hint" type="warning" show-icon :closable="false"

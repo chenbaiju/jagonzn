@@ -110,13 +110,13 @@ test('OTA固件：草稿、上传复验、发布边界与取消终态', async ({
   await expect(row.locator('.el-tag')).toContainText('草稿')
 
   // 2) 上传对象：长度与摘要由浏览器计算，服务端复验后才算事实。
-  const artifact = Buffer.from('thingscloud-ota-e2e-artifact', 'utf8')
+  const artifact = Buffer.from('thingslink-ota-e2e-artifact', 'utf8')
   const artifactSha256 = await page.evaluate(async (text) => {
     const otaPath = '/src/api/ota.ts'
     const api = await import(otaPath)
     const bytes = new TextEncoder().encode(text)
     return api.sha256Hex(bytes.buffer as ArrayBuffer)
-  }, 'thingscloud-ota-e2e-artifact')
+  }, 'thingslink-ota-e2e-artifact')
 
   const uploadDialog = page.getByRole('dialog', { name: '上传固件对象' })
   await expect(uploadDialog).toBeVisible({ timeout: 30_000 })

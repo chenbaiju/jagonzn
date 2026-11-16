@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { it, expect } from 'vitest'
-import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
 import { emptyDashboard } from '../src/features/dashboard/designer-model'
 import DesignerText from '../src/views/dashboard/designer/components/DesignerText.vue'
 const schema: DashboardSchemaV1 = {

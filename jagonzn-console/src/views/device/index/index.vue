@@ -1,9 +1,12 @@
 <template>
-  <div class="console-page device-list" :class="{ 'device-list--detail': detailVisible }">
-    <div v-show="!detailVisible" class="device-list__content">
+  <div
+    class="console-page console-developer-page device-list"
+    :class="{ 'device-list--detail': detailVisible, 'device-list--flat': !detailVisible }"
+  >
+    <div v-show="!detailVisible && !createVisible" class="device-list__content">
       <ConsoleWorkspaceHeader
         project-style
-        title="设备与接入"
+        title="设备列表"
         description="创建设备、获取接入配置，查看真实上报并接续规则与看板开发。"
         :links="[
           { label: '设备类型与物模型', path: '/device/types', permission: 'device:read' },
@@ -24,7 +27,7 @@
       <ElAlert v-if="resourceError" :title="resourceError" type="warning" :closable="false" />
       <ElAlert v-if="typeHandoffError" :title="typeHandoffError" type="warning" :closable="false" />
       <ElAlert v-if="deviceListError" :title="deviceListError" type="error" :closable="false" />
-      <ElCard class="device-list__filter console-list-filter" shadow="never">
+      <section class="device-list__filter" aria-label="设备筛选">
         <DeviceAdvancedFilter
           v-model="deviceFilter"
           :device-types="filterTypeOptions"
@@ -32,8 +35,8 @@
           @search="searchDevices"
           @reset="resetDeviceFilter"
         />
-      </ElCard>
-      <ElCard class="device-list__data" shadow="never">
+      </section>
+      <section class="device-list__data" aria-label="设备列表">
         <ElTable
           v-loading="loading || devicePageLoading"
           :data="items"
@@ -41,7 +44,13 @@
           row-class-name="device-list__clickable-row"
           @row-click="handleDeviceRowClick"
         >
-          <ElTableColumn show-overflow-tooltip prop="name" label="名称" min-width="160" />
+          <ElTableColumn show-overflow-tooltip prop="name" label="名称" min-width="180">
+            <template #default="{ row }"
+              ><span class="device-list__name"
+                ><ArtSvgIcon icon="tl:cpu" /><span>{{ row.name }}</span></span
+              ></template
+            >
+          </ElTableColumn>
           <ElTableColumn show-overflow-tooltip prop="deviceKey" label="标识符" min-width="150" />
           <ElTableColumn label="设备类型" min-width="140">
             <template #default="{ row }">{{ typeName(row.deviceTypeId) }}</template>
@@ -77,25 +86,25 @@
                 @command="handleRowAction(row, $event)"
               >
                 <ElButton text class="device-list__actions-trigger" aria-label="设备操作">
-                  <ArtSvgIcon icon="ri:more-2-fill" />
+                  <ArtSvgIcon icon="tl:ellipsis" />
                 </ElButton>
                 <template #dropdown>
                   <ElDropdownMenu>
                     <ElDropdownItem command="detail">
-                      <ArtSvgIcon icon="ri:eye-line" />详情
+                      <ArtSvgIcon icon="tl:eye" />详情
                     </ElDropdownItem>
                     <ElDropdownItem v-if="hasAuth('device:update')" command="credentials">
-                      <ArtSvgIcon icon="ri:key-2-line" />凭据
+                      <ArtSvgIcon icon="tl:key-round" />凭据
                     </ElDropdownItem>
                     <ElDropdownItem v-if="hasAuth('device:update')" command="edit">
-                      <ArtSvgIcon icon="ri:edit-box-line" />编辑
+                      <ArtSvgIcon icon="tl:square-pen" />编辑
                     </ElDropdownItem>
                     <ElDropdownItem
                       v-if="hasAuth('device:delete')"
                       command="delete"
                       class="device-list__danger-action"
                     >
-                      <ArtSvgIcon icon="ri:delete-bin-line" />删除
+                      <ArtSvgIcon icon="tl:trash" />删除
                     </ElDropdownItem>
                   </ElDropdownMenu>
                 </template>
@@ -136,13 +145,28 @@
             >重试</ElButton
           >
         </div>
-      </ElCard>
+      </section>
     </div>
 
+    <DeviceCreatePage
+      v-if="createVisible"
+      ref="formRef"
+      :model="form"
+      @update:model="Object.assign(form, $event)"
+      :rules="rules"
+      :types="deviceTypes"
+      :groups="creationGroupOptions"
+      :types-loading="deviceTypesLoading"
+      :submitting="submitting"
+      @type-scroll="onDeviceTypePopupScroll"
+      @submit="submit"
+      @cancel="returnFromCreate"
+    />
     <ElDialog
-      class="console-dialog"
+      v-if="editingId"
+      class="console-dialog console-developer-dialog device-form-dialog"
       v-model="formVisible"
-      :title="editingId ? '编辑设备' : '创建设备'"
+      title="编辑设备"
       width="520px"
     >
       <ElForm ref="formRef" :model="form" :rules="rules" label-position="top">
@@ -199,7 +223,7 @@
       >
     </ElDialog>
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog device-form-dialog device-credentials-dialog"
       v-model="credVisible"
       :title="`${credDeviceName} · 设备凭据`"
       width="680px"
@@ -221,13 +245,18 @@
           </ElCheckbox>
         </ElAlert>
       </div>
-      <div class="stream-toolbar">
+      <div class="stream-toolbar device-credentials-toolbar">
         <span>设备密钥用于 MQTT 连接认证，每台设备同时只有一个有效密钥。</span>
         <ElButton type="primary" :icon="Plus" :loading="credLoading" @click="generateCred"
           >生成新密钥</ElButton
         >
       </div>
-      <ElTable v-loading="credLoading" :data="credentials" row-key="id">
+      <ElTable
+        class="device-credentials-table"
+        v-loading="credLoading"
+        :data="credentials"
+        row-key="id"
+      >
         <ElTableColumn show-overflow-tooltip prop="displayName" label="名称" min-width="120" />
         <ElTableColumn label="类型" width="120"
           ><template #default="{ row }">{{
@@ -243,11 +272,13 @@
               type="danger"
               @click="revokeCred(row)"
               label="作废"
-              icon="ri:close-circle-line"
+              icon="tl:circle-x"
             />
           </template>
         </ElTableColumn>
-        <template #empty><ElEmpty description="还没有凭据，请生成新密钥" /></template>
+        <template #empty
+          ><ElEmpty description="还没有凭据，请生成新密钥" :image-size="64"
+        /></template>
       </ElTable>
     </ElDialog>
     <header v-if="detailVisible" class="device-detail__header">
@@ -261,7 +292,7 @@
           @click="returnToList"
         />
         <span class="device-detail__separator" aria-hidden="true"></span>
-        <ArtSvgIcon class="device-detail__icon" icon="ri:box-3-line" />
+        <ArtSvgIcon class="device-detail__icon" icon="tl:cpu" />
         <h2 class="console-heading">{{ detailDevice ? detailName : '正在加载设备…' }}</h2>
       </div>
       <div v-if="detailDevice" class="device-detail__metadata">
@@ -269,14 +300,10 @@
         <span>设备标识：{{ detailDeviceKey }}</span>
         <span data-testid="device-detail-type-summary">设备类型：{{ detailTypeName }}</span>
         <span class="device-detail__status" :class="{ 'is-online': detailStatus === 'ONLINE' }">
-          <ArtSvgIcon icon="ri:plug-line" />{{ detailConnectionLabel }}
+          <ArtSvgIcon icon="tl:activity" />{{ detailConnectionLabel }}
         </span>
         <span class="device-detail__status" :class="{ 'has-alarm': detailAlarmState === 'active' }">
-          <ArtSvgIcon
-            :icon="
-              detailAlarmState === 'active' ? 'ri:alarm-warning-line' : 'ri:notification-off-line'
-            "
-          />
+          <ArtSvgIcon :icon="detailAlarmState === 'active' ? 'tl:triangle-alert' : 'tl:bell'" />
           {{ detailAlarmLabel }}
         </span>
         <ElButton
@@ -287,10 +314,24 @@
           size="small"
           @click="openEdit(detailDevice)"
         >
-          <ArtSvgIcon icon="ri:edit-line" />
+          <ArtSvgIcon icon="tl:square-pen" />
           <span>编辑信息</span>
         </ElButton>
       </div>
+      <nav v-if="detailDevice" class="console-actions" aria-label="设备开发入口">
+        <ElButton
+          v-if="canNavigate('device:read')"
+          :disabled="!canOpenDeviceWorkspace('device:read')"
+          @click="openDeviceWorkspace('messages')"
+          >消息调试</ElButton
+        >
+        <ElButton
+          v-if="canNavigate('dashboard_definition:read')"
+          :disabled="!canOpenDeviceWorkspace('dashboard_definition:read')"
+          @click="openDeviceWorkspace('designer')"
+          >看板设计</ElButton
+        >
+      </nav>
     </header>
     <ElCard
       v-if="detailVisible"
@@ -327,140 +368,267 @@
         ref="detailTabs"
         v-model="detailTab"
         class="device-detail__tabs"
-        @tab-click="(pane) => revealAdjacentTab(detailTabs, pane)"
+        @tab-click="(pane: TabsPaneContext) => revealAdjacentTab(detailTabs, pane)"
       >
-        <ElTabPane name="overview" label="概览" lazy>
-          <ElDescriptions :column="2" border>
-            <ElDescriptionsItem label="设备标识符">{{ detailDeviceKey }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="设备类型">{{ detailTypeName }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="状态">
-              <span>{{ detailConnectionLabel }}</span>
-            </ElDescriptionsItem>
-            <ElDescriptionsItem label="位置">{{ detailLocation || '—' }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="说明" :span="2">{{
-              detailDescription || '—'
-            }}</ElDescriptionsItem>
-          </ElDescriptions>
-          <ElDivider content-position="left">当前坐标</ElDivider>
-          <DeviceLocationPoint
-            v-if="detailVisible"
-            :project-id="projectId"
-            :device-id="detailTagDeviceId"
-            :identity-key="userStore.info.userId ?? ''"
-            :editable="hasAuth('device:update')"
-          />
+        <ElTabPane name="overview" label="概览" class="device-overview" lazy>
+          <div class="device-overview-grid">
+            <div class="device-overview-main">
+              <DeviceDetailCard
+                title="设备信息"
+                heading-id="device-info-heading"
+                class="device-overview-panel"
+              >
+                <ElDescriptions :column="1">
+                  <ElDescriptionsItem label="设备名称">{{ detailName }}</ElDescriptionsItem>
+                  <ElDescriptionsItem label="设备标识符">{{ detailDeviceKey }}</ElDescriptionsItem>
+                  <ElDescriptionsItem label="设备类型">{{ detailTypeName }}</ElDescriptionsItem>
+                  <ElDescriptionsItem label="位置">{{ detailLocation || '—' }}</ElDescriptionsItem>
+                  <ElDescriptionsItem label="创建时间">{{
+                    formatTime(detailDevice.createdAt)
+                  }}</ElDescriptionsItem>
+                  <ElDescriptionsItem label="最后上线">{{
+                    formatTime(detailDevice.lastOnlineAt)
+                  }}</ElDescriptionsItem>
+                  <ElDescriptionsItem label="说明">{{
+                    detailDescription || '—'
+                  }}</ElDescriptionsItem>
+                </ElDescriptions>
+              </DeviceDetailCard>
+              <DeviceDetailCard
+                title="当前属性"
+                heading-id="current-readings-heading"
+                class="device-overview-readings"
+              >
+                <template #actions>
+                  <ElButton text type="primary" @click="detailTab = 'properties'"
+                    >查看全部属性 <ArtSvgIcon icon="tl:chevron-right"
+                  /></ElButton>
+                </template>
+                <div v-if="overviewReadings.length" class="device-overview-readings__grid">
+                  <article
+                    v-for="reading in overviewReadings.slice(0, 4)"
+                    :key="reading.key"
+                    class="device-overview-reading"
+                    ><span>{{ reading.name || reading.key }}</span
+                    ><strong>{{ reading.value }}</strong
+                    ><span class="device-overview-reading__time"
+                      >上报于 {{ formatTime(reading.occurredAt) }}</span
+                    ></article
+                  >
+                </div>
+                <p v-else class="device-overview__empty"
+                  >当前暂无可展示的属性事实，更多状态请查看属性页。</p
+                >
+              </DeviceDetailCard>
+              <DeviceDetailCard
+                title="当前坐标"
+                class="device-overview-panel device-overview-location"
+              >
+                <DeviceLocationPoint
+                  v-if="detailVisible"
+                  :project-id="projectId"
+                  :device-id="detailTagDeviceId"
+                  :identity-key="userStore.info.userId ?? ''"
+                  :editable="hasAuth('device:update')"
+                />
+              </DeviceDetailCard>
+            </div>
+            <aside class="device-overview-aside">
+              <DeviceDetailCard
+                title="连接信息"
+                heading-id="device-status-heading"
+                class="device-overview-panel"
+              >
+                <ElDescriptions :column="1">
+                  <ElDescriptionsItem label="连接状态"
+                    ><span
+                      class="device-detail__status"
+                      :class="{ 'is-online': detailStatus === 'ONLINE' }"
+                      ><ArtSvgIcon icon="tl:activity" />{{ detailConnectionLabel }}</span
+                    ></ElDescriptionsItem
+                  >
+                  <ElDescriptionsItem label="最后上线">{{
+                    formatTime(detailDevice.lastOnlineAt)
+                  }}</ElDescriptionsItem>
+                </ElDescriptions>
+                <div class="device-overview__links"
+                  ><ElButton @click="detailTab = 'connection'">连接记录</ElButton></div
+                >
+              </DeviceDetailCard>
+              <DeviceDetailCard
+                title="当前告警"
+                heading-id="device-alarm-heading"
+                class="device-overview-panel"
+              >
+                <template #actions
+                  ><ElButton
+                    v-if="capabilityTabs.some((tab) => tab.key === 'alarms')"
+                    text
+                    type="primary"
+                    @click="detailTab = 'alarms'"
+                    >查看告警 <ArtSvgIcon icon="tl:chevron-right" /></ElButton
+                ></template>
+                <p class="device-overview-alarm__status"
+                  ><span
+                    class="device-detail__status"
+                    :class="{ 'has-alarm': detailAlarmState === 'active' }"
+                    ><ArtSvgIcon
+                      :icon="detailAlarmState === 'active' ? 'tl:triangle-alert' : 'tl:bell'"
+                    />{{ detailAlarmLabel }}</span
+                  ></p
+                >
+              </DeviceDetailCard>
+              <DeviceDetailCard
+                title="关联能力"
+                heading-id="device-capabilities-heading"
+                class="device-overview-panel"
+              >
+                <div class="device-overview-capabilities">
+                  <ElButton text @click="detailTab = 'device-image'"
+                    ><ArtSvgIcon icon="tl:image" />设备图片</ElButton
+                  >
+                  <ElButton
+                    v-if="capabilityTabs.some((tab) => tab.key === 'ota')"
+                    text
+                    @click="detailTab = 'ota'"
+                    ><ArtSvgIcon icon="tl:cloud-upload" />固件升级</ElButton
+                  >
+                  <ElButton text @click="detailTab = 'property-history'"
+                    ><ArtSvgIcon icon="tl:chart-no-axes-combined" />属性历史</ElButton
+                  >
+                  <ElButton
+                    v-if="capabilityTabs.some((tab) => tab.key === 'diagnostics')"
+                    text
+                    @click="detailTab = 'diagnostics'"
+                    ><ArtSvgIcon icon="tl:activity" />接入诊断</ElButton
+                  >
+                </div>
+              </DeviceDetailCard>
+            </aside>
+          </div>
         </ElTabPane>
         <ElTabPane name="connection" label="连接" lazy>
-          <ElDivider content-position="left">连接记录</ElDivider>
-          <ElTable v-loading="connLoading" :data="connections" row-key="id" size="small">
-            <ElTableColumn label="协议" width="70"
-              ><template #default="{ row }">{{ row.protocol }}</template></ElTableColumn
-            >
-            <ElTableColumn label="IP" width="140" prop="clientIp" show-overflow-tooltip />
-            <ElTableColumn label="连接时间" width="170"
-              ><template #default="{ row }">{{
-                formatTime(row.connectedAt)
-              }}</template></ElTableColumn
-            >
-            <ElTableColumn label="断开时间" width="170">
-              <template #default="{ row }"
-                ><span v-if="row.disconnectedAt">{{ formatTime(row.disconnectedAt) }}</span
-                ><ElTag v-else type="success" size="small">在线</ElTag></template
+          <DeviceDetailCard title="连接记录">
+            <ElTable v-loading="connLoading" :data="connections" row-key="id" size="small">
+              <ElTableColumn label="协议" width="70"
+                ><template #default="{ row }">{{ row.protocol }}</template></ElTableColumn
               >
-            </ElTableColumn>
-            <ElTableColumn
-              label="断开原因"
-              min-width="120"
-              prop="disconnectReason"
-              show-overflow-tooltip
+              <ElTableColumn label="IP" width="140" prop="clientIp" show-overflow-tooltip />
+              <ElTableColumn label="连接时间" width="170"
+                ><template #default="{ row }">{{
+                  formatTime(row.connectedAt)
+                }}</template></ElTableColumn
+              >
+              <ElTableColumn label="断开时间" width="170">
+                <template #default="{ row }"
+                  ><span v-if="row.disconnectedAt">{{ formatTime(row.disconnectedAt) }}</span
+                  ><ElTag v-else type="success" size="small">在线</ElTag></template
+                >
+              </ElTableColumn>
+              <ElTableColumn
+                label="断开原因"
+                min-width="120"
+                prop="disconnectReason"
+                show-overflow-tooltip
+              />
+              <template #empty
+                ><span style="color: var(--art-text-gray-500)"
+                  >暂无连接记录，设备上线后将自动记录</span
+                ></template
+              >
+            </ElTable>
+          </DeviceDetailCard>
+        </ElTabPane>
+        <ElTabPane name="info" label="信息" class="device-detail-sections" lazy>
+          <DeviceDetailCard title="设备信息">
+            <ElDescriptions :column="2" border>
+              <ElDescriptionsItem label="设备 ID">{{ detailTagDeviceId }}</ElDescriptionsItem>
+              <ElDescriptionsItem label="设备名称">{{ detailName }}</ElDescriptionsItem>
+              <ElDescriptionsItem label="创建时间">{{
+                detailDevice.createdAt ? formatTime(detailDevice.createdAt) : '—'
+              }}</ElDescriptionsItem>
+              <ElDescriptionsItem label="最后上线">{{
+                detailDevice.lastOnlineAt ? formatTime(detailDevice.lastOnlineAt) : '从未上线'
+              }}</ElDescriptionsItem>
+            </ElDescriptions>
+          </DeviceDetailCard>
+          <DeviceDetailCard title="设备标签">
+            <DeviceTagEditor
+              :project-id="projectId"
+              :device-id="detailTagDeviceId"
+              :editable="hasAuth('device:update')"
             />
-            <template #empty
-              ><span style="color: var(--art-text-gray-500)"
-                >暂无连接记录，设备上线后将自动记录</span
-              ></template
-            >
-          </ElTable>
+          </DeviceDetailCard>
+          <DeviceDetailCard title="设备绑定模型事件定义">
+            <ElAlert
+              v-if="!eventDefinitionsAvailable"
+              title="事件定义暂不可用，请重新进入详情重试"
+              type="warning"
+              :closable="false"
+            />
+            <ElTable v-else :data="detailEvents" row-key="id">
+              <ElTableColumn show-overflow-tooltip prop="name" label="事件名称" min-width="160" />
+              <ElTableColumn show-overflow-tooltip prop="eventKey" label="标识符" min-width="160" />
+              <ElTableColumn label="级别" width="100">
+                <template #default="{ row }">{{ eventLevelLabel(row.level) }}</template>
+              </ElTableColumn>
+              <ElTableColumn
+                prop="description"
+                label="说明"
+                min-width="200"
+                show-overflow-tooltip
+              />
+              <template #empty
+                ><ElEmpty
+                  :description="detailTypeId ? '设备类型尚未定义事件' : '设备尚未绑定设备类型'"
+              /></template>
+            </ElTable>
+          </DeviceDetailCard>
         </ElTabPane>
-        <ElTabPane name="info" label="信息" lazy>
-          <ElDescriptions :column="2" border>
-            <ElDescriptionsItem label="设备 ID">{{ detailTagDeviceId }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="设备名称">{{ detailName }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="创建时间">{{
-              detailDevice.createdAt ? formatTime(detailDevice.createdAt) : '—'
-            }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="最后上线">{{
-              detailDevice.lastOnlineAt ? formatTime(detailDevice.lastOnlineAt) : '从未上线'
-            }}</ElDescriptionsItem>
-          </ElDescriptions>
-          <ElDivider content-position="left">设备标签</ElDivider>
-          <DeviceTagEditor
-            :project-id="projectId"
-            :device-id="detailTagDeviceId"
-            :editable="hasAuth('device:update')"
-          />
-          <ElDivider content-position="left">设备类型事件定义</ElDivider>
-          <ElAlert type="info" :closable="false" show-icon>当前设备类型定义的事件。</ElAlert>
-          <ElAlert
-            v-if="!eventDefinitionsAvailable"
-            title="事件定义暂不可用，请重新进入详情重试"
-            type="warning"
-            :closable="false"
-          />
-          <ElTable v-else :data="detailEvents" row-key="id">
-            <ElTableColumn show-overflow-tooltip prop="name" label="事件名称" min-width="160" />
-            <ElTableColumn show-overflow-tooltip prop="eventKey" label="标识符" min-width="160" />
-            <ElTableColumn label="级别" width="100">
-              <template #default="{ row }">{{ eventLevelLabel(row.level) }}</template>
-            </ElTableColumn>
-            <ElTableColumn prop="description" label="说明" min-width="200" show-overflow-tooltip />
-            <template #empty
-              ><ElEmpty
-                :description="detailTypeId ? '设备类型尚未定义事件' : '设备尚未绑定设备类型'"
-            /></template>
-          </ElTable>
-        </ElTabPane>
-        <ElTabPane name="properties" label="属性" lazy>
-          <div v-loading="shadowLoading">
-            <div class="shadow-section">
-              <ElDivider content-position="left">
-                <span class="shadow-section__title">
-                  <span>期望状态（Desired）</span>
-                  <span class="shadow-version">版本 {{ shadowVersion }}</span>
-                </span>
-              </ElDivider>
+        <ElTabPane name="properties" label="属性" class="device-detail-sections" lazy>
+          <div v-loading="shadowLoading" class="device-detail-sections">
+            <DeviceDetailCard title="期望状态（Desired）">
+              <template #actions
+                ><span class="shadow-version">版本 {{ shadowVersion }}</span></template
+              >
               <ElInput
                 v-model="shadowDesired"
                 type="textarea"
                 :rows="6"
                 placeholder="暂无期望状态"
               />
-            </div>
-            <div class="shadow-section">
-              <ElDivider content-position="left">
-                <span class="shadow-section__title">
-                  <span>上报状态（Reported）</span>
-                  <ElTag
-                    class="realtime-status"
-                    :type="
-                      realtimeStatus === 'connected'
-                        ? 'success'
+              <ElButton
+                class="shadow-save"
+                v-if="hasAuth('device:update')"
+                type="primary"
+                :loading="shadowLoading"
+                @click="saveDesired"
+                >保存期望</ElButton
+              >
+            </DeviceDetailCard>
+            <DeviceDetailCard title="上报状态（Reported）">
+              <template #actions>
+                <ElTag
+                  class="realtime-status"
+                  :type="
+                    realtimeStatus === 'connected'
+                      ? 'success'
+                      : realtimeStatus === 'quota_exceeded'
+                        ? 'warning'
+                        : 'info'
+                  "
+                >
+                  {{
+                    realtimeStatus === 'connected'
+                      ? '实时连接已建立'
+                      : realtimeStatus === 'connecting'
+                        ? '实时连接中'
                         : realtimeStatus === 'quota_exceeded'
-                          ? 'warning'
-                          : 'info'
-                    "
-                  >
-                    {{
-                      realtimeStatus === 'connected'
-                        ? '实时连接已建立'
-                        : realtimeStatus === 'connecting'
-                          ? '实时连接中'
-                          : realtimeStatus === 'quota_exceeded'
-                            ? '租户共享连接额度已满，暂不自动重连'
-                            : '实时连接已断开'
-                    }}
-                  </ElTag>
-                </span>
-              </ElDivider>
+                          ? '租户共享连接额度已满，暂不自动重连'
+                          : '实时连接已断开'
+                  }}
+                </ElTag>
+              </template>
               <ElInput
                 v-model="shadowReported"
                 type="textarea"
@@ -475,9 +643,7 @@
                 data-testid="reported-property-sources"
               >
                 <ElDivider content-position="left">上报属性明细</ElDivider>
-                <ElAlert type="info" :closable="false" show-icon>
-                  来源版本用于追溯上报时的物模型，接受序号用于判断数据新旧；“未提供”表示该条数据缺少对应元信息。
-                </ElAlert>
+
                 <ElTable :data="reportedSources" row-key="key">
                   <ElTableColumn label="属性名称" min-width="200">
                     <template #default="{ row }">
@@ -508,108 +674,132 @@
                   </ElTableColumn>
                 </ElTable>
               </section>
+            </DeviceDetailCard>
+          </div>
+          <DeviceDetailCard title="历史曲线">
+            <div class="history-toolbar">
+              <ElSelect
+                v-model="historyPropertyKey"
+                placeholder="选择数值属性"
+                @change="loadHistory"
+              >
+                <ElOption
+                  v-for="property in historyProperties"
+                  :key="property.propertyKey ?? property.id"
+                  :label="property.name"
+                  :value="property.propertyKey ?? ''"
+                />
+              </ElSelect>
+              <ElSelect v-model="historyRangeHours" @change="loadHistory">
+                <ElOption label="最近 1 小时" :value="1" />
+                <ElOption label="最近 24 小时" :value="24" />
+                <ElOption label="最近 7 天" :value="168" />
+                <ElOption label="最近 30 天" :value="720" />
+              </ElSelect>
+              <ElTag v-if="historyActualGranularity" type="info">
+                实际粒度：{{ granularityLabel(historyActualGranularity) }}
+              </ElTag>
             </div>
-          </div>
-          <ElButton
-            v-if="hasAuth('device:update')"
-            type="primary"
-            :loading="shadowLoading"
-            @click="saveDesired"
-            >保存期望</ElButton
-          >
-          <ElDivider content-position="left">历史曲线</ElDivider>
-          <div class="history-toolbar">
-            <ElSelect v-model="historyPropertyKey" placeholder="选择数值属性" @change="loadHistory">
-              <ElOption
-                v-for="property in historyProperties"
-                :key="property.propertyKey ?? property.id"
-                :label="property.name"
-                :value="property.propertyKey ?? ''"
-              />
-            </ElSelect>
-            <ElSelect v-model="historyRangeHours" @change="loadHistory">
-              <ElOption label="最近 1 小时" :value="1" />
-              <ElOption label="最近 24 小时" :value="24" />
-              <ElOption label="最近 7 天" :value="168" />
-              <ElOption label="最近 30 天" :value="720" />
-            </ElSelect>
-            <ElTag v-if="historyActualGranularity" type="info">
-              实际粒度：{{ granularityLabel(historyActualGranularity) }}
-            </ElTag>
-          </div>
-          <ElEmpty
-            v-if="!historyLoading && historyValues.every((value) => value === null)"
-            class="history-empty"
-            :image-size="72"
-            description="所选范围暂无历史曲线"
-          >
-            <template #image>
-              <ArtSvgIcon class="history-empty__icon" icon="ri:line-chart-line" />
-            </template>
-          </ElEmpty>
-          <ArtLineChart
-            v-else
-            height="260px"
-            :loading="historyLoading"
-            :is-empty="historyValues.length === 0"
-            :data="historyValues"
-            :x-axis-data="historyTimes"
-            show-area-color
-          />
+            <ElEmpty
+              v-if="!historyLoading && historyValues.every((value) => value === null)"
+              class="history-empty"
+              :image-size="72"
+              description="所选范围暂无历史曲线"
+            >
+              <template #image>
+                <ArtSvgIcon class="history-empty__icon" icon="tl:chart-no-axes-combined" />
+              </template>
+            </ElEmpty>
+            <ArtLineChart
+              v-else
+              height="260px"
+              :loading="historyLoading"
+              :is-empty="historyValues.length === 0"
+              :data="historyValues"
+              :x-axis-data="historyTimes"
+              show-area-color
+            />
+          </DeviceDetailCard>
         </ElTabPane>
 
         <ElTabPane name="commands" label="命令" lazy>
-          <div v-if="hasAuth('device:control')" class="command-panel">
-            <div class="command-toolbar console-actions">
-              <ElSelect v-model="commandKey" placeholder="选择命令" clearable>
-                <ElOption
-                  v-for="command in commandDefinitions"
-                  :key="command.commandKey ?? command.id"
-                  :label="command.name"
-                  :value="command.commandKey ?? ''"
-                />
-              </ElSelect>
-              <ElButton type="primary" :loading="commandSubmitting" @click="submitCommand"
-                >下发命令</ElButton
-              >
-              <ElButton v-if="lastCommand?.id" :loading="commandLoading" @click="refreshCommand"
-                >刷新状态</ElButton
-              >
+          <DeviceDetailCard title="命令">
+            <div v-if="hasAuth('device:control')" class="command-panel">
+              <div class="command-toolbar console-actions">
+                <ElSelect v-model="commandKey" placeholder="选择命令" clearable>
+                  <ElOption
+                    v-for="command in commandDefinitions"
+                    :key="command.commandKey ?? command.id"
+                    :label="command.name"
+                    :value="command.commandKey ?? ''"
+                  />
+                </ElSelect>
+                <ElButton type="primary" :loading="commandSubmitting" @click="submitCommand"
+                  >下发命令</ElButton
+                >
+                <ElButton v-if="lastCommand?.id" :loading="commandLoading" @click="refreshCommand"
+                  >刷新状态</ElButton
+                >
+              </div>
+              <ElAlert
+                v-if="selectedCommandDefinition?.description"
+                :title="selectedCommandDefinition.description"
+                type="info"
+                :closable="false"
+                show-icon
+              />
+              <ElInput
+                v-model="commandInput"
+                type="textarea"
+                :rows="4"
+                placeholder='请输入命令参数 JSON，例如 {"enabled":true}'
+              />
+              <ElDescriptions v-if="lastCommand" :column="3" border class="command-result">
+                <ElDescriptionsItem label="状态">{{
+                  commandStatusLabel(lastCommand.status)
+                }}</ElDescriptionsItem>
+                <ElDescriptionsItem label="尝试次数"
+                  >{{ lastCommand.attemptCount ?? 0 }} /
+                  {{ lastCommand.maxAttempts ?? 0 }}</ElDescriptionsItem
+                >
+                <ElDescriptionsItem label="命令 ID">{{ lastCommand.id }}</ElDescriptionsItem>
+                <ElDescriptionsItem v-if="lastCommand.output" label="设备返回结果" :span="3">
+                  <pre>{{ JSON.stringify(lastCommand.output, null, 2) }}</pre>
+                </ElDescriptionsItem>
+                <ElDescriptionsItem v-if="lastCommand.failureCode" label="失败代码" :span="3">{{
+                  lastCommand.failureCode
+                }}</ElDescriptionsItem>
+                <ElDescriptionsItem v-if="lastCommand.failureMessage" label="失败原因" :span="3">{{
+                  lastCommand.failureMessage
+                }}</ElDescriptionsItem>
+              </ElDescriptions>
+              <DeviceCommandHistory
+                v-if="detailTab === 'commands' && projectId && detailTagDeviceId"
+                :project-id="projectId"
+                :device-id="detailTagDeviceId"
+                :refresh-key="lastCommand?.id"
+              />
             </div>
-            <ElInput
-              v-model="commandInput"
-              type="textarea"
-              :rows="4"
-              placeholder='请输入命令参数 JSON，例如 {"enabled":true}'
-            />
-            <ElDescriptions v-if="lastCommand" :column="3" border class="command-result">
-              <ElDescriptionsItem label="状态">{{
-                commandStatusLabel(lastCommand.status)
-              }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="尝试次数"
-                >{{ lastCommand.attemptCount ?? 0 }} /
-                {{ lastCommand.maxAttempts ?? 0 }}</ElDescriptionsItem
-              >
-              <ElDescriptionsItem label="命令 ID">{{ lastCommand.id }}</ElDescriptionsItem>
-              <ElDescriptionsItem v-if="lastCommand.failureMessage" label="失败原因" :span="3">{{
-                lastCommand.failureMessage
-              }}</ElDescriptionsItem>
-            </ElDescriptions>
-            <DeviceCommandHistory
-              v-if="detailTab === 'commands' && projectId && detailTagDeviceId"
-              :project-id="projectId"
-              :device-id="detailTagDeviceId"
-              :refresh-key="lastCommand?.id"
-            />
-          </div>
-          <ElEmpty v-else description="当前角色没有设备控制权限" :image-size="56" />
+            <ElEmpty v-else description="当前角色没有设备控制权限" :image-size="56" />
+          </DeviceDetailCard>
         </ElTabPane>
         <ElTabPane name="property-history" label="原始属性历史" lazy>
-          <DevicePropertyHistory
-            :project-id="projectId"
-            :device-id="detailDevice.id ?? ''"
-            :active="detailVisible && detailTab === 'property-history'"
-          />
+          <DeviceDetailCard title="原始属性历史">
+            <DevicePropertyHistory
+              :project-id="projectId"
+              :device-id="detailDevice.id ?? ''"
+              :active="detailVisible && detailTab === 'property-history'"
+            />
+          </DeviceDetailCard>
+        </ElTabPane>
+        <ElTabPane name="device-image" label="设备图片" lazy>
+          <DeviceDetailCard title="设备图片">
+            <DeviceImagePanel
+              :project-id="projectId"
+              :device-id="detailDevice.id ?? ''"
+              :active="detailVisible && detailTab === 'device-image'"
+            />
+          </DeviceDetailCard>
         </ElTabPane>
         <ElTabPane name="event-history" label="事件历史" lazy>
           <DeviceEventHistory
@@ -618,37 +808,51 @@
             :active="detailVisible && detailTab === 'event-history'"
           />
         </ElTabPane>
+        <ElTabPane v-if="hasAuth('device:update')" name="runtime-logs" label="运行日志" lazy>
+          <DeviceRuntimeLogs
+            :project-id="projectId"
+            :device-id="detailDevice.id ?? ''"
+            :active="detailVisible && detailTab === 'runtime-logs'"
+          />
+        </ElTabPane>
         <ElTabPane name="messages" label="消息日志" lazy>
-          <ElTable v-loading="msgLoading" :data="messages" row-key="id" size="small">
-            <ElTableColumn label="方向" width="70">
-              <template #default="{ row }">
-                <ElTag :type="row.direction === 'UP' ? 'success' : 'warning'" size="small">{{
-                  row.direction === 'UP' ? '上行' : '下行'
-                }}</ElTag>
-              </template>
-            </ElTableColumn>
-            <ElTableColumn show-overflow-tooltip label="协议" width="70" prop="protocol" />
-            <ElTableColumn label="Topic" min-width="180" prop="topic" show-overflow-tooltip />
-            <ElTableColumn
-              label="载荷"
-              min-width="160"
-              prop="payloadSummary"
-              show-overflow-tooltip
-            />
-            <ElTableColumn label="时间" width="170">
-              <template #default="{ row }">{{ formatTime(row.ts) }}</template>
-            </ElTableColumn>
-            <template #empty
-              ><span style="color: var(--art-text-gray-500)"
-                >暂无消息日志，设备上报数据后将自动记录</span
-              ></template
-            >
-          </ElTable>
-          <div v-if="msgHasMore" class="message-load-more">
-            <ElButton :loading="msgLoading" text type="primary" @click="loadMessages(true)"
-              >加载更多</ElButton
-            >
-          </div>
+          <DeviceDetailCard title="消息日志">
+            <ElTable v-loading="msgLoading" :data="messages" row-key="id" size="small">
+              <ElTableColumn label="方向" width="70">
+                <template #default="{ row }">
+                  <ElTag :type="row.direction === 'UP' ? 'success' : 'warning'" size="small">{{
+                    row.direction === 'UP' ? '上行' : '下行'
+                  }}</ElTag>
+                </template>
+              </ElTableColumn>
+              <ElTableColumn show-overflow-tooltip label="协议" width="70" prop="protocol" />
+              <ElTableColumn label="消息类型" width="120">
+                <template #default="{ row }">{{
+                  messageTypeLabels[row.messageType] || row.messageType || '—'
+                }}</template>
+              </ElTableColumn>
+              <ElTableColumn label="Topic" min-width="180" prop="topic" show-overflow-tooltip />
+              <ElTableColumn
+                label="载荷"
+                min-width="160"
+                prop="payloadSummary"
+                show-overflow-tooltip
+              />
+              <ElTableColumn label="时间" width="170">
+                <template #default="{ row }">{{ formatTime(row.ts) }}</template>
+              </ElTableColumn>
+              <template #empty
+                ><span style="color: var(--art-text-gray-500)"
+                  >暂无消息日志，设备上报数据后将自动记录</span
+                ></template
+              >
+            </ElTable>
+            <div v-if="msgHasMore" class="message-load-more">
+              <ElButton :loading="msgLoading" text type="primary" @click="loadMessages(true)"
+                >加载更多</ElButton
+              >
+            </div>
+          </DeviceDetailCard>
         </ElTabPane>
         <ElTabPane
           v-for="tab in capabilityTabs"
@@ -657,16 +861,18 @@
           :label="tab.label"
           lazy
         >
-          <DeviceCapabilityContent
-            v-if="detailTab === tab.key"
-            :project-id="projectId"
-            :device="detailDevice"
-            :kind="tab.key"
-          >
-            <template v-if="tab.key === 'credentials'" #actions>
-              <ElButton @click="openCredentials(detailDevice)">管理凭据</ElButton>
-            </template>
-          </DeviceCapabilityContent>
+          <DeviceDetailCard :title="tab.label">
+            <DeviceCapabilityContent
+              v-if="detailTab === tab.key"
+              :project-id="projectId"
+              :device="detailDevice"
+              :kind="tab.key"
+            >
+              <template v-if="tab.key === 'credentials'" #actions>
+                <ElButton @click="openCredentials(detailDevice)">管理凭据</ElButton>
+              </template>
+            </DeviceCapabilityContent>
+          </DeviceDetailCard>
         </ElTabPane>
         <ElTabPane name="agent-evidence" label="诊断证据" lazy>
           <DeviceAgentEvidence
@@ -683,42 +889,52 @@
           />
         </ElTabPane>
         <ElTabPane v-if="hasAuth('task:read')" name="tasks" label="任务调度" lazy>
-          <DeviceTasks
-            v-if="detailTab === 'tasks' && projectId && detailTagDeviceId"
-            :project-id="projectId"
-            :device-id="detailTagDeviceId"
-          />
+          <DeviceDetailCard title="任务调度">
+            <DeviceTasks
+              v-if="detailTab === 'tasks' && projectId && detailTagDeviceId"
+              :project-id="projectId"
+              :device-id="detailTagDeviceId"
+            />
+          </DeviceDetailCard>
         </ElTabPane>
         <ElTabPane v-if="hasAuth('rule:read')" name="automations" label="自动化" lazy>
-          <DeviceAutomations
-            v-if="detailTab === 'automations' && projectId && detailTagDeviceId"
-            :project-id="projectId"
-            :device-id="detailTagDeviceId"
-            :can-manage="hasAuth('rule:manage')"
-          />
+          <DeviceDetailCard title="自动化">
+            <DeviceAutomations
+              v-if="detailTab === 'automations' && projectId && detailTagDeviceId"
+              :project-id="projectId"
+              :device-id="detailTagDeviceId"
+              :can-manage="hasAuth('rule:manage')"
+            />
+          </DeviceDetailCard>
         </ElTabPane>
         <ElTabPane v-if="hasAuth('rule:read')" name="scenes" label="场景" lazy>
-          <DeviceScenes
-            v-if="detailTab === 'scenes' && projectId && detailTagDeviceId"
-            :project-id="projectId"
-            :device-id="detailTagDeviceId"
-            :can-manage="hasAuth('rule:manage')"
-          />
+          <DeviceDetailCard title="场景">
+            <DeviceScenes
+              v-if="detailTab === 'scenes' && projectId && detailTagDeviceId"
+              :project-id="projectId"
+              :device-id="detailTagDeviceId"
+              :can-manage="hasAuth('rule:manage')"
+            />
+          </DeviceDetailCard>
         </ElTabPane>
         <ElTabPane v-if="hasAuth('rule:read')" name="message-rules" label="消息规则" lazy>
-          <DeviceMessageRules
-            v-if="detailTab === 'message-rules' && projectId && detailTagDeviceId"
-            :project-id="projectId"
-            :device-id="detailTagDeviceId"
-            :can-manage="hasAuth('rule:manage')"
-          />
+          <DeviceDetailCard title="消息规则">
+            <DeviceMessageRules
+              v-if="detailTab === 'message-rules' && projectId && detailTagDeviceId"
+              :project-id="projectId"
+              :device-id="detailTagDeviceId"
+              :can-manage="hasAuth('rule:manage')"
+            />
+          </DeviceDetailCard>
         </ElTabPane>
         <ElTabPane name="settings" label="接入配置" lazy>
-          <DeviceAccessConfiguration
-            v-if="detailVisible"
-            :project-id="projectId"
-            :device-id="detailTagDeviceId"
-          />
+          <DeviceDetailCard title="接入配置">
+            <DeviceAccessConfiguration
+              v-if="detailVisible"
+              :project-id="projectId"
+              :device-id="detailTagDeviceId"
+            />
+          </DeviceDetailCard>
         </ElTabPane>
       </ElTabs>
     </ElCard>
@@ -735,7 +951,12 @@
   import { deviceStatusLabel, deviceStatusTag } from '@/utils/deviceStatus'
   import { toSeriesValue } from '@/utils/series'
   import { ArrowLeft, Plus } from '@element-plus/icons-vue'
-  import type { FormInstance, FormRules, TabsInstance } from 'element-plus'
+  import {
+    deviceCreationTagError,
+    deviceCreationTags,
+    type DeviceCreationTag
+  } from '../device-creation-form'
+  import type { FormInstance, FormRules, TabsInstance, TabsPaneContext } from 'element-plus'
   import { revealAdjacentTab } from '@/utils/tab-navigation'
   import {
     fetchDeviceDetail,
@@ -763,7 +984,7 @@
     type DeviceResponse,
     type DeviceEventDefinitionResponse,
     type DeviceTypeResponse,
-    type DevicePropertyDefinitionResponse,
+    type DevicePropertyDefinitionView,
     type DeviceCommandDefinitionResponse,
     type DeviceCommandResponse,
     type SubmitDeviceCommandRequest
@@ -786,11 +1007,15 @@
     type DeviceCapability
   } from '../components/DeviceCapabilityContent.vue'
   import DeviceTagEditor from '../components/DeviceTagEditor.vue'
+  import DeviceDetailCard from '../components/DeviceDetailCard.vue'
+  import DeviceCreatePage from '../components/DeviceCreatePage.vue'
   import DeviceAlarmStatus from '../components/DeviceAlarmStatus.vue'
   import DeviceAccessConfiguration from '../components/DeviceAccessConfiguration.vue'
   import DeviceLocationPoint from '../components/DeviceLocationPoint.vue'
   import DeviceCommandHistory from '../components/DeviceCommandHistory.vue'
   import DeviceEventHistory from '../components/DeviceEventHistory.vue'
+  import DeviceRuntimeLogs from '../components/DeviceRuntimeLogs.vue'
+  import DeviceImagePanel from '../components/DeviceImagePanel.vue'
   import DevicePropertyHistory from '../components/DevicePropertyHistory.vue'
   import DeviceAgentEvidence from '../components/DeviceAgentEvidence.vue'
   import DeviceEndUsers from '../components/DeviceEndUsers.vue'
@@ -894,6 +1119,21 @@
   const reportedSources = ref<
     Array<{ key: string; name?: string; occurredAt: string; source?: string; revision?: string }>
   >([])
+  const overviewReadings = computed(() => {
+    const values = reported.values()
+    return reportedSources.value.map((source) => {
+      const value = values[source.key]
+      return {
+        ...source,
+        value:
+          value === null
+            ? 'null'
+            : typeof value === 'string'
+              ? value
+              : (JSON.stringify(value) ?? '—')
+      }
+    })
+  })
   let detailGeneration = 0
   let detailIdentity = currentIdentityEpoch()
   let currentRequest: Promise<void> | undefined
@@ -920,12 +1160,18 @@
     msgLoading = ref(false),
     connections = ref<DeviceConnectionResponse[]>([]),
     messages = ref<MessageLogResponse[]>([])
+  const messageTypeLabels: Record<string, string> = {
+    PROPERTY_REPORT: '属性上报',
+    EVENT: '事件上报',
+    COMMAND: '命令下发',
+    COMMAND_REPLY: '命令回复'
+  }
   const historyLoading = ref(false),
     historyPropertyKey = ref(''),
     historyRangeHours = ref(24),
     historyActualGranularity = ref('')
-  const historyProperties = ref<DevicePropertyDefinitionResponse[]>([]),
-    detailProperties = ref<DevicePropertyDefinitionResponse[]>([]),
+  const historyProperties = ref<DevicePropertyDefinitionView[]>([]),
+    detailProperties = ref<DevicePropertyDefinitionView[]>([]),
     historyValues = ref<(number | null)[]>([]),
     historyTimes = ref<string[]>([])
   const commandDefinitions = ref<DeviceCommandDefinitionResponse[]>([]),
@@ -945,6 +1191,9 @@
   })
   // 命令 POST 的响应可能在后端受理后丢失；同一用户意图重试必须复用原键，成功或明确拒绝后才释放。
   const commandSubmission = new IdempotentSubmission()
+  const selectedCommandDefinition = computed(() =>
+    commandDefinitions.value.find((definition) => definition.commandKey === commandKey.value)
+  )
   const { deviceTypes, deviceTypesLoading, loadDeviceTypes, onDeviceTypePopupScroll } =
     usePagedDeviceCatalog(projectId)
   const deviceGroups = ref<DeviceGroupResponse[]>([])
@@ -957,11 +1206,13 @@
     tagValue: ''
   })
   const typeMap = ref<Record<string, string>>({})
-  const formRef = ref<FormInstance>()
+  const formRef = ref<Pick<FormInstance, 'validate'>>()
   const form = reactive({
     name: '',
     deviceKey: '',
     deviceTypeId: '',
+    groupId: '',
+    tags: [] as DeviceCreationTag[],
     description: '',
     location: ''
   })
@@ -988,6 +1239,15 @@
         message: '以字母或数字开头，仅支持字母、数字、下划线和横线',
         trigger: 'blur'
       }
+    ],
+    tags: [
+      {
+        validator: (_rule, value: DeviceCreationTag[], callback) => {
+          const error = deviceCreationTagError(value)
+          callback(error ? new Error(error) : undefined)
+        },
+        trigger: 'blur'
+      }
     ]
   }
 
@@ -1004,6 +1264,12 @@
         Boolean(group.id && group.name)
       )
       .map((group) => ({ id: group.id, name: group.name }))
+  )
+  const creationGroupOptions = computed(() =>
+    deviceGroups.value.filter(
+      (group): group is DeviceGroupResponse & { id: string; name: string } =>
+        group.type === 'STATIC' && Boolean(group.id && group.name)
+    )
   )
   const deviceSearchQuery = () => ({
     keyword: deviceFilter.value.keyword || undefined,
@@ -1033,11 +1299,16 @@
       userStore.info.buttons?.join(',')
     ])
   )
+  let catalogRead = 0
   const load = async () => {
     if (!projectId.value) return
+    const read = ++catalogRead,
+      project = projectId.value,
+      identity = formScope()
     loading.value = true
     try {
-      const [, groups] = await Promise.all([loadDeviceTypes(), fetchDeviceGroups(projectId.value)])
+      const [, groups] = await Promise.all([loadDeviceTypes(), fetchDeviceGroups(project)])
+      if (read !== catalogRead || project !== projectId.value || identity !== formScope()) return
       deviceGroups.value = groups
       const map: Record<string, string> = {}
       for (const t of deviceTypes.value) {
@@ -1046,7 +1317,7 @@
       typeMap.value = map
       await loadDevices()
     } finally {
-      loading.value = false
+      if (read === catalogRead) loading.value = false
     }
   }
   const searchDevices = () => {
@@ -1085,7 +1356,7 @@
       userStore.info.tenantId,
       currentIdentityEpoch()
     ])
-  const openCreate = (type?: DeviceTypeResponse) => {
+  const beginCreate = (type?: DeviceTypeResponse) => {
     if (!creationScope().canCreate) return
     formGeneration++
     formIdentity = formScope()
@@ -1094,10 +1365,34 @@
       name: '',
       deviceKey: '',
       deviceTypeId: type?.id ?? '',
+      groupId: '',
+      tags: [{ key: '', value: '' }],
       description: '',
       location: ''
     })
     formVisible.value = true
+  }
+  const createVisible = computed(() => formVisible.value && !editingId.value)
+  const openCreate = (type?: DeviceTypeResponse) => {
+    if (!creationScope().canCreate) return
+    beginCreate(type)
+    const query: typeof route.query = {
+      ...route.query,
+      createDevice: '1',
+      contextProjectId: projectId.value
+    }
+    delete query.deviceId
+    delete query.resourceId
+    delete query.createTypeId
+    return router.push({ path: route.path, query })
+  }
+  const returnFromCreate = () => {
+    formVisible.value = false
+    const query = { ...route.query }
+    delete query.createDevice
+    delete query.createTypeId
+    delete query.contextProjectId
+    return router.replace({ path: route.path, query })
   }
   const openEdit = (row: DeviceResponse) => {
     if (!row.id || !hasAuth('device:update')) return
@@ -1108,6 +1403,8 @@
       name: row.name,
       deviceKey: row.deviceKey,
       deviceTypeId: row.deviceTypeId ?? '',
+      groupId: '',
+      tags: [],
       description: row.description ?? '',
       location: row.location ?? ''
     })
@@ -1127,6 +1424,7 @@
     const currentForm = () =>
       generation === formGeneration &&
       formIdentity === formScope() &&
+      hasAuth(editId ? 'device:update' : 'device:create') &&
       !!userStore.info.buttons?.includes(editId ? 'device:update' : 'device:create')
     if (!currentForm()) return
     // 校验本身也是 await；必须在它之前置位并防重入，否则慢网前的快速双击会启动两条写链。
@@ -1146,11 +1444,17 @@
         if (currentDetail(scope) && scope.device === editingId.value && saved.id === scope.device)
           await loadDetail(saved)
       } else {
-        await fetchCreateDevice(project, { ...body, deviceKey: form.deviceKey })
+        await fetchCreateDevice(project, {
+          ...body,
+          deviceKey: form.deviceKey,
+          groupId: form.groupId || undefined,
+          tags: deviceCreationTags(form.tags)
+        })
       }
       if (!currentForm()) return
       ElMessage.success(editId ? '设备修改成功' : '设备创建成功')
-      formVisible.value = false
+      if (editId) formVisible.value = false
+      else await returnFromCreate()
       await load()
     } catch (error) {
       if (!(error instanceof HttpError)) console.error('保存设备失败:', error)
@@ -1164,7 +1468,7 @@
       await ElMessageBox.confirm(
         `确定删除设备“${row.name}”吗？删除后设备将从有效列表移除，当前无自助恢复入口，历史遥测与告警事实不会立即物理清除。`,
         '删除设备',
-        { type: 'warning' }
+        { customClass: 'console-studio-feedback', type: 'warning' }
       )
       await fetchDeleteDevice(projectId.value, row.id)
       ElMessage.success('设备已删除')
@@ -1216,7 +1520,7 @@
       await ElMessageBox.confirm(
         '确定作废该凭据吗？作废后使用该密钥的设备将无法连接。',
         '作废凭据',
-        { type: 'warning' }
+        { customClass: 'console-studio-feedback', type: 'warning' }
       )
       await fetchRevokeCredential(projectId.value, credDeviceId, row.id)
       ElMessage.success('凭据已作废')
@@ -1259,6 +1563,23 @@
     delete query.resourceId
     delete query.contextProjectId
     return router.replace({ path: route.path, query })
+  }
+  const canOpenDeviceWorkspace = (permission: string) =>
+    detailVisible.value &&
+    !detailLoading.value &&
+    !!projectId.value &&
+    detailIdentity === currentIdentityEpoch() &&
+    canNavigate('device:read') &&
+    canNavigate(permission) &&
+    detailDevice.value?.id === detailTagDeviceId.value &&
+    /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(detailTagDeviceId.value)
+  const openDeviceWorkspace = (target: 'messages' | 'designer') => {
+    const permission = target === 'messages' ? 'device:read' : 'dashboard_definition:read'
+    if (!canOpenDeviceWorkspace(permission)) return
+    return router.push({
+      path: target === 'messages' ? '/device/messages' : '/dashboard/designer',
+      query: { deviceId: detailTagDeviceId.value, contextProjectId: projectId.value }
+    })
   }
   const eventLevelLabel = (value?: string) =>
     ({ INFO: '信息', WARNING: '警告', ERROR: '错误' })[value ?? ''] ?? value ?? '—'
@@ -1386,7 +1707,11 @@
       return
     }
     if (!projectId.value) return
-    const observed = await fetchDeviceEventDefinitions(projectId.value, detailTypeId.value)
+    const observed = await fetchDeviceEventDefinitions(
+      projectId.value,
+      detailTypeId.value,
+      detailDeviceId
+    )
     if (currentDetail(scope)) {
       detailEvents.value = observed
       eventDefinitionsAvailable.value = true
@@ -1459,7 +1784,11 @@
   const loadHistoryProperties = async () => {
     const scope = detailScope()
     if (!projectId.value || !detailTypeId.value) return
-    const properties = await fetchDevicePropertyDefinitions(projectId.value, detailTypeId.value)
+    const properties = await fetchDevicePropertyDefinitions(
+      projectId.value,
+      detailTypeId.value,
+      detailDeviceId
+    )
     if (!currentDetail(scope)) return
     detailProperties.value = properties
     historyProperties.value = properties.filter((property) => property.dataType === 'NUMBER')
@@ -1670,10 +1999,15 @@
       () => userStore.info.userId,
       () => userStore.info.tenantId,
       currentIdentityEpoch,
-      () => userStore.info.buttons?.join(',')
+      () => userStore.info.buttons?.join(','),
+      () => hasAuth('device:create'),
+      () => hasAuth('device:update')
     ],
     () => {
       formGeneration++
+      catalogRead++
+      deviceGroups.value = []
+      loading.value = false
       handoffRead++
       formVisible.value = false
       submitting.value = false
@@ -1682,6 +2016,8 @@
         name: '',
         deviceKey: '',
         deviceTypeId: '',
+        groupId: '',
+        tags: [],
         description: '',
         location: ''
       })
@@ -1691,6 +2027,19 @@
       typeHandoffError.value = ''
     },
     { flush: 'sync' }
+  )
+  watch(
+    () => [route.query.createDevice, route.query.contextProjectId, projectId.value] as const,
+    ([intent, contextProject, project]) => {
+      if (intent === '1' && contextProject === project && creationScope().canCreate) {
+        if (!createVisible.value) beginCreate()
+      } else if (createVisible.value) {
+        formGeneration++
+        formVisible.value = false
+        submitting.value = false
+      }
+    },
+    { immediate: true }
   )
   watch(
     () => [route.query.createTypeId, route.query.contextProjectId] as const,
@@ -1711,11 +2060,7 @@
           return
         }
         deviceTypes.value = [...deviceTypes.value.filter((item) => item.id !== type.id), type]
-        openCreate(type)
-        const query = { ...route.query }
-        delete query.createTypeId
-        delete query.contextProjectId
-        await router.replace({ path: route.path, query })
+        await openCreate(type)
       } catch {
         if (read === handoffRead)
           typeHandoffError.value = '设备类型读取失败，请返回设备类型工作区重试。'
@@ -1818,6 +2163,7 @@
 
 <style lang="scss" scoped>
   .device-list {
+    container: device-workspace / inline-size;
     display: flex;
     flex-direction: column;
     padding: 10px;
@@ -1825,22 +2171,7 @@
       display: flex;
       flex: 1;
       flex-direction: column;
-    }
-    &__data {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-
-      :deep(> .el-card__body) {
-        display: flex;
-        flex: 1;
-        flex-direction: column;
-        padding-bottom: 5px;
-      }
-
-      :deep(.el-table) {
-        flex: 1;
-      }
+      gap: 16px;
     }
     &--detail {
       box-sizing: border-box;
@@ -1853,7 +2184,7 @@
       margin-bottom: 0;
     }
     &__filter {
-      margin-bottom: 10px;
+      margin-bottom: 0;
     }
     &__pagination {
       box-sizing: border-box;
@@ -1864,7 +2195,8 @@
       align-items: center;
       justify-content: flex-end;
       width: 100%;
-      padding-block: 5px;
+      padding: 20px 0 5px;
+      font-size: 12px;
 
       .el-select {
         width: 120px;
@@ -1876,14 +2208,14 @@
     }
   }
   .device-list__actions-trigger.el-button {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     padding: 0;
-    font-size: 18px;
+    font-size: 16px;
     color: var(--el-text-color-regular);
     background-color: var(--el-fill-color) !important;
     border-color: transparent !important;
-    border-radius: 7px;
+    border-radius: 4px;
     outline: none !important;
     box-shadow: none !important;
 
@@ -1908,6 +2240,7 @@
     gap: 8px;
     min-height: 34px;
     padding: 0 12px;
+    font-size: 14px;
     border-radius: 4px;
   }
   :global(.device-list-actions-menu .device-list__danger-action) {
@@ -1924,8 +2257,8 @@
     :deep(.el-alert__title),
     :deep(.el-alert__description),
     :deep(.console-description) {
-      font-size: 12px;
-      line-height: 20px;
+      font-size: 14px;
+      line-height: 22px;
     }
 
     :deep(.el-alert__icon) {
@@ -1935,22 +2268,28 @@
     }
 
     &__header {
+      display: grid;
       flex-shrink: 0;
-      padding-bottom: 18px;
-      margin-bottom: 14px;
-      border-bottom: 1px solid var(--console-line);
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px 20px;
+      padding: 10px 0 16px;
+      margin-bottom: 0;
+      background: var(--el-bg-color);
+      border: 0;
+      border-radius: 0;
     }
     &__heading {
       display: flex;
+      grid-column: 1;
       gap: 10px;
       align-items: center;
       font-size: 22px;
       h2 {
         min-width: 0;
         margin: 0;
-        font-size: 28px;
+        font-size: 20px;
         font-weight: 400;
-        line-height: 40px;
+        line-height: 28px;
         overflow-wrap: anywhere;
       }
     }
@@ -1959,7 +2298,7 @@
       width: 28px;
       height: 32px;
       padding: 0;
-      font-size: 20px;
+      font-size: 16px;
     }
     &__separator {
       flex-shrink: 0;
@@ -1969,15 +2308,16 @@
     }
     &__icon {
       flex-shrink: 0;
+      font-size: 20px;
       color: var(--el-text-color-secondary);
     }
     &__edit.el-button {
       flex-shrink: 0;
-      height: 20px;
-      min-height: 20px;
+      height: 22px;
+      min-height: 22px;
       padding: 0;
-      font-size: 12px;
-      line-height: 20px;
+      font-size: 14px;
+      line-height: 22px;
 
       :deep(> span) {
         gap: 6px;
@@ -1997,11 +2337,13 @@
     &__metadata {
       display: flex;
       flex-wrap: wrap;
+      grid-row: 2;
+      grid-column: 1 / -1;
       gap: 12px 24px;
       align-items: center;
-      margin: 8px 0 0;
-      font-size: 12px;
-      line-height: 20px;
+      margin: 0;
+      font-size: 14px;
+      line-height: 22px;
       color: var(--el-text-color-secondary);
       span {
         overflow-wrap: anywhere;
@@ -2037,16 +2379,11 @@
   .cred-confirm {
     margin-top: 10px;
   }
-  .shadow-section {
-    margin-bottom: 10px;
-    &__title {
-      display: inline-flex;
-      gap: 10px;
-      align-items: center;
-    }
+  .shadow-save {
+    margin-top: 16px;
   }
   .shadow-version {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--art-text-gray-600);
   }
   .reported-sources {
@@ -2058,7 +2395,7 @@
     }
 
     &__key {
-      font-size: 12px;
+      font-size: 14px;
       color: var(--el-text-color-secondary);
     }
 
@@ -2078,6 +2415,19 @@
     }
 
     .device-detail__tabs {
+      flex: 1;
+    }
+
+    :deep(.device-detail-card),
+    :deep(.device-detail-card > .el-card__body) {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    :deep(.device-detail-card > .el-card__body > .el-table) {
       flex: 1;
     }
 
@@ -2192,5 +2542,749 @@
     justify-content: space-between;
     margin-bottom: 10px;
     color: var(--art-text-gray-600);
+  }
+
+  // 仅列表试点复用参考页的平铺内容、文字层级与控件尺度。
+  :global(#app-main:has(.device-list--flat)) {
+    background-color: var(--el-bg-color);
+  }
+  .device-list.device-list--flat {
+    --el-component-custom-height: 32px;
+    --el-font-size-extra-small: 14px;
+    --el-font-size-small: 14px;
+    --el-text-color-primary: #272e3b;
+    --el-text-color-regular: #272e3b;
+    --el-text-color-secondary: #576175;
+    --el-text-color-placeholder: #a7adba;
+    --el-border-color: #c9cdd4;
+    --el-border-color-light: #eaeef6;
+    --el-border-color-lighter: #ebecf0;
+    --el-fill-color-light: #f7f8fa;
+    --console-line: #eaeef6;
+    padding: 10px 14px 22px !important;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial,
+      'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5715;
+    background-color: var(--el-bg-color);
+
+    .device-list__content {
+      gap: 20px;
+    }
+    :deep(.workspace-header--project) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px 24px;
+      align-items: start;
+      padding: 0 0 16px;
+      margin: 0;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--console-line);
+      border-radius: 0;
+    }
+    :deep(.workspace-header--project .console-heading) {
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 28px;
+    }
+    :deep(.workspace-header--project .console-description) {
+      margin: 0;
+      font-size: 14px;
+      line-height: 22px;
+      color: var(--el-text-color-secondary);
+    }
+    :deep(.workspace-header > .workspace-header__actions) {
+      display: flex;
+      grid-row: 1;
+      grid-column: 2;
+    }
+    :deep(.workspace-header > .console-actions > .el-button) {
+      grid-row: 1;
+      grid-column: 2;
+      margin: 0;
+    }
+    :deep(.workspace-header > .workspace-header__links) {
+      grid-row: 2;
+      grid-column: 1 / -1;
+      gap: 24px;
+      justify-content: flex-start;
+      margin: 0;
+    }
+    :deep(.workspace-header nav .el-button) {
+      flex: 0 0 auto;
+      width: auto;
+      min-width: 0;
+      height: auto !important;
+      min-height: 0;
+      padding: 0;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px;
+      color: var(--el-color-primary);
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--el-color-primary-light-3);
+      }
+    }
+    .device-list__filter,
+    .device-list__data {
+      min-width: 0;
+      margin: 0;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    :deep(.el-button:not(.is-text, .is-link, .is-circle)) {
+      min-width: 62px;
+      height: 32px;
+      min-height: 32px;
+      padding: 4px 16px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px;
+      border-radius: 4px;
+    }
+    :deep(.el-input__wrapper),
+    :deep(.el-select__wrapper) {
+      min-height: 32px;
+      padding-block: 4px;
+      border-radius: 4px;
+    }
+    :deep(.el-input__inner) {
+      height: 22px;
+      line-height: 22px;
+    }
+    :deep(.device-advanced-filter .el-form > .el-row) {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px 8px;
+      align-items: start;
+    }
+    :deep(.device-advanced-filter .el-col),
+    :deep(.device-advanced-filter .el-col:nth-child(n + 4)) {
+      grid-column: span 1;
+    }
+    :deep(.device-advanced-filter .el-form-item__label) {
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px !important;
+      color: var(--el-text-color-secondary);
+    }
+    :deep(.device-advanced-filter .el-col.action-column) {
+      grid-column: 1 / -1;
+    }
+    :deep(.device-advanced-filter .action-column .action-buttons-wrapper) {
+      justify-content: flex-start !important;
+    }
+    :deep(.device-advanced-filter .form-buttons) {
+      gap: 8px;
+    }
+    :deep(.device-advanced-filter .form-buttons .el-button) {
+      min-width: 62px;
+    }
+    :deep(.device-advanced-filter .form-buttons .el-button--primary) {
+      --el-button-text-color: var(--el-text-color-primary);
+      --el-button-bg-color: var(--el-bg-color);
+      --el-button-border-color: var(--el-border-color);
+      --el-button-hover-text-color: var(--el-color-primary);
+      --el-button-hover-bg-color: var(--el-bg-color);
+      --el-button-hover-border-color: var(--el-color-primary);
+      --el-button-active-text-color: var(--el-color-primary);
+      --el-button-active-bg-color: var(--el-bg-color);
+      --el-button-active-border-color: var(--el-color-primary);
+    }
+    :deep(.device-list__data > .el-table) {
+      --el-table-border-color: var(--console-line);
+      --el-table-header-text-color: var(--el-text-color-primary);
+      --el-table-header-bg-color: var(--el-fill-color-light);
+      --el-table-row-hover-bg-color: var(--el-fill-color-light);
+      font-size: 14px;
+      color: var(--el-text-color-primary);
+      border-radius: 0;
+    }
+    :deep(.device-list__data .el-table th.el-table__cell) {
+      height: 36px;
+      padding: 6px 0;
+      font-size: 14px;
+      font-weight: 500;
+      background: var(--el-fill-color-light);
+      border: 0;
+    }
+    :deep(.device-list__data .el-table td.el-table__cell) {
+      height: auto;
+      padding: 11px 0;
+    }
+    :deep(.device-list__data .el-table .cell) {
+      padding-inline: 16px;
+      line-height: 22px;
+    }
+    .device-list__name {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+      font-weight: 400;
+      color: var(--el-color-primary);
+    }
+    .device-list__name > svg {
+      flex-shrink: 0;
+      color: var(--el-text-color-secondary);
+    }
+    .device-list__name > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    :deep(.device-list__actions-trigger.el-button) {
+      --el-component-custom-height: 22px;
+      min-height: 22px;
+      background: transparent !important;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--el-color-primary);
+        background-color: var(--el-fill-color-light) !important;
+      }
+    }
+    .device-list__pagination {
+      gap: 8px;
+      padding: 16px 0 0;
+      font-size: 14px;
+      color: var(--el-text-color-secondary);
+    }
+    :deep(.device-list__data .el-tag) {
+      height: 24px;
+      padding-inline: 6px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px;
+    }
+    :deep(.device-list__content .el-empty__description p),
+    :deep(.device-list__content .el-alert__title),
+    :deep(.device-list__content .el-alert__description),
+    :deep(.device-list__content .el-button.is-link) {
+      font-size: 14px;
+      line-height: 22px;
+    }
+  }
+  :global(html.dark) .device-list.device-list--flat {
+    --el-text-color-primary: #e5e7eb;
+    --el-text-color-regular: #d1d5db;
+    --el-text-color-secondary: #9ca3af;
+    --el-text-color-placeholder: #6b7280;
+    --el-border-color: #4b5563;
+    --el-border-color-light: #374151;
+    --el-border-color-lighter: #374151;
+    --el-fill-color-light: #252a34;
+    --console-line: #374151;
+  }
+  @container device-workspace (max-width: 1000px) {
+    .device-list.device-list--flat :deep(.device-advanced-filter .el-form > .el-row) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @container device-workspace (max-width: 760px) {
+    .device-list.device-list--flat :deep(.device-advanced-filter .el-form > .el-row) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (width <= 640px) {
+    .device-list.device-list--flat {
+      padding: 10px 14px 16px !important;
+
+      :deep(.workspace-header--project) {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      :deep(.workspace-header > .console-actions > .el-button) {
+        grid-row: 2;
+        grid-column: 1;
+        justify-self: start;
+      }
+      :deep(.workspace-header > .console-actions > nav) {
+        grid-row: 3;
+        grid-column: 1;
+      }
+      :deep(.device-advanced-filter .el-form > .el-row) {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .device-list__pagination {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+
+        > span:first-child {
+          justify-self: start;
+        }
+        > .el-select {
+          grid-column: 2 / -1;
+          justify-self: end;
+        }
+        > span[aria-live] {
+          text-align: center;
+        }
+        > .el-button {
+          min-width: 0;
+          margin: 0;
+        }
+      }
+    }
+  }
+  :global(.el-dialog.device-credentials-dialog .device-credentials-toolbar) {
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  :global(.el-dialog.device-credentials-dialog .device-credentials-toolbar > span) {
+    flex: 1 1 240px;
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--el-text-color-secondary);
+  }
+  :global(.el-dialog.device-credentials-dialog .el-button) {
+    min-height: 32px;
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 4px;
+  }
+  :global(.el-dialog.device-credentials-dialog .device-credentials-table) {
+    --el-table-header-bg-color: #f7f8fa;
+    --el-table-border-color: #eaeef6;
+
+    font-size: 14px;
+  }
+  :global(.el-dialog.device-credentials-dialog .el-table th.el-table__cell) {
+    height: 32px;
+    padding-block: 4px;
+    font-weight: 500;
+  }
+  :global(.el-dialog.device-credentials-dialog .el-table td.el-table__cell) {
+    height: 40px;
+    padding-block: 6px;
+  }
+  :global(.el-dialog.device-credentials-dialog .el-table .cell) {
+    line-height: 22px;
+  }
+  :global(.el-dialog.device-credentials-dialog .el-alert) {
+    border-radius: 4px;
+  }
+  :global(.el-dialog.device-credentials-dialog .el-alert__title),
+  :global(.el-dialog.device-credentials-dialog .el-alert__description),
+  :global(.el-dialog.device-credentials-dialog .el-checkbox__label),
+  :global(.el-dialog.device-credentials-dialog .el-empty__description p) {
+    font-size: 14px;
+    line-height: 22px;
+  }
+  :global(.el-dialog.device-credentials-dialog .cred-confirm) {
+    height: auto;
+    white-space: normal;
+  }
+  :global(.el-dialog.device-form-dialog) {
+    --el-component-custom-height: 32px;
+    padding: 0;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial,
+      'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    color: var(--el-text-color-primary);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px !important;
+  }
+  :global(.el-dialog.device-form-dialog .el-dialog__header) {
+    padding: 18px 24px;
+    margin: 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+  :global(.el-dialog.device-form-dialog .el-dialog__title) {
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 26px;
+  }
+  :global(.el-dialog.device-form-dialog .el-dialog__headerbtn) {
+    top: 18px;
+    right: 20px;
+    width: 26px;
+    height: 26px;
+  }
+  :global(.el-dialog.device-form-dialog .el-dialog__body) {
+    padding: 20px 24px !important;
+    font-size: 14px;
+    line-height: 22px;
+  }
+  :global(.el-dialog.device-form-dialog .el-form-item) {
+    margin-bottom: 16px;
+  }
+  :global(.el-dialog.device-form-dialog .el-form-item:last-child) {
+    margin-bottom: 0;
+  }
+  :global(.el-dialog.device-form-dialog .el-form-item__error) {
+    position: static;
+    width: 100%;
+    padding-top: 4px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+  :global(.el-dialog.device-form-dialog .el-form-item .el-form-item__label) {
+    height: auto !important;
+    padding: 0;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px !important;
+  }
+  :global(.el-dialog.device-form-dialog .el-input__wrapper),
+  :global(.el-dialog.device-form-dialog .el-select__wrapper) {
+    min-height: 32px;
+    border-radius: 4px;
+  }
+  :global(.el-dialog.device-form-dialog .el-input__inner) {
+    height: 22px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+  :global(.el-dialog.device-form-dialog .el-textarea__inner) {
+    font-size: 14px;
+    line-height: 22px;
+    border-radius: 4px;
+  }
+  :global(.el-dialog.device-form-dialog .form-help) {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--el-text-color-secondary);
+  }
+  :global(.el-dialog.device-form-dialog .el-dialog__footer) {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid var(--el-border-color-lighter);
+  }
+  :global(.el-dialog.device-form-dialog .el-dialog__footer .el-button) {
+    min-width: 64px;
+    min-height: 32px;
+    padding: 4px 16px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    border-radius: 4px;
+  }
+  // 详情保持参考主页签，内容统一为浅灰标题栏卡片，不改变嵌套工作区页签。
+  :global(#app-main:has(.device-list--detail)) {
+    background-color: var(--el-bg-color);
+  }
+  .device-list.device-list--detail {
+    --el-component-custom-height: 32px;
+    --el-font-size-extra-small: 14px;
+    --el-font-size-small: 14px;
+    --el-text-color-primary: #272e3b;
+    --el-text-color-regular: #272e3b;
+    --el-text-color-secondary: #576175;
+    --el-border-color-light: #eaeef6;
+    --el-border-color-lighter: #ebecf0;
+    --el-fill-color-light: #f7f8fa;
+    --console-line: #eaeef6;
+    padding: 10px 14px 22px !important;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial,
+      'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    background-color: var(--el-bg-color);
+
+    :deep(.el-button:not(.is-text, .is-link, .is-circle)) {
+      height: 32px;
+      min-height: 32px;
+      padding-block: 4px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 22px;
+      border-radius: 4px;
+    }
+    :deep(.el-input__wrapper),
+    :deep(.el-select__wrapper) {
+      min-height: 32px;
+      padding-block: 4px;
+      border-radius: 4px;
+    }
+    :deep(.el-input__inner) {
+      height: 22px;
+      line-height: 22px;
+    }
+    :deep(.el-textarea__inner),
+    :deep(.el-form-item__label),
+    :deep(.el-form-item__error),
+    :deep(.el-tag),
+    :deep(.el-pagination),
+    :deep(.el-empty__description p),
+    :deep(.console-description),
+    :deep(.device-access__current),
+    :deep(.device-image-panel__caption),
+    :deep(.device-image-panel__file > span),
+    :deep(.device-capability__monitor > .console-description) {
+      font-size: 14px;
+      line-height: 22px;
+    }
+    :deep(.device-capability__monitor.console-toolbar) {
+      padding: 0;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+    }
+    :deep(.device-access .el-divider--horizontal) {
+      height: auto;
+      margin: 0 0 16px;
+      border: 0;
+    }
+    :deep(.device-access .el-divider__text) {
+      position: static;
+      display: block;
+      max-width: 100%;
+      padding: 0;
+      white-space: normal;
+      background: transparent;
+      transform: none;
+    }
+    :deep(.device-access__heading) {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+    }
+    :deep(.device-access__heading > span:first-child) {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    :deep(.device-access__current) {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    :deep(.device-runtime-logs__toolbar .el-form-item__label) {
+      height: 32px;
+      line-height: 32px;
+    }
+    :deep(.device-capability__monitor > .console-description) {
+      min-height: 32px;
+    }
+    :deep(.el-textarea__inner) {
+      border-radius: 4px;
+    }
+    :deep(.el-table) {
+      --el-table-header-bg-color: #f7f8fa;
+      --el-table-border-color: #eaeef6;
+      font-size: 14px;
+    }
+    :deep(.el-table th.el-table__cell) {
+      height: 36px;
+      padding-block: 6px;
+      font-weight: 400;
+    }
+    :deep(.el-table td.el-table__cell) {
+      height: 44px;
+      padding-block: 10px;
+    }
+    :deep(.el-table .cell) {
+      line-height: 22px;
+    }
+  }
+  .device-detail__header > nav {
+    grid-row: 1;
+    grid-column: 2;
+    margin-bottom: 0;
+  }
+  .device-detail__separator,
+  .device-detail__icon {
+    display: none;
+  }
+  .device-detail.el-card {
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    :deep(> .el-card__body) {
+      padding: 0;
+    }
+  }
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header) {
+    padding: 0;
+    margin: 0 0 24px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__nav) {
+    gap: 40px;
+  }
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__item) {
+    height: 28px;
+    padding: 0 0 6px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+    color: var(--el-text-color-primary);
+    transition: color 0.3s;
+  }
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__item:hover) {
+    color: var(--el-color-primary-light-3);
+  }
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__item.is-active) {
+    color: var(--el-color-primary);
+    text-shadow: 0 0 0.25px currentcolor;
+  }
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__active-bar) {
+    height: 2px;
+    background: var(--el-color-primary);
+    transition:
+      width 0.3s,
+      transform 0.3s;
+  }
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__nav-wrap::after) {
+    height: 1px;
+    background: var(--console-line);
+  }
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__nav-prev),
+  .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__nav-next) {
+    height: 28px;
+    font-size: 14px;
+    line-height: 28px;
+  }
+  .device-detail
+    :deep(.device-detail__tabs > .el-tabs__content > .el-tab-pane:not(.device-overview)) {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__item),
+    .device-detail :deep(.device-detail__tabs > .el-tabs__header .el-tabs__active-bar) {
+      transition: none;
+    }
+  }
+  .device-overview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .device-overview-main,
+  .device-overview-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+  .device-detail-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+  .device-overview-panel :deep(.el-descriptions__label) {
+    display: inline-block;
+    min-width: 100px;
+    margin-right: 16px;
+    font-weight: 400;
+    color: var(--el-text-color-secondary);
+  }
+  .device-overview-panel
+    :deep(.el-descriptions__body .el-descriptions__table .el-descriptions__cell) {
+    padding-bottom: 10px;
+    line-height: 22px;
+    overflow-wrap: anywhere;
+  }
+  .device-overview-panel
+    :deep(.el-descriptions__body .el-descriptions__table tr:last-child .el-descriptions__cell) {
+    padding-bottom: 8px;
+  }
+  .device-overview__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .device-overview__links .el-button {
+    margin: 0;
+  }
+  .device-overview-readings__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .device-overview-reading {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 16px;
+    background: var(--el-fill-color-light);
+    border-radius: 4px;
+  }
+  .device-overview-reading > span {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+    overflow-wrap: anywhere;
+  }
+  .device-overview-reading strong {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 32px;
+    color: var(--el-text-color-primary);
+    overflow-wrap: anywhere;
+  }
+  .device-overview-reading > .device-overview-reading__time {
+    font-size: 14px;
+  }
+  .device-overview__empty {
+    margin: 0;
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+  }
+  .device-overview-alarm__status {
+    margin: 0;
+  }
+  .device-overview-capabilities {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .device-overview-capabilities .el-button {
+    justify-content: flex-start;
+    min-width: 0;
+    padding-inline: 0;
+    margin: 0;
+  }
+
+  @media (width <= 1000px) {
+    .device-overview-readings__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @container device-workspace (max-width: 760px) {
+    .device-overview-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (width <= 700px) {
+    .device-detail__header {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .device-detail__header > nav {
+      grid-row: 3;
+      grid-column: 1;
+      justify-content: flex-start;
+    }
   }
 </style>

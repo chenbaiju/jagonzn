@@ -56,15 +56,16 @@
       useMenuStore().navigationMenu,
       String(route.meta.activePath || route.path)
     )
-    if (group) {
-      const leaf = group.children!.find(
+    if (group?.children?.length) {
+      const leaf = group.children.find(
         (item) => item.path === String(route.meta.activePath || route.path)
       )!
       return [
-        { path: group.children![0].path, meta: group.meta },
+        { path: group.children[0].path, meta: group.meta },
         { path: leaf.path, meta: leaf.meta }
       ]
     }
+    if (group) return [{ path: group.path, meta: group.meta }]
     const { matched } = route
     const matchedLength = matched.length
 
@@ -94,17 +95,6 @@
       return [createBreadcrumbItem(currentRoute)]
     }
 
-    // D-002：概要父目录与默认概要页同义，只保留可定位的当前页。
-    // 不按同名标题全局去重，避免吞掉其他二级/三级语义层级。
-    if (
-      items.length === 2 &&
-      items[0].path === '/dashboard' &&
-      items[1].path === '/dashboard/overview' &&
-      formatMenuTitle(items[0].meta?.title as string) ===
-        formatMenuTitle(items[1].meta?.title as string)
-    ) {
-      return [items[1]]
-    }
     return items
   })
 

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { readFileSync, realpathSync, statSync } from 'node:fs'
-import { isAbsolute, relative, resolve } from 'node:path'
+import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { parseStrictPublicJson } from '../src/features/ota/strict-public-json'
 
 export interface MqttTlsFixture {
@@ -25,7 +25,7 @@ function ownedFile(value: unknown): Buffer {
     !suffix ||
     isAbsolute(suffix) ||
     suffix === '..' ||
-    suffix.startsWith('../') ||
+    suffix.startsWith(`..${sep}`) ||
     !stat.isFile() ||
     stat.size < 1 ||
     stat.size > 65_536

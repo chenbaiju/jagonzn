@@ -1,4 +1,4 @@
-import { dashboardV1Contract } from '@things-cloud/client-contracts/dashboard/v1'
+import { dashboardV1Contract } from '@things-link/client-contracts/dashboard/v1'
 import type { components } from '@/types/api/schema'
 import { missingApplicationResource, parseContent, title } from './editor-model'
 
@@ -213,8 +213,10 @@ export function parseSnapshot(value: unknown): PublicationVersionDetail['snapsho
   const kinds = data.requiredComponents.map((value) => {
     const component = exact(value, ['kind', 'componentVersion'])
     requireThat(
-      dashboardV1Contract.components.some((item) => item.kind === component.kind) &&
-        (component.componentVersion === '1.0.0' || component.componentVersion === '1.0.1')
+      dashboardV1Contract.components.some(
+        (item) =>
+          item.kind === component.kind && item.componentVersion === component.componentVersion
+      )
     )
     return component.kind as string
   })

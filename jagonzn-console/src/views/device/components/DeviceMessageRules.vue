@@ -5,13 +5,7 @@
       <ElTabPane name="history" label="执行尝试" />
       <ElTabPane name="actions" label="设备动作" />
     </ElTabs>
-    <ElAlert type="info" :closable="false" show-icon>{{
-      mode === 'definitions'
-        ? '项目规则候选未绑定此设备；任意脚本的过滤结果只能运行时判定，暂停规则不处理新消息。'
-        : mode === 'history'
-          ? '仅包含写入设备身份后的执行尝试；旧日志设备未知，不推测回填。SUCCESS不表示物理动作成功。'
-          : '按动作原设备查询仍保留的记录，含旧动作；投递终态不代替物理设备验收。'
-    }}</ElAlert>
+
     <ElAlert
       v-if="failed"
       type="error"

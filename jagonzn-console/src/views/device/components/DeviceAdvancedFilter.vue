@@ -3,6 +3,8 @@
     class="device-advanced-filter"
     :items="filterItems"
     :span="8"
+    label-position="top"
+    :show-expand="false"
     @search="emit('search')"
     @reset="emit('reset')"
   >
@@ -70,7 +72,7 @@
     { key: 'groupId', label: '设备组' },
     { key: 'tagKey', label: '标签键' },
     { key: 'tagValue', label: '标签值' }
-  ].map((item) => ({ ...item, labelWidth: 90 }))
+  ]
   /** 设备高级筛选的固定白名单状态；不向后端传递自由表达式或排序字段。 */
   export interface DeviceAdvancedFilterModel {
     keyword: string
@@ -99,7 +101,57 @@
 </script>
 
 <style lang="scss">
-  .device-advanced-filter.console-filter-bar .el-form-item .el-form-item__label {
-    justify-content: flex-end;
+  .device-advanced-filter.console-filter-bar.art-search-bar {
+    container: device-filter / inline-size;
+
+    .el-form > .el-row {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px 16px;
+      align-items: end;
+      margin-inline: 0 !important;
+    }
+    .el-col {
+      grid-column: span 4;
+      width: auto;
+      max-width: none;
+      padding-inline: 0 !important;
+    }
+    .el-col:nth-child(n + 4) {
+      grid-column: span 3;
+    }
+    .el-form-item .el-form-item__label {
+      justify-content: flex-start;
+      // Override the legacy global 36px horizontal-label rule for this top-label filter only.
+      height: auto !important;
+      margin: 0 0 2px;
+      font-size: 14px;
+      line-height: 18px !important;
+    }
+    .action-column .action-buttons-wrapper {
+      justify-content: flex-end;
+      margin: 0 !important;
+    }
+    .form-buttons .el-button {
+      min-width: 80px;
+    }
+
+    @container device-filter (max-width: 760px) {
+      .el-form > .el-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .el-col,
+      .el-col:nth-child(n + 4) {
+        grid-column: span 1;
+      }
+      .el-col.action-column {
+        grid-column: 1 / -1;
+      }
+    }
+    @container device-filter (max-width: 480px) {
+      .el-form > .el-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
   }
 </style>

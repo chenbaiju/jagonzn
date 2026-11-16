@@ -1,29 +1,17 @@
 <template>
-  <div class="console-page project-end-users">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace console-studio-workspace project-end-users"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="项目终端用户"
       description="为应用使用者管理账号、项目角色、设备绑定与看板授权。"
     />
-    <ElAlert
-      class="project-end-users__notice"
-      title="终端用户使用独立登录身份。目录只列本项目已分配角色的账号；账号状态与项目角色状态分别展示。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
+
     <ElAlert v-if="notice" :title="notice" type="warning" :closable="false" />
     <ElAlert v-if="!projectId" title="请先进入项目" type="info" :closable="false" />
     <template v-else>
       <ElCard v-if="canManage" shadow="never">
-        <ElAlert
-          class="project-end-users__notice"
-          title="预置账号与查找"
-          description="预置只创建账号，不自动分配项目角色。若用户名已存在或申请结果未知，请按精确用户名找回并核对身份。"
-          type="info"
-          :closable="false"
-          show-icon
-        />
         <ElForm class="end-user-provision" label-position="top" @submit.prevent>
           <ElFormItem label="精确用户名"
             ><ElInput
@@ -107,9 +95,6 @@
             >恢复项目角色</ElButton
           >
         </div>
-        <ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >这些操作只影响本项目。恢复角色不会重新打开停用时关闭的设备关系。</ElAlert
-        >
       </ElCard>
       <ElCard v-if="canManage && selected?.role" shadow="never">
         <EndUserNotificationContact
@@ -132,7 +117,7 @@
           :allow-write="writable && !busy"
         />
       </ElCard>
-      <ElCard shadow="never">
+      <ElCard class="console-list-data" shadow="never">
         <ElDivider content-position="left">本项目角色目录</ElDivider>
         <ElTable v-loading="loading" :data="rows" row-key="id">
           <ElTableColumn prop="username" label="用户名" min-width="160" />
@@ -343,7 +328,10 @@
             ? '只恢复本项目角色，不恢复旧设备关系，也不改变账号登录状态。'
             : `确认将本项目角色设为${role}？`
       try {
-        await ElMessageBox.confirm(text, '确认终端用户项目操作', { type: 'warning' })
+        await ElMessageBox.confirm(text, '确认终端用户项目操作', {
+          type: 'warning',
+          customClass: 'console-studio-feedback'
+        })
       } catch {
         return
       }
@@ -411,75 +399,106 @@
 </script>
 
 <style scoped lang="scss">
+  .project-end-users {
+    :deep(.el-card__body) {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+      padding: var(--console-page-spacing);
+    }
+
+    :deep(.el-form-item) {
+      min-width: 0;
+      margin-bottom: 0;
+    }
+
+    :deep(.el-form--label-top .el-form-item__label) {
+      height: auto !important;
+      margin-bottom: 6px;
+      line-height: 20px !important;
+    }
+
+    :deep(.console-end-user-section) {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    :deep(.console-end-user-section > .console-hint) {
+      margin: 0;
+    }
+  }
+
   .end-user-provision {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0 16px;
-    :deep(.el-form-item__label) {
-      height: auto;
-      margin-bottom: 6px;
-      line-height: 20px;
-    }
+    gap: 16px;
+
     .console-actions {
       grid-column: 1 / -1;
+      margin: 0;
     }
   }
+
   .end-user-selection__identity {
     display: flex;
     flex-wrap: wrap;
     gap: 6px 16px;
     align-items: baseline;
-    margin-bottom: 12px;
+
     strong {
-      font-size: 16px;
+      font-size: 14px;
+      line-height: 24px;
+      overflow-wrap: anywhere;
     }
   }
+
   .end-user-selection__id {
-    font-size: 12px;
+    font-size: 14px;
+    line-height: 20px;
     color: var(--el-text-color-secondary);
     overflow-wrap: anywhere;
   }
+
   .end-user-selection__statuses {
     display: flex;
     flex-wrap: wrap;
     gap: 12px 24px;
-    margin-bottom: 16px;
+
     > span {
       display: flex;
       gap: 8px;
       align-items: center;
     }
   }
+
   .end-user-selection__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
-    margin-bottom: 12px;
+
     > .el-select {
       width: 280px;
       max-width: 100%;
     }
+
     > .el-button {
       margin: 0;
     }
   }
-  @media (width <= 680px) {
-    .end-user-provision {
-      grid-template-columns: 1fr;
-    }
-  }
 
   .project-end-users__pagination {
-    box-sizing: border-box;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
     justify-content: flex-end;
     width: 100%;
-    padding-block: 5px;
-    margin-top: 5px;
+    font-size: 14px;
+    line-height: 20px;
 
     > .el-button {
       margin: 0;
@@ -487,18 +506,46 @@
   }
 
   .project-end-users__notice {
-    margin-bottom: 10px;
+    margin: 0;
 
     :deep(.el-alert__title),
     :deep(.el-alert__description) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }
+
     :deep(.el-alert__icon) {
       width: 14px;
       height: 14px;
       font-size: 14px;
+    }
+  }
+
+  @media (width <= 1000px) {
+    .end-user-provision {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width <= 640px) {
+    .project-end-users {
+      :deep(.el-card__body),
+      :deep(.console-end-user-section) {
+        gap: 12px;
+      }
+    }
+
+    .end-user-provision {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .end-user-selection__actions {
+      > label,
+      > .el-select {
+        width: 100%;
+      }
     }
   }
 </style>

@@ -236,10 +236,10 @@ test.afterEach(async ({ request }) => {
 
 /**
  * D-058 旅程 7（@simulator）：终端用户登录 → CLAIM → MEMBER 共享 → PRIMARY 转移
- * → 真实设备控制 → 旧主控自解绑 → 数据面立即失权并保留 CLOSED 历史。
+ * → 真实设备控制 → 旧主控自解绑失去控制但保留项目读取 → 停用项目角色后读取失权。
  */
 test(
-  '旅程7：登录→认领/共享/转移→控制→解绑立即失权',
+  '旅程7：登录→认领/共享/转移→解绑失去控制→停用角色后读取失权',
   { tag: '@simulator' },
   async ({ page, request }) => {
     test.setTimeout(300_000)
@@ -389,16 +389,17 @@ test(
       )
       .toBe('SUCCEEDED')
 
-    // 旧主控 Alice 此时为 MEMBER；自解绑后同一令牌必须立即丧失读/控权限，Bob 不受影响。
+    // ADR0237：自解绑关闭控制关系；Alice 的有效项目角色仍允许读取，Bob 不受影响。
     const unbindResponse = await request.delete(`/api/v1/app/devices/${device.id}/binding`, {
       headers: aliceHeaders
     })
     expect(unbindResponse.status()).toBe(204)
-    const deniedDetail = await request.get(`/api/v1/app/devices/${device.id}`, {
-      headers: aliceHeaders
-    })
-    expect(deniedDetail.status()).toBe(404)
-    expect(((await deniedDetail.json()) as ApiError).code).toBe(60010)
+    expect(
+      await json<{ id: string }>(
+        await request.get(`/api/v1/app/devices/${device.id}`, { headers: aliceHeaders }),
+        '已解绑用户按有效项目角色回读设备'
+      )
+    ).toMatchObject({ id: device.id })
     const deniedCommand = await request.post(`/api/v1/app/devices/${device.id}/commands`, {
       headers: { ...aliceHeaders, 'Idempotency-Key': `journey-7-denied-${suffix}` },
       data: { commandKey: 'reboot', input: {} }
@@ -416,5 +417,23 @@ test(
     ).toContainEqual(
       expect.objectContaining({ deviceId: device.id, relationRole: 'MEMBER', status: 'CLOSED' })
     )
+
+    // 仅停用本场创建的 Alice 项目角色，证明项目读取资格撤销后旧令牌立即失效。
+    const suspended = await request.post(
+      `/api/v1/projects/${device.projectId}/end-users/${alice.id}/suspend`,
+      { headers: ownerHeaders }
+    )
+    expect(suspended.status()).toBe(204)
+    const deniedDetail = await request.get(`/api/v1/app/devices/${device.id}`, {
+      headers: aliceHeaders
+    })
+    expect(deniedDetail.status()).toBe(401)
+    expect(((await deniedDetail.json()) as ApiError).code).toBe(60009)
+    expect(
+      await json<{ id: string }>(
+        await request.get(`/api/v1/app/devices/${device.id}`, { headers: bobHeaders }),
+        '另一用户项目角色停用后新 PRIMARY 仍可回读设备'
+      )
+    ).toMatchObject({ id: device.id })
   }
 )

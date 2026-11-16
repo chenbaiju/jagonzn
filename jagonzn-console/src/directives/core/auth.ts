@@ -29,7 +29,7 @@
  * - 权限点列表从当前路由的 meta.authList 中获取
  *
  * @module directives/auth
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { router } from '@/router'

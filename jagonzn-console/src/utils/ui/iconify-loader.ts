@@ -10,7 +10,7 @@
  * 3. 在组件中使用：<ArtSvgIcon icon="ri:home-line" />
  *
  * @module utils/ui/iconify-loader
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 // import { addCollection } from '@iconify/vue'

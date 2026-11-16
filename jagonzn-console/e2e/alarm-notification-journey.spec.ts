@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { login, enterProject, OWNER_EMAIL, OWNER_PASSWORD } from './helpers'
 import { readBoundModelVersion } from './device-model-fixture'
 import { currentValueMessage, publishCurrentValues } from './current-value-mqtt'
+import { setTimeout as delay } from 'node:timers/promises'
 
 test(
   '告警通知旅程：真实上报的同一事件贯穿投递、个人阅读、确认与自动恢复',
@@ -110,8 +111,12 @@ test(
           payload: currentValueMessage(JSON.stringify({ temperature }), modelVersion)
         })
       await report(31)
-      const readFact = () =>
-        page.evaluate(
+      // 页面首读与个人通知刷新共用账号20读/秒桶；三联事实查询按秒取样，不突发挤占UI请求。
+      let lastFactReadAt = performance.now()
+      const readFact = async () => {
+        await delay(Math.max(0, 1100 - (performance.now() - lastFactReadAt)))
+        lastFactReadAt = performance.now()
+        return page.evaluate(
           async ({ projectId, ruleId }) => {
             const alarmPath = '/src/api/alarm.ts',
               httpPath = '/src/utils/http/index.ts'
@@ -131,14 +136,22 @@ test(
           },
           { projectId: fixture.projectId, ruleId: fixture.ruleId }
         )
-      await expect
-        .poll(async () => (await readFact())?.deliveries.length ?? 0, { timeout: 30_000 })
-        .toBe(1)
+      }
       // 本地未配置 SMTP：Worker 必须显式留下失败及待重试事实，不能把日志发信当送达。
+      const observed = { fact: null as Awaited<ReturnType<typeof readFact>> }
       await expect
-        .poll(async () => (await readFact())?.deliveries[0]?.status, { timeout: 30_000 })
-        .toBe('RETRY_SCHEDULED')
-      const fact = await readFact()
+        .poll(
+          async () => {
+            observed.fact = await readFact()
+            return {
+              count: observed.fact?.deliveries.length ?? 0,
+              status: observed.fact?.deliveries[0]?.status
+            }
+          },
+          { timeout: 30_000, intervals: [1000] }
+        )
+        .toEqual({ count: 1, status: 'RETRY_SCHEDULED' })
+      const fact = observed.fact
       expect(fact?.deliveries[0]?.attemptCount).toBe(1)
       expect(fact?.instance.conditionState).toBe('ACTIVE')
       expect(fact?.instance.ackState).toBe('UNACKNOWLEDGED')
@@ -167,7 +180,10 @@ test(
       await expect(row).toContainText('已确认')
       await report(24)
       await expect
-        .poll(async () => (await readFact())?.instance.conditionState, { timeout: 30_000 })
+        .poll(async () => (await readFact())?.instance.conditionState, {
+          timeout: 30_000,
+          intervals: [1000]
+        })
         .toBe('CLEARED')
       await page.reload()
       await expect(row).toContainText('已清除')

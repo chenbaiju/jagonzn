@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page alarm-page console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace alarm-page console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="告警规则"
@@ -25,13 +27,6 @@
         <ElButton @click="reloadSource">重试来源设备</ElButton>
       </template>
     </section>
-    <ElAlert
-      class="alarm-page__notice"
-      title="规则仅支持固定数值比较；修改规则不会改写已经产生的告警实例和事件。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="items" row-key="id">
@@ -100,7 +95,7 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-alarm-dialog"
       v-model="formVisible"
       :title="editingId ? '编辑告警规则' : '创建告警规则'"
       width="760px"
@@ -116,13 +111,14 @@
           </ElFormItem>
           <ElFormItem label="目标设备" prop="deviceId">
             <ElSelect
+              ref="ruleDeviceSelectRef"
               v-model="form.deviceId"
               filterable
               remote
               :remote-method="searchDevices"
               :loading="devicesLoading"
               placeholder="输入名称或标识搜索设备"
-              @popup-scroll="onDevicePopupScroll"
+              @popup-scroll="onRuleDevicePopupScroll"
             >
               <ElOption
                 v-for="device in deviceOptions"
@@ -132,8 +128,11 @@
               />
             </ElSelect>
           </ElFormItem>
-          <ElFormItem label="数值属性标识" prop="propertyKey">
+          <ElFormItem label="属性或平台信号" prop="propertyKey">
             <ElInput v-model.trim="form.propertyKey" maxlength="64" placeholder="temperature" />
+            <ElButton link type="primary" @click="useConnectionCondition"
+              >使用设备离线条件</ElButton
+            >
           </ElFormItem>
         </div>
 
@@ -185,12 +184,13 @@
     </ElDialog>
 
     <ElDrawer
+      class="console-developer-drawer console-execution-drawer console-alarm-drawer"
       v-model="bindingsVisible"
       :title="`${selectedRule?.name ?? ''} · 通知路由`"
       size="780px"
       destroy-on-close
     >
-      <div class="binding-toolbar">
+      <div class="binding-toolbar console-alarm-toolbar">
         <span>每条路由把此告警规则连接到一个通知组和同渠道模板。</span>
         <ElButton
           v-if="hasAuth('alarm:manage')"
@@ -245,7 +245,7 @@
     </ElDrawer>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-alarm-dialog"
       v-model="bindingFormVisible"
       :title="editingBindingId ? '编辑通知路由' : '添加通知路由'"
       width="620px"
@@ -301,7 +301,7 @@
 
   import { formatTime } from '@/utils/time'
   import { Plus } from '@element-plus/icons-vue'
-  import type { FormInstance, FormRules } from 'element-plus'
+  import type { FormInstance, FormRules, SelectInstance } from 'element-plus'
   import {
     fetchAlarmNotificationBindings,
     fetchAlarmNotificationGroups,
@@ -354,6 +354,12 @@
     ensureDevices,
     onDevicePopupScroll
   } = usePagedDeviceCatalog(projectId)
+  const ruleDeviceSelectRef = ref<SelectInstance>()
+  // Element Plus emits scroll offsets; the catalog uses the actual scrollbar dimensions.
+  const onRuleDevicePopupScroll = () => {
+    const target = ruleDeviceSelectRef.value?.scrollbarRef?.wrapRef
+    if (target) onDevicePopupScroll({ target } as unknown as Event)
+  }
   const nextCursor = ref<string>()
   const hasMore = ref(false)
   const formVisible = ref(false)
@@ -385,6 +391,17 @@
     enabled: true
   })
   const form = reactive<SaveAlarmRuleRequest>(defaultForm())
+  const useConnectionCondition = () => {
+    Object.assign(form, {
+      propertyKey: 'platformConnectionOnline',
+      triggerOperator: 'EQ',
+      triggerThreshold: 0,
+      triggerDurationSeconds: 0,
+      clearOperator: 'EQ',
+      clearThreshold: 1,
+      clearDurationSeconds: 0
+    })
+  }
   watch(
     sourceDevice,
     (next, previous) => {
@@ -559,6 +576,7 @@
         `确定删除规则“${row.name ?? ''}”吗？历史告警仍会保留。`,
         '删除规则',
         {
+          customClass: 'console-alarm-feedback',
           type: 'warning',
           confirmButtonText: '删除',
           cancelButtonText: '取消'
@@ -666,6 +684,7 @@
     if (!projectId.value || !row.id || row.version == null) return
     try {
       await ElMessageBox.confirm('确定删除这条告警通知路由吗？', '删除通知路由', {
+        customClass: 'console-alarm-feedback',
         type: 'warning',
         confirmButtonText: '删除',
         cancelButtonText: '取消'
@@ -681,11 +700,13 @@
   }
 
   watch(
-    () => [
-      projectId.value,
-      userStore.info.userId,
-      userStore.isLogin,
-      userStore.info.buttons?.join(',')
+    [
+      projectId,
+      () => userStore.info.userId,
+      () => userStore.isLogin,
+      () => userStore.info.buttons?.join(','),
+      () => hasAuth('alarm:read'),
+      () => hasAuth('alarm:manage')
     ],
     () => {
       listGeneration++
@@ -710,17 +731,11 @@
 
 <style scoped lang="scss">
   .alarm-page {
-    padding: 10px;
-
-    :deep(.workspace-header > .console-actions) {
-      margin-bottom: 0;
-    }
-
     &__notice {
       margin-bottom: 10px;
 
       :deep(.el-alert__title) {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: normal;
         line-height: 20px;
       }
@@ -741,21 +756,16 @@
   .alarm-condition-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0 18px;
-  }
+    gap: 0 16px;
 
-  .binding-toolbar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    color: var(--el-text-color-secondary);
+    > * {
+      min-width: 0;
+    }
   }
 
   .form-help {
     margin-top: 6px;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--el-text-color-secondary);
   }
 

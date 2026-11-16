@@ -1,16 +1,11 @@
 <template>
-  <div class="console-page alarm-page console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace alarm-page console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="告警历史"
       description="查看异常设备，确认或清除告警，并从单条告警追踪通知投递。"
-    />
-    <ElAlert
-      class="alarm-page__notice"
-      title="已清除告警不会删除。设备再次异常时会创建新一代实例，不会复活旧事故。"
-      type="info"
-      :closable="false"
-      show-icon
     />
 
     <ElCard class="console-page__main-panel" shadow="never">
@@ -41,11 +36,8 @@
         <ElTableColumn label="当前值" width="100" align="right">
           <template #default="{ row }">{{ row.lastValue ?? '—' }}</template>
         </ElTableColumn>
-        <ElTableColumn label="首次命中" width="180">
-          <template #default="{ row }">{{ formatTime(row.firstConditionAt) }}</template>
-        </ElTableColumn>
-        <ElTableColumn label="激活时间" width="180">
-          <template #default="{ row }">{{ formatTime(row.activatedAt) }}</template>
+        <ElTableColumn label="最近报警时间" width="180">
+          <template #default="{ row }">{{ formatTime(row.lastReceivedAt) }}</template>
         </ElTableColumn>
         <ElTableColumn label="清除信息" min-width="200">
           <template #default="{ row }">
@@ -92,15 +84,14 @@
       </div>
     </ElCard>
 
-    <ElDrawer v-model="eventsVisible" title="告警事件时间线" size="680px" destroy-on-close>
-      <div class="alarm-events__toolbar">
-        <ElAlert
-          class="alarm-events__notice"
-          title="摘要与事件分别读取；外部操作后可刷新查看。"
-          type="info"
-          :closable="false"
-          show-icon
-        />
+    <ElDrawer
+      class="console-developer-drawer console-execution-drawer console-alarm-drawer"
+      v-model="eventsVisible"
+      title="告警事件时间线"
+      size="680px"
+      destroy-on-close
+    >
+      <div class="alarm-events__toolbar console-alarm-toolbar">
         <ElButton :loading="detailLoading || eventsLoading" @click="refreshDetails">
           刷新详情
         </ElButton>
@@ -116,6 +107,15 @@
       <ElDescriptions v-if="selected" :column="2" border class="alarm-events__summary">
         <ElDescriptionsItem label="告警类型">{{ selected.alarmType ?? '—' }}</ElDescriptionsItem>
         <ElDescriptionsItem label="设备">{{ deviceName(selected.deviceId) }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="首次命中">{{
+          formatTime(selected.firstConditionAt)
+        }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="激活时间">{{
+          formatTime(selected.activatedAt)
+        }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="最近报警时间">{{
+          formatTime(selected.lastReceivedAt)
+        }}</ElDescriptionsItem>
         <ElDescriptionsItem label="条件状态">
           {{ conditionLabel(selected.conditionState) }}
         </ElDescriptionsItem>
@@ -316,6 +316,7 @@
         '人工清除会结束本代事故，但不会自动标记为已确认。是否继续？',
         '人工清除告警',
         {
+          customClass: 'console-alarm-feedback',
           type: 'warning',
           confirmButtonText: '清除',
           cancelButtonText: '取消'
@@ -462,13 +463,11 @@
 
 <style scoped lang="scss">
   .alarm-page {
-    padding: 10px;
-
     &__notice {
       margin-bottom: 10px;
 
       :deep(.el-alert__title) {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: normal;
         line-height: 20px;
       }
@@ -485,26 +484,11 @@
     }
   }
 
-  .alarm-events__toolbar {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    color: var(--art-text-gray-500);
-
-    > .alarm-events__notice {
-      margin: 0;
-    }
-    > .el-button {
-      flex-shrink: 0;
-    }
-  }
   .alarm-events__notice {
     min-width: 0;
 
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }
@@ -515,10 +499,11 @@
     }
   }
   .alarm-events__summary {
-    margin-bottom: 10px;
+    margin-bottom: 16px;
   }
   .alarm-event__title {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     align-items: center;
     justify-content: space-between;

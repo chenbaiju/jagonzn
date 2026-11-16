@@ -11,12 +11,12 @@
     @apply w-full h-auto p-[24px];
     background: var(--el-bg-color);
     border: 1px solid var(--el-border-color-lighter);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgb(0 0 0 / 3%);
+    border-radius: 4px;
+    box-shadow: none;
   }
 
   .title {
-    @apply text-g-900 text-[28px] font-medium;
+    @apply text-g-900 text-[20px] font-medium;
   }
 
   .sub-title {
@@ -24,7 +24,7 @@
   }
 
   .custom-height {
-    @apply !h-[40px];
+    @apply !h-[32px];
   }
 }
 

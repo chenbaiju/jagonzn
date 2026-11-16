@@ -9,7 +9,9 @@
   也不把"本地校验通过"当作可以创建成功。
 -->
 <template>
-  <div class="console-page ota-campaigns console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace ota-campaigns console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="升级活动"
@@ -21,14 +23,6 @@
         </ElButton>
       </template>
     </ConsoleWorkspaceHeader>
-
-    <ElAlert
-      class="ota-campaigns__notice"
-      title="创建或启动活动前，请确认固件已完成签名发布。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="campaigns" row-key="id">
@@ -100,7 +94,7 @@
     </ElCard>
 
     <ElDialog
-      class="console-dialog"
+      class="console-dialog console-developer-dialog"
       v-model="createVisible"
       title="创建灰度活动"
       width="720px"
@@ -204,6 +198,7 @@
     </ElDialog>
 
     <ElDrawer
+      class="console-developer-drawer"
       v-model="detailVisible"
       :title="`活动 ${detail?.id ?? ''}`"
       size="960px"
@@ -483,6 +478,14 @@
   const createKeys = new IdempotentSubmission()
   const actionKeys = new IdempotentSubmission()
 
+  watch(
+    () => hasAuth('ota:deploy'),
+    (allowed) => {
+      if (!allowed) createVisible.value = false
+    },
+    { flush: 'sync' }
+  )
+
   /** 活动动作资格；详情抽屉与提示共用同一判定。 */
   const actionsOf = (row?: Partial<OtaCampaignSummaryResponse>) =>
     campaignActions(row?.status, execution.value?.batchProgress?.awaitingManualApproval === true)
@@ -511,6 +514,7 @@
   }
 
   async function openCreate() {
+    if (!hasAuth('ota:deploy')) return
     createError.value = ''
     // 预填"5分钟后"作为保守默认：活动只能在notBefore之后启动，空白只会让操作者猜格式。
     if (!notBeforeLocal.value) notBeforeLocal.value = new Date(Date.now() + 5 * 60 * 1000)
@@ -534,6 +538,7 @@
   }
 
   async function submitCreate() {
+    if (!hasAuth('ota:deploy')) return
     if (!notBeforeLocal.value) {
       createError.value = '请选择最早启动时间。'
       return
@@ -655,6 +660,7 @@
         `请输入${labels[kind] ?? kind}活动的原因（会写入运行事实与审计）。`,
         `${labels[kind] ?? kind}活动`,
         {
+          customClass: 'console-studio-feedback',
           inputPattern: /\S+/,
           inputErrorMessage: '原因不能为空',
           confirmButtonText: labels[kind] ?? '确定'
@@ -690,7 +696,7 @@
       margin-bottom: 10px;
 
       :deep(.el-alert__title) {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: normal;
         line-height: 20px;
       }
@@ -715,6 +721,11 @@
     &__policy {
       width: 100%;
 
+      :deep(.el-collapse-item__header) {
+        height: 32px;
+        line-height: 32px;
+      }
+
       :deep(.el-form-item__content) {
         gap: 8px;
         align-items: center;
@@ -722,8 +733,8 @@
     }
 
     &__policy-row > :deep(.el-form-item__label) {
-      height: 50px !important;
-      line-height: 50px !important;
+      height: 32px !important;
+      line-height: 32px !important;
     }
 
     &__actions {
@@ -735,13 +746,13 @@
 
     &__mono {
       font-family: var(--art-font-mono, monospace);
-      font-size: 12px;
+      font-size: 14px;
       word-break: break-all;
     }
 
     &__hint {
       margin-left: 8px;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--art-text-gray-600);
     }
   }

@@ -27,7 +27,7 @@
  * - ResourceError: 静态资源加载失败
  *
  * @module utils/sys/error-handle
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 import type { App } from 'vue'
 

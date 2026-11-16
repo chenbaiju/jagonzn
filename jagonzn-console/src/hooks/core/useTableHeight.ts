@@ -12,7 +12,7 @@
  * 4. 智能适配 - 无额外元素时自动使用 100% 高度
  *
  * @module useTableHeight
- * @author Things Cloud Team
+ * @author Things Link Team
  */
 
 import { computed, type Ref } from 'vue'

@@ -80,7 +80,11 @@ describe('设备终端用户', () => {
     expect(api.fetchDeviceEndUsers.mock.calls[2][2]).toBeUndefined()
     await click('刷新用户')
     expect(wrapper.text()).toContain('第 1 页')
-    expect(wrapper.text()).toContain('仅列出账号、项目角色和设备关系均有效')
+    expect(api.fetchDeviceEndUsers.mock.calls.at(-1)?.slice(0, 3)).toEqual([
+      'project-a',
+      'device-a',
+      undefined
+    ])
   })
   it('换设备取消旧请求，旧响应不能落到新设备详情', async () => {
     let finish!: (v: unknown) => void

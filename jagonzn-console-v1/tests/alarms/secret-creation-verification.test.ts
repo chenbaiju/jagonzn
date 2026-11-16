@@ -1,0 +1,23 @@
+import {beforeEach,describe,it,expect,vi} from 'vitest'
+import {createSecretGroupAndVerify} from '../../src/features/alarms/secret-group-creation'
+import {notificationSecretApi} from '../../src/features/alarms/notification-secret-api'
+import {alarmApi} from '../../src/features/alarms/api'
+import {secretGroupKinds} from '../../src/features/alarms/notification-secret-contract'
+import {emptyNotificationGroupDraft,type NotificationGroupDraft} from '../../src/features/alarms/notification-group-draft'
+import {session} from '../../src/core/session'
+import {ApiError,identityEpoch,changeIdentity,IdentityChanged} from '../../src/core/http'
+vi.mock('../../src/features/alarms/notification-secret-api',()=>({notificationSecretApi:{create:vi.fn(),read:vi.fn()}}))
+vi.mock('../../src/features/alarms/api',()=>({alarmApi:{group:vi.fn(),groupConfiguration:vi.fn()}}))
+const group='00000000-0000-0000-0000-000000000004',project='00000000-0000-0000-0000-000000000002',url='https://example.invalid/notify?key=fixture',metadata={id:group,name:'值班',description:'说明',version:0,enabled:true,createdAt:'2026-10-24T00:00:00Z',updatedAt:'2026-10-24T00:00:00Z'}
+function setup(mode:keyof typeof secretGroupKinds='webhook'):NotificationGroupDraft {const draft=emptyNotificationGroupDraft(mode);draft.name='值班';draft.description='说明';if(mode==='webhook')draft.webhookUrl=url;else draft.robotUrls[mode]=url;vi.mocked(notificationSecretApi.create).mockResolvedValue(metadata);vi.mocked(alarmApi.group).mockResolvedValue(metadata);vi.mocked(alarmApi.groupConfiguration).mockResolvedValue({groupId:group,configured:true,notificationType:secretGroupKinds[mode],configurationVersion:0});vi.mocked(notificationSecretApi.read).mockResolvedValue({groupId:group,notificationType:secretGroupKinds[mode],configurationVersion:0,url,headers:[]});return draft}
+const context=()=>({projectId:project,identityEpoch:identityEpoch()})
+beforeEach(()=>{vi.resetAllMocks();changeIdentity();session.user={currentProjectId:project,permissions:['alarm:read','alarm:manage']}})
+describe('秘密四方式创建后真实回读用例',()=>{
+ it.each(Object.keys(secretGroupKinds) as (keyof typeof secretGroupKinds)[])('%s核对完整元数据、独立身份及当前原文后才成功',async mode=>{expect(await createSecretGroupAndVerify(context(),setup(mode))).toEqual(metadata);expect(notificationSecretApi.create).toHaveBeenCalledTimes(1);expect(alarmApi.group).toHaveBeenCalledExactlyOnceWith(project,group);expect(notificationSecretApi.read).toHaveBeenCalledExactlyOnceWith(project,group)})
+ it('自定义正文明确参数拒绝且不发POST',async()=>{const draft=setup();draft.customBody=true;draft.bodyFunctionSource='return { original: true }';await expect(createSecretGroupAndVerify(context(),draft)).rejects.toMatchObject({status:400,outcomeUnknown:false});expect(notificationSecretApi.create).not.toHaveBeenCalled();expect(draft.bodyFunctionSource).toContain('original')})
+ it('POST未知不能自动重放或开始回读',async()=>{const draft=setup();vi.mocked(notificationSecretApi.create).mockRejectedValue(new TypeError('transport lost'));await expect(createSecretGroupAndVerify(context(),draft)).rejects.toMatchObject({outcomeUnknown:true});expect(notificationSecretApi.create).toHaveBeenCalledTimes(1);expect(alarmApi.group).not.toHaveBeenCalled()})
+ it('写后原文GET失败归结果未知，不能接受原提交值当回读结果',async()=>{const draft=setup();vi.mocked(notificationSecretApi.read).mockRejectedValue(new ApiError('保护失败',500));await expect(createSecretGroupAndVerify(context(),draft)).rejects.toMatchObject({outcomeUnknown:true});expect(notificationSecretApi.create).toHaveBeenCalledTimes(1)})
+ it('不同原文、配置版本或描述返回冲突，不覆盖已提交事实',async()=>{const draft=setup();vi.mocked(notificationSecretApi.read).mockResolvedValueOnce({groupId:group,notificationType:'WEBHOOK',configurationVersion:0,url:url+'-changed',headers:[]});await expect(createSecretGroupAndVerify(context(),draft)).rejects.toMatchObject({status:409});vi.mocked(alarmApi.group).mockResolvedValueOnce({...metadata,description:'其它描述'});await expect(createSecretGroupAndVerify(context(),draft)).rejects.toMatchObject({status:409})})
+ it('失权401/403/404保留原拒绝，跨身份在回读前终止',async()=>{const draft=setup();for(const status of [401,403,404]){vi.mocked(alarmApi.group).mockRejectedValueOnce(new ApiError('不可见',status));await expect(createSecretGroupAndVerify(context(),draft)).rejects.toMatchObject({status})}vi.mocked(notificationSecretApi.create).mockImplementationOnce(async()=>{changeIdentity();return metadata});await expect(createSecretGroupAndVerify(context(),draft)).rejects.toBeInstanceOf(IdentityChanged)})
+ it('异步等待后仍按实际提交方式核对，不借用后来修改的表单',async()=>{const draft=setup();vi.mocked(notificationSecretApi.create).mockImplementationOnce(async()=>{draft.mode='qywx_robot';return metadata});await expect(createSecretGroupAndVerify(context(),draft)).resolves.toEqual(metadata)})
+})

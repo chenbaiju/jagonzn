@@ -1,5 +1,5 @@
 <template>
-  <div class="console-page invitation-entry">
+  <div class="console-page console-developer-workspace invitation-entry">
     <ElCard v-loading="loading" shadow="never">
       <h2>项目协作邀请</h2>
       <ElAlert
@@ -11,11 +11,7 @@
       <template v-else-if="invitation">
         <p>项目：{{ invitation.projectName }} · 角色：{{ invitation.role }}</p>
         <p>到期时间：{{ formatTime(invitation.expiresAt) }}</p>
-        <ElAlert
-          type="info"
-          :closable="false"
-          title="仅绑定邮箱的已验证账号可以接受；打开链接或注册都不会自动加入项目。"
-        />
+
         <ElForm label-position="top" class="invitation-entry__form" @submit.prevent="register">
           <ElFormItem label="邀请绑定邮箱">
             <ElInput :model-value="invitation.targetEmail" readonly aria-label="邀请绑定邮箱" />

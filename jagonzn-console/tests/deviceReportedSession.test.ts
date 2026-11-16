@@ -4,12 +4,18 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   current: vi.fn(),
   create: vi.fn(),
+  update: vi.fn(),
+  groups: vi.fn(),
   canCreate: false,
   deviceDetail: vi.fn(),
   recordRecent: vi.fn(),
   typeDetail: vi.fn(),
   typeSearch: vi.fn(),
-  route: { path: '/device/list', query: {} as Record<string, string> },
+  route: {
+    path: '/device/list',
+    query: {} as Record<string, string>,
+    meta: { authList: undefined as { authMark: string }[] | undefined }
+  },
   push: vi.fn(),
   replace: vi.fn(),
   definitions: vi.fn(),
@@ -25,9 +31,11 @@ const mocks = vi.hoisted(() => ({
   }
 }))
 vi.mock('@/utils/workbench-recent', () => ({ recordRecentResource: mocks.recordRecent }))
-vi.mock('vue-router', async () => {
+vi.mock('vue-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue-router')>()
   const { reactive } = await import('vue')
   return {
+    ...actual,
     useRoute: () => reactive(mocks.route),
     useRouter: () => ({ push: mocks.push, replace: mocks.replace })
   }
@@ -39,7 +47,7 @@ vi.mock('@/api/device', () => ({
   fetchDeviceEventDefinitions: vi.fn().mockResolvedValue([]),
   fetchSearchDevices: vi.fn().mockResolvedValue({ items: [] }),
   fetchCreateDevice: mocks.create,
-  fetchUpdateDevice: vi.fn(),
+  fetchUpdateDevice: mocks.update,
   fetchDeleteDevice: vi.fn(),
   fetchDeviceCredentials: vi.fn().mockResolvedValue([]),
   fetchDeviceMessages: vi.fn().mockResolvedValue({ items: [] }),
@@ -55,7 +63,7 @@ vi.mock('@/api/device', () => ({
   fetchDeviceCommand: vi.fn(),
   fetchPropertyHistory: vi.fn().mockResolvedValue({ points: [] })
 }))
-vi.mock('@/api/device-group', () => ({ fetchDeviceGroups: vi.fn().mockResolvedValue([]) }))
+vi.mock('@/api/device-group', () => ({ fetchDeviceGroups: mocks.groups }))
 vi.mock('@/api/dashboard-binding', () => ({
   createDesignerReadScope: () => ({ close: vi.fn() }),
   fetchBindingMetadata: vi.fn().mockRejectedValue(new Error('无可用模型'))
@@ -63,7 +71,14 @@ vi.mock('@/api/dashboard-binding', () => ({
 vi.mock('@/api/dashboard-alarms', () => ({ fetchDesignerAlarms: vi.fn() }))
 vi.mock('@/store/modules/user', () => ({ useUserStore: () => mocks.user }))
 vi.mock('@/hooks/core/useAuth', () => ({
-  useAuth: () => ({ hasAuth: (auth: string) => auth === 'device:create' && mocks.canCreate })
+  useAuth: () => ({
+    hasAuth: (auth: string) => {
+      const points = reactive(mocks.route).meta.authList
+      return points
+        ? points.some((point) => point.authMark === auth)
+        : auth === 'device:create' && mocks.canCreate
+    }
+  })
 }))
 vi.mock('@/utils/http/error', () => ({ HttpError: class extends Error {} }))
 vi.mock('@/utils/http/identity-scope', () => ({ currentIdentityEpoch: () => mocks.epoch }))
@@ -118,10 +133,21 @@ vi.mock('@/views/device/components/DeviceAutomations.vue', () => ({
 import Devices from '@/views/device/index/index.vue'
 interface DetailState {
   formVisible: boolean
+  createVisible: boolean
   openCreate(): void
+  openEdit(row: { id: string; name: string; deviceKey: string }): void
+  returnFromCreate(): Promise<void>
   submit(): Promise<void>
   formRef?: { validate(): Promise<void> }
-  form: { deviceTypeId: string }
+  form: {
+    name: string
+    deviceKey: string
+    deviceTypeId: string
+    groupId: string
+    tags: Array<{ key: string; value: string }>
+  }
+  deviceGroups: Array<{ id: string; name: string; type: string }>
+  creationGroupOptions: Array<{ id: string; name: string; type: string }>
   resourceError: string
   typeHandoffError: string
   loadDetail(row: {
@@ -134,8 +160,12 @@ interface DetailState {
   openDetail(row: { id: string }): Promise<void>
   returnToList(): Promise<void>
   detailVisible: boolean
+  detailLoading: boolean
+  canOpenDeviceWorkspace(permission: string): boolean
+  openDeviceWorkspace(target: 'messages' | 'designer'): Promise<void> | undefined
   detailName: string
   closeRealtime(): void
+  overviewReadings: Array<{ key: string; value: string; occurredAt: string }>
   shadowReported: string
   detailProperties: Array<{ propertyKey: string }>
   detailDeviceType?: { id: string; name: string; deviceKind: string; payloadProtocol: string }
@@ -177,8 +207,11 @@ function response(deviceId: string, value: number, revision: string) {
 }
 beforeEach(() => {
   mocks.create.mockReset().mockResolvedValue({ id: 'created' })
+  mocks.update.mockReset()
+  mocks.groups.mockReset().mockResolvedValue([])
   mocks.canCreate = false
   mocks.route.query = {}
+  mocks.route.meta.authList = undefined
   mocks.push.mockImplementation(async (target) => {
     reactive(mocks.route).query = target.query
   })
@@ -212,6 +245,58 @@ beforeEach(() => {
 })
 afterEach(() => {
   wrappers.splice(0).forEach((wrapper) => wrapper.unmount())
+  vi.unstubAllGlobals()
+})
+it('设备开发跳转携带当前实际读取的设备及项目，不继承旧查询参数', async () => {
+  const state = detail()
+  const first = '00000000-0000-0000-0000-000000000001'
+  const second = '00000000-0000-0000-0000-000000000002'
+  mocks.user.info.buttons.push('dashboard_definition:read')
+  mocks.push.mockReset().mockResolvedValue(undefined)
+  await state.loadDetail({ id: first })
+  state.detailVisible = true
+  await state.openDeviceWorkspace('messages')
+  expect(mocks.push).toHaveBeenLastCalledWith({
+    path: '/device/messages',
+    query: { deviceId: first, contextProjectId: 'project' }
+  })
+  await state.loadDetail({ id: second })
+  await state.openDeviceWorkspace('designer')
+  expect(mocks.push).toHaveBeenLastCalledWith({
+    path: '/dashboard/designer',
+    query: { deviceId: second, contextProjectId: 'project' }
+  })
+})
+it('未读取到设备、读取中、关闭详情和无效设备ID不得跳转', async () => {
+  const state = detail()
+  mocks.push.mockClear()
+  state.detailVisible = true
+  await state.openDeviceWorkspace('messages')
+  await state.loadDetail({ id: 'invalid-id' })
+  await state.openDeviceWorkspace('messages')
+  await state.loadDetail({ id: '00000000-0000-0000-0000-000000000001' })
+  state.detailLoading = true
+  await state.openDeviceWorkspace('messages')
+  state.detailLoading = false
+  state.detailVisible = false
+  await state.openDeviceWorkspace('messages')
+  expect(mocks.push).not.toHaveBeenCalled()
+})
+it('设备开发跳转重新核验目标权限、设备读取权限与身份代次', async () => {
+  const state = detail()
+  await state.loadDetail({ id: '00000000-0000-0000-0000-000000000001' })
+  state.detailVisible = true
+  mocks.push.mockClear()
+  await state.openDeviceWorkspace('designer')
+  expect(state.canOpenDeviceWorkspace('dashboard_definition:read')).toBe(false)
+  mocks.user.info.buttons = ['dashboard_definition:read']
+  await state.openDeviceWorkspace('messages')
+  await state.openDeviceWorkspace('designer')
+  mocks.user.info.buttons = ['device:read', 'dashboard_definition:read']
+  state.detailVisible = true
+  mocks.epoch++
+  await state.openDeviceWorkspace('designer')
+  expect(mocks.push).not.toHaveBeenCalled()
 })
 it('真实详情编排拒绝同项目 A→B→A 旧 REST', async () => {
   const old = deferred<ReturnType<typeof response>>()
@@ -228,6 +313,9 @@ it('真实详情编排拒绝同项目 A→B→A 旧 REST', async () => {
   await original
   await flushPromises()
   expect(JSON.parse(state.shadowReported)).toEqual({ temperature: 3 })
+  expect(state.overviewReadings).toEqual([
+    expect.objectContaining({ key: 'temperature', value: '3', occurredAt: '2026-09-12T00:00:00Z' })
+  ])
 })
 it('迟到模型定义不能按新设备创建旧属性订阅', async () => {
   const old = deferred<Array<{ propertyKey: string; dataType: string }>>()
@@ -253,6 +341,7 @@ it('关闭或身份换代后迟到 REST 不恢复已清视图', async () => {
   old.resolve(response('a', 1, '1'))
   await pending
   expect(state.shadowReported).toBe('')
+  expect(state.overviewReadings).toEqual([])
 })
 
 it('详情导航通过设备参数加载事实，返回清除参数并关闭详情', async () => {
@@ -534,6 +623,140 @@ it('创建失败保留当前输入和打开状态，可原地重试', async () =
   expect(state.formVisible).toBe(true)
   expect(state.form.deviceTypeId).toBe('chosen')
   expect(mocks.create).toHaveBeenCalledOnce()
+})
+
+it.each(['create', 'update'] as const)(
+  '仅撤回路由 device:%s 关闭写表单，阻止在途校验后的提交，保留全局读取身份',
+  async (operation) => {
+    mocks.route.meta.authList = [{ authMark: `device:${operation}` }]
+    mocks.user.info.buttons = ['device:read', `device:${operation}`]
+    const state = detail()
+    await flushPromises()
+    if (operation === 'create') state.openCreate()
+    else state.openEdit({ id: 'editing', name: '待编辑设备', deviceKey: 'sensor_edit' })
+    await flushPromises()
+    expect(state.formVisible).toBe(true)
+    const validation = deferred<void>()
+    state.formRef = { validate: () => validation.promise }
+    const saving = state.submit()
+    reactive(mocks.route).meta.authList = []
+    await flushPromises()
+    expect(state.formVisible).toBe(false)
+    expect(state.createVisible).toBe(false)
+    expect(mocks.user.info.buttons).toEqual(['device:read', `device:${operation}`])
+    validation.resolve()
+    await saving
+    expect(mocks.create).not.toHaveBeenCalled()
+    expect(mocks.update).not.toHaveBeenCalled()
+    expect(state.resourceError).toBe('')
+  }
+)
+
+it('创建归组和标签只发出一次原子请求，不另行替换组成员或逐条写标签', async () => {
+  vi.stubGlobal('ElMessage', { success: vi.fn() })
+  mocks.canCreate = true
+  mocks.user.info.buttons = ['device:create']
+  const state = detail()
+  await flushPromises()
+  state.openCreate()
+  Object.assign(state.form, {
+    name: '设备',
+    deviceKey: 'sensor_new',
+    groupId: 'static-group',
+    tags: [{ key: 'region', value: ' 上海 ' }]
+  })
+  state.formRef = { validate: async () => {} }
+  const saving = deferred<{ id: string }>()
+  mocks.create.mockReturnValueOnce(saving.promise)
+  const first = state.submit()
+  await flushPromises()
+  await state.submit()
+  expect(mocks.create).toHaveBeenCalledExactlyOnceWith('project', {
+    name: '设备',
+    deviceKey: 'sensor_new',
+    deviceTypeId: undefined,
+    description: undefined,
+    location: undefined,
+    groupId: 'static-group',
+    tags: { region: '上海' }
+  })
+  saving.resolve({ id: 'created' })
+  await first
+  expect(state.formVisible).toBe(false)
+})
+
+it('创建组选择仅显示有效静态组，身份切换清除分组和标签', async () => {
+  const state = detail()
+  await flushPromises()
+  state.deviceGroups = [
+    { id: 'static', name: '静态组', type: 'STATIC' },
+    { id: 'dynamic', name: '动态组', type: 'DYNAMIC' }
+  ]
+  expect(state.creationGroupOptions.map((group) => group.id)).toEqual(['static'])
+  state.form.groupId = 'static'
+  state.form.tags = [{ key: 'site', value: 'east' }]
+  mocks.user.info.currentProjectId = 'other'
+  await flushPromises()
+  expect(state.form.groupId).toBe('')
+  expect(state.form.tags).toEqual([])
+  expect(state.deviceGroups).toEqual([])
+})
+
+it('切换项目后旧设备组响应不能回填创建选项', async () => {
+  const pending = deferred<Array<{ id: string; name: string; type: string }>>()
+  mocks.groups.mockReturnValueOnce(pending.promise)
+  const state = detail()
+  await flushPromises()
+  mocks.user.info.currentProjectId = 'other'
+  await flushPromises()
+  pending.resolve([{ id: 'old', name: '旧组', type: 'STATIC' }])
+  await flushPromises()
+  expect(state.creationGroupOptions).toEqual([])
+})
+
+it('列表创建入口跳转到页面，取消返回原列表并保留其他查询参数', async () => {
+  mocks.canCreate = true
+  mocks.user.info.buttons = ['device:create']
+  mocks.route.query = { retained: 'yes' }
+  const state = detail()
+  await flushPromises()
+  state.openCreate()
+  await flushPromises()
+  expect(state.createVisible).toBe(true)
+  expect(mocks.push).toHaveBeenLastCalledWith({
+    path: '/device/list',
+    query: { retained: 'yes', createDevice: '1', contextProjectId: 'project' }
+  })
+  await state.returnFromCreate()
+  expect(state.createVisible).toBe(false)
+  expect(mocks.route.query).toEqual({ retained: 'yes' })
+})
+
+it('创建页面可从URL恢复，浏览器返回关闭表单，前进重新打开', async () => {
+  mocks.canCreate = true
+  mocks.user.info.buttons = ['device:create']
+  mocks.route.query = { createDevice: '1', contextProjectId: 'project' }
+  const state = detail()
+  await flushPromises()
+  expect(state.createVisible).toBe(true)
+  reactive(mocks.route).query = {}
+  await flushPromises()
+  expect(state.createVisible).toBe(false)
+  reactive(mocks.route).query = { createDevice: '1', contextProjectId: 'project' }
+  await flushPromises()
+  expect(state.createVisible).toBe(true)
+})
+
+it('跨项目或缺少创建权限的URL不能打开创建页面', async () => {
+  mocks.route.query = { createDevice: '1', contextProjectId: 'project' }
+  const state = detail()
+  await flushPromises()
+  expect(state.createVisible).toBe(false)
+  mocks.canCreate = true
+  mocks.user.info.buttons = ['device:create']
+  reactive(mocks.route).query = { createDevice: '1', contextProjectId: 'foreign' }
+  await flushPromises()
+  expect(state.createVisible).toBe(false)
 })
 
 const recentDeviceId = '11111111-1111-4111-8111-111111111111'

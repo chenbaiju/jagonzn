@@ -167,6 +167,28 @@ describe('默认关闭的设备模型交互', () => {
     expect(state().template).toBe('STATUS_SUMMARY')
     expect(state().busy).toBe(false)
   })
+  it('读取完成后切换项目再返回，清除旧状态与确认且仍需手动读取', async () => {
+    page()
+    vi.mocked(readAnalysisAvailability).mockResolvedValue({
+      businessAvailable: false,
+      reason: 'INTERNAL_TRANSPORT_DISABLED'
+    })
+    await state().refresh()
+    expect(panel.text()).toContain('模型分析服务尚未启用')
+    state().consented = true
+    mocks.user.info.currentProjectId = 'other'
+    await nextTick()
+    mocks.user.info.currentProjectId = 'p'
+    await nextTick()
+    expect(state().availability).toBeUndefined()
+    expect(state().consented).toBe(false)
+    expect(panel.text()).not.toContain('模型分析服务尚未启用')
+    const buttons = panel.findAll('button')
+    expect(buttons[0].attributes()).not.toHaveProperty('disabled')
+    expect(buttons.at(-1)!.attributes()).toHaveProperty('disabled')
+    expect(readAnalysisAvailability).toHaveBeenCalledTimes(1)
+    expect(postAnalysisRun).not.toHaveBeenCalled()
+  })
   it('其他标签存储变化清除瞬时结果但不发新请求', async () => {
     page()
     state().result = { call: null, category: 'UNAVAILABLE', result: null }
@@ -349,7 +371,7 @@ it('首次成功仅在当前页面纯文本显示，重新查看状态清除正�
     },
     result: {
       model: 'deepseek-flash',
-      promptVersion: 'thingscloud-agent-single-analysis-v1',
+      promptVersion: 'thingslink-agent-single-analysis-v1',
       summary: '<script>synthetic-summary</script>',
       findings: [{ kind: 'HYPOTHESIS', statement: 'synthetic-finding', evidenceIds: ['e-device'] }],
       limitations: ['synthetic-limit'],

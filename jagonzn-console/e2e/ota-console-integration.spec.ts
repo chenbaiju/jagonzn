@@ -62,7 +62,7 @@ test('OTA控制台整合：四页菜单、跨页事实一致与角色边界', as
       },
       crypto.randomUUID()
     )
-    const content = new TextEncoder().encode('thingscloud-ota-integration-artifact')
+    const content = new TextEncoder().encode('thingslink-ota-integration-artifact')
     const sha256 = await otaApi.sha256Hex(content.buffer as ArrayBuffer)
     const session = await otaApi.createOtaUpload(
       projectId,

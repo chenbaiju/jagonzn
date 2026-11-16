@@ -6,12 +6,7 @@
     data-testid="personal-fact-collection"
   >
     <template #header><h4 class="console-heading">个人历史设备集合报告</h4></template>
-    <ElAlert
-      type="info"
-      show-icon
-      :closable="false"
-      title="仅汇编本人所选历史记录，未做实时巡检或模型诊断；最多五设备，每设备选一条。记录仍仅本人且当前有权可读。"
-    />
+
     <div class="console-toolbar">
       <ElButton :disabled="busy" @click="refresh">刷新本人项目记录</ElButton>
       <ElButton :disabled="!canGenerate" @click="generate()">生成集合事实报告</ElButton>
@@ -43,7 +38,9 @@
             <span>设备：{{ row.deviceId }}</span>
             <span>记录：{{ row.id }}</span>
             <span>采集时模型：{{ row.modelVersionId }}</span>
-            <span>保存：{{ row.createdAt }}；可见至：{{ row.expiresAt }}</span>
+            <span
+              >保存：{{ formatTime(row.createdAt) }}；可见至：{{ formatTime(row.expiresAt) }}</span
+            >
           </span>
         </label>
       </li>
@@ -62,18 +59,19 @@
         {{ report.coverage.unavailableValues }}（其中省略 {{ report.coverage.omittedValues }}）。</p
       >
       <p
-        >历史采集包络：{{ report.earliestCollectionAt }} 至
-        {{ report.latestCollectionAt }}；最早来源期限：{{ report.expiresAt }}。</p
+        >历史采集包络：{{ formatTime(report.earliestCollectionAt) }} 至
+        {{ formatTime(report.latestCollectionAt) }}；最早来源期限：{{
+          formatTime(report.expiresAt)
+        }}。</p
       >
       <p class="console-metadata">报告摘要：{{ report.contentSha256 }}。</p>
-      <ElAlert type="info" show-icon :closable="false"
-        >缺项不代表正常，历史采集包络不保证连续时序或同时刻快照；下载会再次向服务端核验全部来源与当前权限。</ElAlert
-      >
+
       <pre>{{ report.markdown }}</pre>
     </section>
   </ElCard>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { useUserStore } from '@/store/modules/user'
   import { currentIdentityEpoch } from '@/utils/http/identity-scope'

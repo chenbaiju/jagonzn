@@ -1,0 +1,35 @@
+import {afterEach,beforeEach,describe,it,expect,vi} from 'vitest'
+import {mount,flushPromises} from '@vue/test-utils'
+import ElementPlus from 'element-plus'
+import Rules from '../../src/features/devices/DeviceAlarmRules.vue'
+import {ApiError} from '../../src/core/http'
+const state=vi.hoisted(()=>({project:null as any,current:null as any,session:null as any,permissions:null as any,api:vi.fn(),read:vi.fn(),clear:vi.fn()}))
+vi.mock('@/core/session',async()=>{const {ref,reactive}=await import('vue');state.project=ref('00000000-0000-4000-8000-000000000010');state.current=ref({status:'ACTIVE'});state.session=reactive({user:{accountId:'actor'}});state.permissions=ref(['device:read','alarm:read','alarm:maintain']);return {projectId:state.project,currentProject:state.current,session:state.session,can:(p:string)=>state.permissions.value.includes(p)}})
+vi.mock('@/core/http',async()=>({...await vi.importActual('@/core/http'),api:state.api}))
+vi.mock('@/features/alarms/alarm-runtime-instance-api',async()=>({...await vi.importActual('@/features/alarms/alarm-runtime-instance-api'),alarmRuntimeInstanceApi:{read:state.read,clear:state.clear}}))
+const device='00000000-0000-4000-8000-000000000001',rule='00000000-0000-4000-8000-000000000002',instance='00000000-0000-4000-8000-000000000003'
+const item=(extra={})=>({id:rule,name:'精确设备规则',enabled:true,version:1,level:'URGENT',sourceKind:'DEVICE',manualClearAllowed:true,deviceAllowed:true,deviceAllowanceVersion:0,notificationGroups:[],customerChannels:[],incident:{instanceId:instance,ruleId:rule,deviceId:device,conditionState:'ACTIVE',version:7},...extra})
+const encode=(items=[item()])=>new TextEncoder().encode(JSON.stringify({deviceId:device,items,total:String(items.length),page:1,limit:24}))
+let wrapper:ReturnType<typeof mount>
+const button=(label:string)=>wrapper.findAll('button').find(b=>b.text()===label)!
+const snapshot=()=>({id:instance,ruleId:rule,deviceId:device,conditionState:'ACTIVE',version:9,evaluationSnapshotJson:'{}'})
+beforeEach(()=>{state.project.value='00000000-0000-4000-8000-000000000010';state.current.value={status:'ACTIVE'};state.session.user.accountId='actor';state.permissions.value=['device:read','alarm:read','alarm:maintain'];state.api.mockReset().mockResolvedValue(encode());state.read.mockReset().mockResolvedValue(snapshot());state.clear.mockReset().mockResolvedValue({...snapshot(),conditionState:'CLEARED',version:10})})
+afterEach(()=>{wrapper?.unmount();document.body.innerHTML=''})
+function render(visible=true){wrapper=mount(Rules,{props:{deviceId:device,visible},attachTo:document.body,global:{plugins:[ElementPlus]}});return wrapper}
+describe('设备规则行挂载真实独立解除对话框',()=>{
+ it('隐藏规则模式零请求，打开只读设备适用目录',async()=>{render(false);await flushPromises();expect(state.api).not.toHaveBeenCalled();await wrapper.setProps({visible:true});await flushPromises();expect(state.api.mock.calls[0][0]).toBe(`/api/v1/projects/${state.project.value}/console/devices/${device}/alarm-rules`);expect(state.read).not.toHaveBeenCalled();expect(wrapper.text()).toContain('精确设备规则')})
+ it('当前规则只有ACTIVE精确事故允许解除，确认前重新读单条，不用目录版本写',async()=>{render();await flushPromises();await button('解除告警').trigger('click');await flushPromises();expect(state.read.mock.calls[0][1]).toEqual({instanceId:instance,ruleId:rule,deviceId:device});expect(state.clear).not.toHaveBeenCalled();await wrapper.get('textarea[aria-label="告警原因"]').setValue('设备异常');await wrapper.get('textarea[aria-label="解决方案"]').setValue('人工检查');await wrapper.get('textarea[aria-label="其它备注"]').setValue('本地流程备注');await button('提交').trigger('click');await flushPromises();expect(state.clear.mock.calls[0][1].version).toBe(9);expect(state.clear.mock.calls[0][3]).toEqual({alarmReason:'设备异常',solution:'人工检查',remark:'本地流程备注'});expect(state.api).toHaveBeenCalledTimes(2);expect(wrapper.text()).not.toContain('ACK')})
+ it('取消无写；未知写跨模式隐藏及重新打开仍只读，必须显式继续',async()=>{state.clear.mockRejectedValue(new ApiError('结果未知',0,undefined,undefined,true));render();await flushPromises();await button('解除告警').trigger('click');await flushPromises();await button('提交').trigger('click');await flushPromises();await button('取消').trigger('click');await wrapper.setProps({visible:false});await wrapper.setProps({visible:true});await flushPromises();await button('解除告警').trigger('click');await flushPromises();expect(button('提交').attributes('disabled')).toBeDefined();expect(wrapper.text()).toContain('读取当前状态');expect(state.clear).toHaveBeenCalledTimes(1);await button('读取当前状态').trigger('click');await flushPromises();expect(wrapper.text()).toContain('按当前状态继续');expect(state.clear).toHaveBeenCalledTimes(1)})
+ it('无事故/待定/禁止手动或只读成员没有解除入口',async()=>{for(const row of [item({incident:null}),item({manualClearAllowed:false}),item({incident:{...item().incident,conditionState:'PENDING'}})]){state.api.mockResolvedValue(encode([row]));render();await flushPromises();expect(button('解除告警')).toBeUndefined();wrapper.unmount()}state.permissions.value=['device:read','alarm:read'];render();await flushPromises();expect(button('解除告警')).toBeUndefined();expect(state.read).not.toHaveBeenCalled()})
+ it('失权清行和旧确认，不提交旧操作',async()=>{render();await flushPromises();await button('解除告警').trigger('click');await flushPromises();state.permissions.value=[];await flushPromises();expect(wrapper.text()).not.toContain('精确设备规则');expect(button('提交').attributes('disabled')).toBeDefined();expect(state.clear).not.toHaveBeenCalled()})
+ it('目录403后不展示假空成功或沿历史query猜rule身份',async()=>{state.api.mockRejectedValue(new ApiError('设备告警不可读',403));render();await flushPromises();expect(wrapper.text()).toContain('没有设备告警规则的读取权限');expect(wrapper.text()).not.toContain('暂无数据');expect(state.api).toHaveBeenCalledTimes(1);expect(state.read).not.toHaveBeenCalled()})
+ it('通知摘要显示原组顺序、未知名称与渠道图标，名称只作文本',async()=>{state.api.mockResolvedValue(encode([item({notificationGroups:[{id:instance,name:'<img src=x onerror=alert(1)>'},{id:rule,name:null}],customerChannels:['WECHAT','SMS','VOICE','APP']})]));render();await flushPromises();const tags=wrapper.findAll('.notification-groups .el-tag').map(t=>t.text());expect(tags).toEqual(['<img src=x onerror=alert(1)>','—']);expect(wrapper.find('.notification-groups img').exists()).toBe(false);expect(wrapper.findAll('.channel-icon').map(icon=>icon.attributes('aria-label'))).toEqual(['电话通知','短信通知','公众号通知','App 通知']);expect(state.clear).not.toHaveBeenCalled();expect(wrapper.text()).not.toContain('投递成功')})
+ it('空通知配置显示未设置且保持真实解除入口',async()=>{render();await flushPromises();expect(wrapper.text().match(/未设置/g)).toHaveLength(2);expect(button('解除告警')).toBeDefined();expect(wrapper.findAll('.channel-icon')).toHaveLength(0)})
+ it('刷新后同ID规则已禁止人工解除，旧行回调不能再打开旧事故',async()=>{
+  render();await flushPromises()
+  const old=wrapper.findAllComponents({name:'ElButton'}).find(b=>b.text()==='解除告警')!.vm.$.vnode.props!.onClick as ()=>void
+  state.api.mockResolvedValue(encode([item({manualClearAllowed:false})]));await button('刷新').trigger('click');await flushPromises()
+  expect(button('解除告警')).toBeUndefined();old();await flushPromises()
+  expect(state.read).not.toHaveBeenCalled();expect(state.clear).not.toHaveBeenCalled()
+ })
+})

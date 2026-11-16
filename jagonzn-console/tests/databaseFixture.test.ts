@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -18,7 +17,7 @@ const pg = {
   imageDigest: 'sha256:' + 'b'.repeat(64),
   port: 5549,
   database: 'tc_console_wp03_guard',
-  user: 'thingscloud',
+  user: 'thingslink',
   databaseOid: 16384
 }
 function fixture(change?: (runtime: any) => void) {
@@ -38,7 +37,7 @@ function fixture(change?: (runtime: any) => void) {
     Image: pg.imageDigest,
     ConfigImage: pg.image,
     Running: true,
-    Labels: { 'thingscloud.owner': 'console-wp03' },
+    Labels: { 'thingslink.owner': 'console-wp03' },
     Ports: { '5432/tcp': [{ HostIp: '127.0.0.1', HostPort: '5549' }] }
   }
   const identity: any = { database: pg.database, user: pg.user, oid: pg.databaseOid }
@@ -67,13 +66,18 @@ describe('owned material filesystem boundary', () => {
   it('reads only bounded real files in owned logs and refuses outside symlink targets', () => {
     mkdirSync(resolve('logs'), { recursive: true })
     const inside = mkdtempSync(resolve('logs/wp03-database-test-'))
-    const outside = mkdtempSync(resolve(tmpdir(), 'wp03-database-test-'))
+    const outside = mkdtempSync(resolve('logs', '..', 'wp03-database-outside-'))
     created.push(inside, outside)
     writeFileSync(resolve(inside, 'runtime.json'), '{}')
     writeFileSync(resolve(outside, 'runtime.json'), '{}')
-    symlinkSync(resolve(outside, 'runtime.json'), resolve(inside, 'escape.json'))
+    // 同盘外部目录确保真实路径逃逸检查覆盖Windows反斜杠边界。
+    symlinkSync(
+      outside,
+      resolve(inside, 'escape'),
+      process.platform === 'win32' ? 'junction' : 'dir'
+    )
     expect(readOwnedDatabaseMaterial(resolve(inside, 'runtime.json')).toString()).toBe('{}')
-    expect(() => readOwnedDatabaseMaterial(resolve(inside, 'escape.json'))).toThrow(
+    expect(() => readOwnedDatabaseMaterial(resolve(inside, 'escape', 'runtime.json'))).toThrow(
       'DATABASE_FIXTURE_SCOPE_REJECTED'
     )
     expect(() => readOwnedDatabaseMaterial(resolve(outside, 'runtime.json'))).toThrow(
@@ -136,7 +140,7 @@ describe('owned database fixture', () => {
     [
       'shared database',
       (r: any) => {
-        r.postgres.database = 'thingscloud'
+        r.postgres.database = 'thingslink'
       }
     ],
     [
@@ -239,7 +243,7 @@ describe('owned database fixture', () => {
     [
       'foreign owner',
       (v: any) => {
-        v.Labels['thingscloud.owner'] = 'console-010-c'
+        v.Labels['thingslink.owner'] = 'console-010-c'
       }
     ],
     [

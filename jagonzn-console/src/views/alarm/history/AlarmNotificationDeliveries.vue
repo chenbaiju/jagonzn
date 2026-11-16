@@ -4,13 +4,7 @@
       ><h4>通知投递记录</h4
       ><ElButton :disabled="loading" @click="refresh">刷新投递记录</ElButton></div
     >
-    <ElAlert
-      class="alarm-notification-deliveries__notice"
-      title="记录是服务端投递意图与执行状态，执行成功不代表收件人或供应商已确认送达。目标已脱敏；此处不提供重发操作。"
-      type="info"
-      :closable="false"
-      show-icon
-    />
+
     <ElAlert
       v-if="failed"
       title="投递记录读取失败，请刷新；不能据此判断没有投递。"
@@ -65,6 +59,7 @@
     DEAD_LETTER: '已进入死信',
     SKIPPED_AUTHORIZATION: '权限失效，已跳过',
     SUPPRESSED_QUOTA: '额度抑制',
+    SUPPRESSED_POLICY: '项目通知已静默',
     TEMPLATE_INVALID: '模板无效'
   }
   const statusLabel = (value?: AlarmNotificationDeliveryResponse['status']) =>
@@ -183,7 +178,7 @@
     margin-bottom: 10px;
 
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }

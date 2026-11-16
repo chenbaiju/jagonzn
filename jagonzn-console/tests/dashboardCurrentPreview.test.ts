@@ -3,7 +3,7 @@ import {
   parseDashboardRuntimeResponse,
   validateDashboardSchemaV1,
   serializeRuntimeValue
-} from '@things-cloud/client-contracts/dashboard/v1'
+} from '@things-link/client-contracts/dashboard/v1'
 import {
   loadDesignerDevicePreview,
   refreshDesignerCurrent,
@@ -127,6 +127,16 @@ describe('完整当前值草稿预览', () => {
     const f = fixture(),
       rows = await loadDesignerDevicePreview(f.schema(), 'main', f.ports)
     expect(rows[0]?.text).toBe('12.50')
+    expect(rows.map((row) => row.detail)).toEqual([
+      '上报时间：2026-09-08 08:00:00',
+      '上报时间：2026-09-08 08:00:00',
+      '上报时间：2026-09-08 08:00:00'
+    ])
+    expect(f.values.map((entry) => entry.occurredAt)).toEqual([
+      '2026-09-08T00:00:00Z',
+      '2026-09-08T00:00:00Z',
+      '2026-09-08T00:00:00Z'
+    ])
     expect(rows[0]?.gauge).toEqual({ minimum: '0', maximum: '10', percent: 100, outOfRange: true })
     expect(serializeRuntimeValue(rows[1]!.composite!.value)).toContain('9007199254740993')
     expect(rows[2]?.composite).toMatchObject({

@@ -1,5 +1,7 @@
 <template>
-  <div class="console-page notification-page console-page--single-panel">
+  <div
+    class="console-page console-developer-page console-developer-workspace console-rule-workspace console-operations-workspace notification-page console-page--single-panel"
+  >
     <ConsoleWorkspaceHeader
       project-style
       title="通知模板"
@@ -11,12 +13,6 @@
         </ElButton>
       </template>
     </ConsoleWorkspaceHeader>
-
-    <ElAlert class="notification-page__notice" type="info" :closable="false" show-icon>
-      <template #title>
-        模板不执行脚本或任意表达式；未知的 <code>${...}</code> 变量会在保存时被服务端拒绝。
-      </template>
-    </ElAlert>
 
     <ElCard class="console-page__main-panel" shadow="never">
       <ElTable v-loading="loading" :data="templates" row-key="id">
@@ -69,14 +65,20 @@
 
     <component
       :is="editingId ? ElDrawer : ElDialog"
-      class="console-dialog"
+      class="console-dialog console-developer-dialog console-developer-drawer console-alarm-dialog console-alarm-drawer"
       :class="{ 'notification-template-drawer': !!editingId }"
       v-model="formVisible"
       :title="editingId ? '编辑通知模板' : '创建通知模板'"
       v-bind="editingId ? { size: '760px' } : { width: '760px' }"
       destroy-on-close
     >
-      <ElForm ref="formRef" :model="form" :rules="rules" label-position="top">
+      <ElForm
+        ref="formRef"
+        class="notification-template-form"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+      >
         <div class="template-form-grid">
           <ElFormItem label="模板名称" prop="name">
             <ElInput v-model.trim="form.name" maxlength="128" />
@@ -95,13 +97,6 @@
               {{ variable.label }}：{{ variable.key }}
             </ElTag>
           </div>
-          <ElAlert
-            class="template-variables__notice"
-            title="变量名和大小写必须完全一致，可用于主题和正文。"
-            type="info"
-            :closable="false"
-            show-icon
-          />
         </ElFormItem>
 
         <ElFormItem v-if="form.channel === 'EMAIL'" label="邮件主题" prop="subjectTemplate">
@@ -166,6 +161,13 @@
   const formVisible = ref(false)
   const editingId = ref('')
   const formRef = ref<FormInstance>()
+  watch(
+    () => hasAuth('alarm:manage'),
+    (allowed) => {
+      if (!allowed) formVisible.value = false
+    },
+    { flush: 'sync' }
+  )
   const templateVariables = [
     { key: '${alarm.type}', label: '告警类型' },
     { key: '${alarm.severity}', label: '告警级别' },
@@ -218,11 +220,13 @@
   }
   const loadMore = () => void loadTemplates(true)
   const openCreate = () => {
+    if (!hasAuth('alarm:manage')) return
     editingId.value = ''
     Object.assign(form, defaultForm())
     formVisible.value = true
   }
   const openEdit = (row: AlarmNotificationTemplateResponse) => {
+    if (!hasAuth('alarm:manage')) return
     editingId.value = row.id ?? ''
     Object.assign(form, {
       name: row.name ?? '',
@@ -235,7 +239,8 @@
     formVisible.value = true
   }
   const submitTemplate = async () => {
-    if (!projectId.value || !(await formRef.value?.validate().catch(() => false))) return
+    if (!hasAuth('alarm:manage') || !projectId.value) return
+    if (!(await formRef.value?.validate().catch(() => false)) || !hasAuth('alarm:manage')) return
     submitting.value = true
     try {
       const body: SaveAlarmNotificationTemplateRequest = { ...form }
@@ -261,7 +266,12 @@
       await ElMessageBox.confirm(
         `确定删除通知模板“${row.name ?? ''}”吗？仍被规则绑定时服务端会拒绝删除。`,
         '删除通知模板',
-        { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
+        {
+          customClass: 'console-alarm-feedback',
+          type: 'warning',
+          confirmButtonText: '删除',
+          cancelButtonText: '取消'
+        }
       )
       await fetchDeleteAlarmNotificationTemplate(projectId.value, row.id, row.version)
       ElMessage.success('通知模板已删除')
@@ -282,17 +292,11 @@
   }
 
   .notification-page {
-    padding: 10px;
-
-    :deep(.workspace-header > .console-actions) {
-      margin-bottom: 0;
-    }
-
     &__notice {
       margin-bottom: 10px;
 
       :deep(.el-alert__title) {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: normal;
         line-height: 20px;
       }
@@ -313,20 +317,76 @@
   .template-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0 18px;
+    gap: 0 16px;
+
+    > * {
+      min-width: 0;
+    }
+  }
+
+  .notification-template-form {
+    :deep(.el-form-item__label) {
+      display: block;
+      height: auto !important;
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 20px !important;
+    }
+
+    :deep(.el-form-item) {
+      margin-bottom: 16px;
+    }
+
+    :deep(.el-radio-button__inner) {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      font-size: 14px;
+    }
+
+    :deep(.el-textarea__inner) {
+      padding: 8px 12px;
+      font-size: 14px;
+      line-height: 22px;
+      border-radius: 4px;
+    }
+
+    :deep(.el-input__count) {
+      font-size: 14px;
+      line-height: 20px;
+    }
+
+    :deep(.el-switch) {
+      height: 32px;
+    }
   }
 
   .template-variables {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    width: 100%;
+
+    .el-tag {
+      max-width: 100%;
+      height: auto;
+      min-height: 24px;
+      padding-block: 1px;
+      line-height: 20px;
+      white-space: normal;
+    }
+
+    :deep(.el-tag__content) {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
   }
 
   .template-variables__notice {
-    margin-top: 8px;
+    margin: 8px 0 0;
 
     :deep(.el-alert__title) {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: normal;
       line-height: 20px;
     }

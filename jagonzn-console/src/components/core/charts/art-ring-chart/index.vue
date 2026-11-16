@@ -3,7 +3,9 @@
   <div
     ref="chartRef"
     class="relative w-full"
-    :style="{ height: props.height }"
+    :style="{
+      height: props.centered && props.showLegend && compactLegend ? '264px' : props.height
+    }"
     v-loading="props.loading"
   >
   </div>
@@ -13,6 +15,7 @@
   import type { EChartsOption } from '@/plugins/echarts'
   import { useChartOps, useChartComponent } from '@/hooks/core/useChart'
   import type { RingChartProps } from '@/types/component/chart'
+  import { useResizeObserver } from '@vueuse/core'
 
   defineOptions({ name: 'ArtRingChart' })
 
@@ -28,25 +31,38 @@
     radius: () => ['50%', '80%'],
     borderRadius: 10,
     centerText: '',
+    centered: false,
     showLabel: false,
 
     // 交互配置
     showTooltip: true,
     showLegend: false,
+    showLegendPercent: false,
+    showLegendValue: false,
     legendPosition: 'right'
   })
+  const compactLegend = ref(false)
 
   // 使用新的图表组件抽象
-  const { chartRef, isDark, getAnimationConfig, getTooltipStyle, getLegendStyle } =
+  const { chartRef, isDark, getAnimationConfig, getTooltipStyle, getLegendStyle, handleResize } =
     useChartComponent({
       props,
       checkEmpty: () => {
         return !props.data?.length || props.data.every((item) => item.value === 0)
       },
-      watchSources: [() => props.data, () => props.centerText],
+      watchSources: [
+        () => props.data,
+        () => props.centerText,
+        () => props.centered,
+        () => props.showLegendPercent,
+        () => props.showLegendValue,
+        () => compactLegend.value
+      ],
       generateOptions: (): EChartsOption => {
+        const legendBelow = props.centered && props.showLegend && compactLegend.value
         // 根据图例位置计算环形图中心位置
         const getCenterPosition = (): [string, string] => {
+          if (props.centered) return ['50%', legendBelow ? '38%' : '50%']
           if (!props.showLegend) return ['50%', '50%']
 
           switch (props.legendPosition) {
@@ -71,8 +87,24 @@
             : undefined,
           legend: props.showLegend
             ? {
-                ...getLegendStyle(props.legendPosition, { itemGap: 12 }),
-                ...(props.legendPosition === 'right' ? { right: 24 } : {})
+                ...getLegendStyle(legendBelow ? 'bottom' : props.legendPosition, { itemGap: 12 }),
+                ...(props.showLegendPercent
+                  ? {
+                      formatter: (name: string) => {
+                        const total = props.data.reduce((sum, item) => sum + item.value, 0)
+                        const value = props.data.find((item) => item.name === name)?.value ?? 0
+                        const percent = total > 0 ? (value / total) * 100 : 0
+                        return props.showLegendValue
+                          ? `${name}  ${value} (${percent.toFixed(1)}%)`
+                          : `${name}  ${percent.toFixed(1)}%`
+                      }
+                    }
+                  : {}),
+                ...(legendBelow
+                  ? { right: 'auto', top: 'auto', left: 'center', bottom: 0 }
+                  : props.legendPosition === 'right'
+                    ? { right: 24, left: 'auto', bottom: 'auto' }
+                    : {})
               }
             : undefined,
           series: [
@@ -135,4 +167,10 @@
         return option
       }
     })
+
+  useResizeObserver(chartRef, (entries) => {
+    if (!props.centered) return
+    compactLegend.value = (entries[0]?.contentRect.width ?? 0) < 420
+    nextTick(handleResize)
+  })
 </script>

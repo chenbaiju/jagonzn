@@ -24,7 +24,7 @@
     "lint:stylelint:check": "stylelint \"**/*.{css,scss,vue}\"",
     "api:generate": "openapi-typescript ../docs/upstream/console-openapi.json -o src/types/api/schema.d.ts",
     "api:check": "tsx scripts/check-api.ts",
-    "contracts:build": "pnpm --dir ../../things-cloud-client-contracts contract:check && pnpm --dir ../../things-cloud-client-contracts build"
+    "contracts:build": "pnpm --dir ../../things-link-client-contracts contract:check && pnpm --dir ../../things-link-client-contracts build"
   },
   "config": {
     "commitizen": {
@@ -85,7 +85,7 @@
     "vue-router": "^4.5.1",
     "xgplayer": "^3.0.20",
     "xlsx": "^0.18.5",
-    "@things-cloud/client-contracts": "link:../../things-cloud-client-contracts"
+    "@things-link/client-contracts": "link:../../things-link-client-contracts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.4.1",

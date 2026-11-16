@@ -84,7 +84,7 @@
             <!-- 推拽验证：注册同样是公开入口，必须先确认是真人操作再创建账号和触发邮件。 -->
             <div class="relative pb-5 mt-6">
               <div
-                class="relative z-[2] overflow-hidden select-none rounded-lg border border-transparent tad-300"
+                class="relative z-[2] overflow-hidden select-none rounded border border-transparent tad-300"
                 :class="{ '!border-[#FF4E4F]': !isPassing && isClickPass }"
               >
                 <ArtDragVerify
@@ -99,7 +99,7 @@
                 />
               </div>
               <p
-                class="absolute top-0 z-[1] px-px mt-2 text-xs text-[#f56c6c] tad-300"
+                class="absolute top-0 z-[1] px-px mt-2 text-sm text-[#f56c6c] tad-300"
                 :class="{ 'translate-y-10': !isPassing && isClickPass }"
               >
                 {{ $t('login.placeholder.slider') }}

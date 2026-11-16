@@ -30,7 +30,7 @@ test(
   { tag: '@simulator' },
   async ({ page }, testInfo) => {
     test.skip(process.env.E2E_ASSOCIATION_FIXTURE !== '1', '需要专属一次性关联目录选场')
-    assertAssociationFixture(process.env, existsSync('/.thingscloud-local-ci'))
+    assertAssociationFixture(process.env, existsSync('/.thingslink-local-ci'))
     test.setTimeout(420_000)
     const owned = new OwnedFixture()
     let primary: { error: unknown } | undefined

@@ -105,7 +105,7 @@ describe('设备场景', () => {
     await click('执行历史')
     await click('项目场景候选')
     expect(wrapper.text()).toContain('第 1 页')
-    expect(wrapper.text()).toContain('项目场景候选未绑定此设备')
+    expect(wrapper.findComponent(table).props('data')).toEqual([item])
   })
   it('换设备取消旧请求，旧响应不能落到新设备详情', async () => {
     let finish!: (v: unknown) => void
@@ -190,7 +190,7 @@ describe('设备场景', () => {
     await flushPromises()
     expect(wrapper.text()).toContain('execution-1')
     expect(wrapper.text()).not.toContain('场景一')
-    expect(wrapper.text()).toContain('动作意图受理及设备动作记录数均不代表设备物理执行成功')
+    expect(wrapper.findComponent(table).props('data')).toEqual([history])
     api.fetchDeviceScenes.mockResolvedValue({ items: [] })
     await click('项目场景候选')
     expect(wrapper.find('.device-detail-pagination').exists()).toBe(false)

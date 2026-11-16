@@ -17,11 +17,11 @@
             ><td>{{ item.severity }}</td
             ><td>{{ item.conditionState }}</td
             ><td>{{ item.ackState }}</td
-            ><td>{{ item.firstConditionAt }}</td
-            ><td>{{ item.activatedAt ?? '未提供' }}</td
-            ><td v-if="alarm.showClearedAt">{{ item.clearedAt ?? '未提供' }}</td
-            ><td>{{ item.acknowledgedAt ?? '未提供' }}</td
-            ><td>{{ item.lastReceivedAt }}</td></tr
+            ><td>{{ formatTime(item.firstConditionAt) }}</td
+            ><td>{{ formatTime(item.activatedAt, '未提供') }}</td
+            ><td v-if="alarm.showClearedAt">{{ formatTime(item.clearedAt, '未提供') }}</td
+            ><td>{{ formatTime(item.acknowledgedAt, '未提供') }}</td
+            ><td>{{ formatTime(item.lastReceivedAt) }}</td></tr
           ></tbody
         >
       </table>
@@ -47,6 +47,7 @@
   </section>
 </template>
 <script setup lang="ts">
+  import { formatTime } from '@/utils/time'
   import type { PreviewRow } from '@/features/dashboard/device-preview'
   defineProps<{ componentId: string; alarm: NonNullable<PreviewRow['alarm']>; disabled: boolean }>()
   const emit = defineEmits<{ page: [queryId: string, cursor: string | undefined] }>()

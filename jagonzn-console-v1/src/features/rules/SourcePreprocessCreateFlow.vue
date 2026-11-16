@@ -1,0 +1,23 @@
+<script setup lang="ts">
+import {computed,onScopeDispose,ref,shallowRef,watch} from 'vue'
+import {can,projectId} from '@/core/session'
+import {identityEpoch,onIdentityChange,errorMessage,ApiError} from '@/core/http'
+import DeviceRulePreprocessBuilder from './DeviceRulePreprocessBuilder.vue'
+import {createSourcePreprocessor,recoverSourcePreprocessor,knownPreprocessRejection,PreprocessOutcomeUnknown} from './preprocess-control-api'
+import {sourceSelectionKey,type RuleSourceSelection} from './rule-source-selection'
+import type {PreprocessKind} from './rule-builder-draft'
+import type {PreprocessCreationDraft} from './preprocess-version-editor'
+const props=defineProps<{source:RuleSourceSelection;initialName:string;initialKind:PreprocessKind;initialFilterJson:string}>()
+const emit=defineEmits<{created:[id:string];close:[];previous:[];busy:[value:boolean];locked:[value:boolean];denied:[cause:ApiError,unknown:boolean]}>()
+const turn=ref(0),busy=ref(false),locked=ref(false),unknown=ref(false),error=ref(''),rejectedAttempt=ref<string>(),pending=shallowRef<{ruleId?:string;draft:PreprocessCreationDraft}>()
+const allowed=computed(()=>!!projectId.value&&can('rule:manage')),sourceKey=computed(()=>sourceSelectionKey(props.source)),scopeKey=computed(()=>`${identityEpoch()}:${turn.value}:${projectId.value}:rule-source-create`)
+let alive=true,controller:AbortController|undefined
+function reset(){turn.value++;controller?.abort();busy.value=false;locked.value=false;unknown.value=false;error.value='';rejectedAttempt.value=undefined;pending.value=undefined}
+function capture(){const generation=turn.value,epoch=identityEpoch(),project=projectId.value,key=sourceKey.value,scope={projectId:project,scopeKey:scopeKey.value,source:props.source};return{scope,current:()=>alive&&generation===turn.value&&epoch===identityEpoch()&&project===projectId.value&&key===sourceKey.value&&allowed.value}}
+const dispose=onIdentityChange(reset);onScopeDispose(()=>{alive=false;controller?.abort();dispose()});watch([projectId,sourceKey,allowed],reset)
+watch(busy,value=>emit('busy',value),{immediate:true,flush:'sync'});watch([locked,unknown],()=>emit('locked',locked.value||unknown.value),{immediate:true,flush:'sync'})
+function authority(cause:unknown,uncertain:boolean){const actual=cause instanceof PreprocessOutcomeUnknown?cause.cause:cause;if(actual instanceof ApiError&&[401,403,404].includes(actual.status))emit('denied',actual,uncertain)}
+async function submit(intent:{scopeKey:string;source:RuleSourceSelection;attemptId:string;draft:PreprocessCreationDraft}){if(!allowed.value||busy.value||unknown.value||intent.scopeKey!==scopeKey.value||sourceSelectionKey(intent.source)!==sourceKey.value)return;const s=capture();controller?.abort();controller=new AbortController();busy.value=true;error.value='';pending.value={draft:intent.draft};try{const result=await createSourcePreprocessor(s.scope,intent.draft,intent.attemptId,s.current,controller.signal);if(s.current()){pending.value=undefined;emit('created',result.seed.ruleId)}}catch(cause){if(s.current()){error.value=errorMessage(cause);if(knownPreprocessRejection(cause)){pending.value=undefined;rejectedAttempt.value=intent.attemptId}else{unknown.value=true;pending.value={draft:intent.draft,ruleId:cause instanceof PreprocessOutcomeUnknown?cause.ruleId:undefined}}authority(cause,unknown.value)}}finally{if(s.current())busy.value=false}}
+async function recover(){const original=pending.value;if(!original?.ruleId||busy.value||!allowed.value)return;const s=capture();controller?.abort();controller=new AbortController();busy.value=true;try{const result=await recoverSourcePreprocessor(s.scope,original.ruleId,original.draft,s.current,controller.signal);if(s.current()){unknown.value=false;pending.value=undefined;emit('created',result.seed.ruleId)}}catch(cause){if(s.current()){error.value=errorMessage(cause);authority(cause,true)}}finally{if(s.current())busy.value=false}}
+</script>
+<template><section><DeviceRulePreprocessBuilder :scope-key="scopeKey" :project-id="projectId" @denied="authority($event,false)" :source-selection="source" :initial-name="initialName" :initial-kind="initialKind" :initial-filter-json="initialFilterJson" external-first-step :disabled="!allowed||busy||unknown" :rejected-attempt="rejectedAttempt" @create-sources="submit" @cancel="emit('close')" @previous="emit('previous')" @locked="locked=$event"/><el-alert v-if="error" :title="unknown?'创建结果尚未完整核对，请勿重复创建。'+error:error" type="error" :closable="false"/><el-button v-if="unknown&&pending?.ruleId" :disabled="busy" @click="recover">读取原规则核对</el-button><p v-if="unknown&&!pending?.ruleId" role="status">未取得可核对的规则标识，保留原草稿，不自动重发。</p></section></template>

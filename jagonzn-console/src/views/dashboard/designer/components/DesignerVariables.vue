@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref, shallowRef, watch, onBeforeUnmount } from 'vue'
-  import type { DashboardSchemaV1 } from '@things-cloud/client-contracts/dashboard/v1'
+  import type { DashboardSchemaV1 } from '@things-link/client-contracts/dashboard/v1'
   import {
     fetchDesignerDeviceCatalog,
     fetchBindingMetadata,
@@ -286,10 +286,7 @@
 </script>
 <template>
   <section class="console-fragment" aria-label="设备变量管理">
-    <ElDivider content-position="left">设备变量</ElDivider
-    ><ElAlert class="console-hint" type="info" show-icon :closable="false"
-      >默认设备写入草稿；预览中的临时选择不会修改默认值。设备可见性由每次读取重新确认。</ElAlert
-    >
+    <ElDivider content-position="left">设备变量</ElDivider>
     <button :disabled="disabled" data-testid="variable-new" @click="startNew">新建设备变量</button>
     <div v-for="v in variables" :key="v.key"
       ><button
@@ -449,10 +446,8 @@
             type="number"
             min="1"
             max="256"
-            aria-label="多设备表每页行数" /></label
-        ><ElAlert class="console-hint" type="info" show-icon :closable="false"
-          >请先编辑该变量，读取同模型设备的属性元数据，再配置 1～10 个标量列。</ElAlert
-        >
+            aria-label="多设备表每页行数"
+        /></label>
         <div v-for="(column, index) in columns" :key="index"
           ><label>列标题<input v-model="column.label" :aria-label="`第${index + 1}列标题`" /></label
           ><label

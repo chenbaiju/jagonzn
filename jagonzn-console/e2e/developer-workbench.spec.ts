@@ -27,27 +27,25 @@ test.afterEach(async ({ page }) => {
   }, id)
 })
 
-test('开发首页真实项目摘要、入口与响应式布局保留项目概况', async ({ page }) => {
+test('开发首页真实项目摘要、入口与响应式布局保留共享统计', async ({ page }) => {
   const email = process.env.E2E_OWNER_EMAIL
   const password = process.env.E2E_OWNER_PASSWORD
   test.skip(!email || !password, '需要独占测试账号')
   await login(page, email!, password!)
   await enterProject(page, 'E2E项目')
-  await page.goto('/#/dashboard/overview')
-  await expect(page.locator('.overview-card--count')).toHaveCount(4)
-  await page.screenshot({
-    path: path.join(process.env.E2E_RUN_DIR ?? 'logs', 'overview-preserved.png'),
-    fullPage: true
-  })
   await page.goto('/#/dashboard/workbench')
   await expect(page.locator('.workbench-hero h1')).toHaveText('E2E项目')
   await expect(page.locator('.development-step')).toHaveCount(5)
-  await expect(page.locator('.workbench-metrics strong').first()).not.toHaveText('—')
-  await expect(page.locator('.workbench-metrics > div')).toHaveCount(4)
-  await expect(page.locator('.workbench-traffic > section')).toHaveCount(3)
+  await expect(page.locator('.workbench-summary .overview-card__value').first()).not.toHaveText('—')
+  await expect(page.locator('.workbench-summary .overview-card--count')).toHaveCount(4)
+  await expect(page.locator('.workbench-traffic.workbench-panel')).toHaveCount(1)
+  await expect(page.locator('.workbench-traffic__metric')).toHaveCount(2)
   await expect(page.locator('.workbench-main')).not.toContainText('统计生成于')
   const total = Number(
-    (await page.locator('.workbench-metrics strong').first().innerText()).replaceAll(',', '')
+    (await page.locator('.workbench-summary .overview-card__value').first().innerText()).replaceAll(
+      ',',
+      ''
+    )
   )
   if (total === 0) await expect(page.locator('.workbench-help')).toBeVisible()
   else {
@@ -56,12 +54,12 @@ test('开发首页真实项目摘要、入口与响应式布局保留项目概�
     await expect(page.getByLabel('设备类型数量', { exact: true })).not.toHaveText(/—|暂不可用/)
   }
   await page.setViewportSize({ width: 2173, height: 1220 })
-  const cardTops = await page
-    .locator('.workbench-traffic > section')
+  const rowTops = await page
+    .locator('.workbench-window, .workbench-traffic__metrics')
     .evaluateAll((elements) =>
       elements.map((element) => Math.round(element.getBoundingClientRect().top))
     )
-  expect(new Set(cardTops).size).toBe(1)
+  expect(rowTops[1]).toBeGreaterThan(rowTops[0])
   for (const [width, height] of [
     [1440, 900],
     [1280, 800],
@@ -102,14 +100,15 @@ test('业务导航保留旧路由和终端用户入口', async ({ page }) => {
   await page.getByRole('menuitem', { name: '应用与看板', exact: true }).click()
   await page.getByRole('menuitem', { name: '终端用户', exact: true }).click()
   await expect(page).toHaveURL(/\/project\/end-users/)
-  await expect(page.locator('[aria-label="breadcrumb"]')).toContainText('应用与看板')
+  await expect(page.locator('[aria-label="breadcrumb"]')).toHaveCount(0)
   await page.goto('/#/device/types')
-  await expect(page.locator('[aria-label="breadcrumb"]')).toContainText('设备开发')
+  await expect(page.locator('[aria-label="breadcrumb"]')).toHaveCount(0)
   await page.reload()
   await expect(page.getByRole('heading', { name: '设备类型与物模型', exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/device\/types/)
-  await page.goto('/#/dashboard/overview')
+  await page.goto('/#/dashboard/workbench')
   await expect(page.locator('.overview-card--count')).toHaveCount(4)
+  await expect(page.locator('.overview-card--rate')).toHaveCount(3)
 })
 
 test('开发首页深色、文字放大与键盘入口保持可用', async ({ page }) => {

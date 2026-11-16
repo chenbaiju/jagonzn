@@ -94,7 +94,7 @@ def generate(directory, *, create_directory=True):
     if create_directory:
         directory.mkdir(mode=0o700, parents=True, exist_ok=False)
     run('openssl', 'req', '-sha256', '-x509', '-newkey', 'ec', '-pkeyopt', 'ec_paramgen_curve:P-256', '-pkeyopt', 'ec_param_enc:named_curve',
-        '-nodes', '-days', '2', '-subj', '/CN=ThingsCloud controlled test CA',
+        '-nodes', '-days', '2', '-subj', '/CN=ThingsLink controlled test CA',
         '-addext', 'basicConstraints=critical,CA:TRUE,pathlen:0',
         '-addext', 'keyUsage=critical,keyCertSign,cRLSign',
         '-addext', 'subjectKeyIdentifier=hash',
