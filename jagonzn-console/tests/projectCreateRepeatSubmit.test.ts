@@ -215,7 +215,7 @@ describe('项目创建防重复提交（G1-C2b 真实写入页）', () => {
     wrapper.unmount()
   })
 
-  it('列表展示各项目返回的真实订阅，不查当前项目配额且不把缺失版本当免费版', async () => {
+  it('列表展示项目描述与角色，不查当前项目配额且不展示订阅套餐列', async () => {
     vi.mocked(fetchProjects).mockResolvedValue([
       {
         id: 'proj-1',
@@ -237,12 +237,9 @@ describe('项目创建防重复提交（G1-C2b 真实写入页）', () => {
     const wrapper = await mountPage()
     await flushPromises()
     expect(fetchProjectQuota).not.toHaveBeenCalled()
-    expect(
-      wrapper
-        .findAll('.el-table__row')
-        .find((row) => row.text().includes('当前项目'))!
-        .text()
-    ).toContain('免费版')
+    expect(wrapper.text()).not.toContain('订阅套餐')
+    expect(wrapper.text()).not.toContain('免费版')
+    expect(wrapper.text()).not.toContain('标准版')
     const ownedRows = wrapper.findAll('.project-list__section')[0].findAll('.el-table__row')
     expect(ownedRows[0].findAll('.cell')[1].text()).toBe('设备接入与规则调试')
     expect(ownedRows[1].findAll('.cell')[1].text()).toBe('—')
@@ -251,17 +248,9 @@ describe('项目创建防重复提交（G1-C2b 真实写入页）', () => {
       .filter((column) => column.props('label') === '项目描述')
     expect(descriptionColumns).toHaveLength(2)
     expect(descriptionColumns.every((column) => column.props('showOverflowTooltip'))).toBe(true)
-    const unselected = wrapper
-      .findAll('.el-table__row')
-      .find((row) => row.text().includes('未进入项目'))!
-    expect(unselected.text()).toContain('标准版')
-    expect(unselected.find('.project-list__plan').attributes('title')).toContain('standard-r2 · v2')
     const external = wrapper
       .findAll('.el-table__row')
       .find((row) => row.text().includes('外部协作项目'))!
-    expect(external.text()).toContain('订阅版本暂不可用')
-    expect(external.text()).not.toContain('免费版')
-    expect(external.text()).not.toContain('标准版')
     expect(external.findAll('.cell')[1].text()).toBe('—')
     await wrapper.vm.$router.replace({ query: { region: 'bj-2' } })
     expect(wrapper.findAll('.el-table__row')).toHaveLength(1)

@@ -1,7 +1,0 @@
-packages: []
-allowBuilds:
-  esbuild: true
-  vue-demi: true
-overrides:
-  "@vue/compiler-dom": 3.5.22
-confirmModulesPurge: false

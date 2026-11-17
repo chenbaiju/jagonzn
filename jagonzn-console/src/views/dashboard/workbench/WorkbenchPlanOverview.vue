@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import type { ProjectQuotaOverviewResponse, QuotaMetricUsageResponse } from '@/api/quota'
-  import { subscriptionStatusLabel } from '@/features/plan/plan-summary-model'
   import { buildMessageUnitQuotaRows } from '@/features/quota/message-unit-model'
 
   const props = defineProps<{
@@ -11,11 +10,10 @@
   }>()
   defineEmits<{ retry: []; resources: [] }>()
 
-  const summary = computed(() => props.overview?.planSummary)
   const unitRows = computed(() => buildMessageUnitQuotaRows(props.overview?.messageUnitQuotas))
   const number = (value?: number) =>
     typeof value === 'number' ? value.toLocaleString('zh-CN') : '—'
-  // 用共享池已用值对照共享上限，不能把当前项目贡献当成共享池总用量。
+  // 用量取共享池已用值，不能把当前项目贡献当成共享池总用量；上限只用于换算进度，不展示数值。
   const rows = computed(() => {
     const pool = props.overview?.tenantSharedPool
     const metric = (code: string) => pool?.dailyMetrics?.find((item) => item.metric === code)
@@ -33,7 +31,7 @@
       return quota
         ? {
             label: quota.label,
-            text: quota.sharedUsageText,
+            text: quota.tenantOccupiedText,
             percentage: quota.percentage,
             progressStatus: quota.progressStatus,
             statusText: quota.statusText,
@@ -52,8 +50,8 @@
       legacy('通知投递 / 日', metric('NOTIFICATION_DELIVERY'))
     ]
   })
-  const usageText = (usage?: QuotaMetricUsageResponse) =>
-    usage ? `${number(usage.used)} / ${usage.limit == null ? '不限' : number(usage.limit)}` : '—'
+  // 概况只展示用量，不在面板上暴露共享池上限。
+  const usageText = (usage?: QuotaMetricUsageResponse) => (usage ? number(usage.used) : '—')
   // 缺失、未设上限和零额度均不伪造百分比；超额保留原始数值，进度条最多填满。
   const percentage = (usage?: QuotaMetricUsageResponse) =>
     typeof usage?.used === 'number' && typeof usage.limit === 'number' && usage.limit > 0
@@ -68,27 +66,19 @@
 </script>
 
 <template>
-  <section class="workbench-plan" aria-labelledby="plan-overview-heading">
+  <section class="workbench-plan" aria-labelledby="project-overview-heading">
     <div class="workbench-plan__header">
-      <h2 id="plan-overview-heading">套餐概况</h2>
-      <ElButton text aria-label="查看用量与项目资源" @click="$emit('resources')">
+      <h2 id="project-overview-heading">项目概况</h2>
+      <ElButton text aria-label="前往项目设置" @click="$emit('resources')">
         <ArtSvgIcon icon="tl:chevron-right" />
       </ElButton>
     </div>
     <ElSkeleton :loading="loading" animated :rows="5">
-      <ElAlert v-if="failed" type="warning" title="套餐概况暂不可用" :closable="false">
+      <ElAlert v-if="failed" type="warning" title="项目概况暂不可用" :closable="false">
         <ElButton text @click="$emit('retry')">重新读取</ElButton>
       </ElAlert>
       <template v-else>
         <dl class="workbench-plan__usage">
-          <div class="workbench-plan__row">
-            <dt>订阅套餐</dt>
-            <dd>{{ summary?.subscribedPlan?.name || '暂不可用' }}</dd>
-          </div>
-          <div v-if="summary?.subscriptionStatus" class="workbench-plan__row">
-            <dt>订阅状态</dt>
-            <dd>{{ subscriptionStatusLabel(summary.subscriptionStatus) }}</dd>
-          </div>
           <div v-for="row in rows" :key="row.label" class="workbench-plan__row">
             <dt :title="row.snapshotText">{{ row.label }}</dt>
             <dd>
@@ -116,9 +106,6 @@
           消息按每个原报文每 4KiB 向上取整，按 UTC
           日计量；共享占用包含未决受理，余额不是本项目独享。
         </p>
-        <p v-if="summary?.effectiveMatchesSubscribed === false" class="workbench-plan__warning"
-          >当前生效额度与订阅套餐不同，详见项目资源。</p
-        >
       </template>
     </ElSkeleton>
   </section>
@@ -186,17 +173,11 @@
       }
     }
 
-    &__caption,
-    &__warning {
+    &__caption {
       margin: 16px 0 0;
       font-size: 14px;
       line-height: 1.6;
       color: var(--el-text-color-secondary);
     }
-
-    &__warning {
-      color: var(--el-color-warning-dark-2);
-    }
-
   }
 </style>

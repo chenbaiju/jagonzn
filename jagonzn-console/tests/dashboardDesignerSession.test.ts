@@ -117,8 +117,8 @@ describe('设计器会话边界', () => {
     expect(f.designer.state.schema).toBeNull()
   })
   it.each([
-    [60059, '套餐上限'],
-    [50048, '套餐配置']
+    [60059, '已达上限'],
+    [50048, '确认配置']
   ])('确定额度拒绝%s显示恢复建议且允许用户重新创建', async (code, message) => {
     const { designer } = fixture()
     api.createDashboard.mockRejectedValue({ code, outcomeUnknown: false })

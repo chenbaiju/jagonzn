@@ -238,9 +238,9 @@ export function useDashboardDesigner(
         if (failure.outcomeUnknown === false) createIntent = undefined
         state.error =
           failure.outcomeUnknown === false && failure.code === 60059
-            ? '看板数量已达套餐上限，请扩容后再创建。'
+            ? '看板数量已达上限，请扩容后再创建。'
             : failure.outcomeUnknown === false && failure.code === 50048
-              ? '套餐额度暂不可用，请联系管理员确认套餐配置后重试。'
+              ? '额度暂不可用，请联系管理员确认配置后重试。'
               : '创建未完成；若结果未知，请用原名称明确重试以恢复同一次创建。'
       }
     } finally {

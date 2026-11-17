@@ -134,7 +134,7 @@ test(
       await expect(rows.first()).toContainText('9007199254740993123456789')
       await history.getByRole('textbox', { name: '历史属性键' }).fill('missing_property')
       await history.getByTestId('device-property-history-refresh').click()
-      await expect(history).toContainText('当前筛选与套餐可读窗口内暂无数据')
+      await expect(history).toContainText('当前筛选与可读窗口内暂无数据')
       await expect(history.getByTestId('device-property-history-error')).toHaveCount(0)
       await test.info().attach('raw-property-history-result', {
         body: JSON.stringify({

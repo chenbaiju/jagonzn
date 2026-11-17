@@ -80,7 +80,7 @@ it('原始值按纯文本保真展示，关闭宿主清旧内容；空态与错�
   })
   await wrapper.setProps({ active: true })
   await flushPromises()
-  expect(wrapper.text()).toContain('当前筛选与套餐可读窗口内暂无数据')
+  expect(wrapper.text()).toContain('当前筛选与可读窗口内暂无数据')
   expect(wrapper.find('[aria-label="原始属性历史分页"]').exists()).toBe(false)
   api.fetchDevicePropertyHistory.mockRejectedValue(new Error('private'))
   await wrapper.get('[data-testid="device-property-history-refresh"]').trigger('click')

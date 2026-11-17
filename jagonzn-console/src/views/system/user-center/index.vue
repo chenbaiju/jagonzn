@@ -53,15 +53,6 @@
         </div>
       </dl>
     </ElCard>
-    <ElCard shadow="never" class="user-center-page__notifications" aria-label="租户通知接收设置">
-      <template #header><h4>租户通知接收设置</h4></template>
-      <p class="console-description"
-        >维护当前账号归属租户的套餐通知号码，不随选中的外部项目转移。</p
-      >
-      <SmsRecipientEditor purpose="QUOTA_WARNING" />
-      <ElDivider />
-      <SmsRecipientEditor purpose="SUBSCRIPTION_EXPIRING" />
-    </ElCard>
     <ProjectInvitations :table-height="520" />
   </div>
 </template>
@@ -70,7 +61,6 @@
   import ConsoleWorkspaceHeader from '@/components/business/ConsoleWorkspaceHeader.vue'
   import { storeToRefs } from 'pinia'
   import ProjectInvitations from '@/components/ProjectInvitations.vue'
-  import SmsRecipientEditor from '@/components/business/SmsRecipientEditor.vue'
   import defaultAvatar from '@imgs/brand/jagonzn-original.png'
   import { useUserStore } from '@/store/modules/user'
 
@@ -177,121 +167,6 @@
 
     &__item--roles {
       grid-column: 1 / -1;
-    }
-  }
-
-  .user-center-page__notifications :deep(.el-card__body) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
-    gap: 16px 24px;
-    min-width: 0;
-
-    > .console-description {
-      grid-column: 1 / -1;
-      margin: 0;
-      font-size: 14px;
-      line-height: 20px;
-    }
-
-    > .sms-recipient-editor {
-      grid-row: 2;
-    }
-
-    > .sms-recipient-editor:first-of-type {
-      grid-column: 1;
-    }
-
-    > .sms-recipient-editor:last-of-type {
-      grid-column: 3;
-    }
-
-    > .el-divider {
-      grid-area: 2 / 2;
-      height: auto;
-      margin: 0;
-      border-top: 0;
-      border-left: 1px solid var(--console-line);
-    }
-  }
-
-  .user-center-page :deep(.sms-recipient-editor) {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-width: 0;
-    padding: 0;
-
-    h4 {
-      margin: 0;
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 22px;
-    }
-
-    > .el-alert {
-      margin: 0;
-    }
-
-    .el-form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .el-form-item,
-    .console-description {
-      margin: 0;
-    }
-
-    .el-form-item__label {
-      height: auto !important;
-      margin-bottom: 6px;
-      font-size: 14px;
-      line-height: 20px !important;
-    }
-
-    .el-checkbox {
-      align-items: flex-start;
-      min-height: 22px;
-      margin: 0;
-    }
-
-    .el-checkbox__input {
-      margin-top: 4px;
-    }
-
-    .el-checkbox__label {
-      font-size: 14px;
-      line-height: 22px;
-    }
-
-    .console-description {
-      font-size: 14px;
-      line-height: 20px;
-    }
-
-    .console-actions {
-      margin: 0;
-    }
-  }
-
-  @media (width <= 1100px) {
-    .user-center-page__notifications :deep(.el-card__body) {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 16px;
-
-      > .sms-recipient-editor:first-of-type,
-      > .sms-recipient-editor:last-of-type,
-      > .el-divider {
-        grid-area: auto / 1;
-      }
-
-      > .el-divider {
-        height: 1px;
-        border-top: 1px solid var(--console-line);
-        border-left: 0;
-      }
     }
   }
 

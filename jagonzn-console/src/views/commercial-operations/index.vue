@@ -233,7 +233,7 @@
   onBeforeUnmount(() => model.invalidate())
   const dimensionLabel = (code?: string) => quotaDimensionLabel(code ?? '')
   const statusLabel = (status?: string) =>
-    ({ ACTIVE: '已受理', PENDING: '等待订阅恢复', EXPIRED: '已到期', CANCELLED: '已撤销' })[
+    ({ ACTIVE: '已受理', PENDING: '等待额度恢复', EXPIRED: '已到期', CANCELLED: '已撤销' })[
       status ?? ''
     ] ??
     status ??

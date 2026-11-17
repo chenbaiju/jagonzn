@@ -194,7 +194,7 @@ describe('项目设置与工作台的实际消息单位消费者', () => {
     ).toEqual(['上行消息（4KiB 单位 / 日）', '31', '100', '69', '可用'])
   })
 
-  it('工作台使用共享占用并显示禁用原因，不展示旧条数或项目贡献作为共享用量', () => {
+  it('工作台使用共享占用且只显示用量，不展示上限、旧条数或项目贡献', () => {
     const wrapper = renderPlan([
       quota(),
       quota({
@@ -205,26 +205,36 @@ describe('项目设置与工作台的实际消息单位消费者', () => {
         remaining: 11
       })
     ])
-    expect(wrapper.text()).toContain('31 / 100')
-    expect(wrapper.text()).toContain('19 / 30')
+    const uplink = wrapper
+      .findAll('.workbench-plan__row')
+      .find((row) => row.text().includes('上行消息'))!
+    const downlink = wrapper
+      .findAll('.workbench-plan__row')
+      .find((row) => row.text().includes('下行消息'))!
+    expect(uplink.text()).toContain('31')
+    expect(uplink.text()).not.toContain('100')
+    expect(downlink.text()).toContain('19')
+    expect(downlink.text()).not.toContain('30')
     expect(wrapper.text()).toContain('新消息受理未启用')
-    expect(wrapper.text()).not.toContain('899 / 900')
-    expect(wrapper.text()).not.toContain('699 / 700')
-    expect(wrapper.text()).not.toContain('3 / 100')
+    expect(wrapper.text()).not.toContain('899')
+    expect(wrapper.text()).not.toContain('699')
+    expect(wrapper.text()).not.toContain('3 /')
     expect(
       wrapper.findAllComponents({ name: 'ElProgress' }).map((node) => node.props('percentage'))
     ).toEqual([31])
   })
 
-  it('工作台新上限缺失不显示无限，旧的其他无限指标保持原义', () => {
+  it('工作台上限缺失时仍只显示用量，不出现无限或不可用上限文案', () => {
     const wrapper = renderPlan([quota({ limit: undefined, remaining: undefined })])
     const uplink = wrapper
       .findAll('.workbench-plan__row')
       .find((row) => row.text().includes('4KiB'))!
-    expect(uplink.text()).toContain('31 / 暂不可用')
+    expect(uplink.text()).toContain('31')
     expect(uplink.text()).not.toContain('不限')
     expect(uplink.find('.test-progress').exists()).toBe(false)
-    expect(wrapper.text()).toContain('7 / 不限')
-    expect(wrapper.text()).toContain('699 / 700')
+    expect(wrapper.text()).toContain('7')
+    expect(wrapper.text()).toContain('699')
+    expect(wrapper.text()).not.toContain('不限')
+    expect(wrapper.text()).not.toContain('699 / 700')
   })
 })

@@ -103,8 +103,8 @@ export const projectRoutes: AppRouteRecord = {
         title: 'menus.project.settings',
         icon: 'ri:settings-3-line',
         keepAlive: false,
-        // S7-2 的页面没有写操作。四种项目角色都可读取当前项目贡献与租户共享池余量，
-        // 但后端不会返回其他项目的事实或账单聚合（架构文档 8.1.1）。
+        // 项目设置页承载 Agent、知识资料与告警配置，四种项目角色均可进入；
+        // 用量与额度面板已从本页移除，配额事实仍由工作台等独立消费方读取。
         roles: ['OWNER', 'ADMIN', 'OPERATOR', 'VIEWER']
       }
     }

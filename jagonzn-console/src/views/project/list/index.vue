@@ -60,13 +60,6 @@
               <ElTag :type="roleTagType(row.myRole)" disable-transitions>{{ row.myRole }}</ElTag>
             </template>
           </ElTableColumn>
-          <ElTableColumn label="订阅套餐" width="200">
-            <template #default="{ row }">
-              <span class="project-list__plan" :title="projectPlanTitle(row)">{{
-                projectPlanLabel(row)
-              }}</span>
-            </template>
-          </ElTableColumn>
           <ElTableColumn
             class-name="console-table-actions-cell"
             :label="$t('project.column.action')"
@@ -215,20 +208,9 @@
   const headerLinks = computed(() =>
     [
       { label: '成员与邀请', path: '/project/members', permission: 'member:read' },
-      { label: '用量与项目设置', path: '/project/settings', permission: 'quota:read' }
+      { label: '项目设置', path: '/project/settings', permission: 'quota:read' }
     ].filter((link) => userStore.info.buttons?.includes(link.permission))
   )
-  // 列表接口按每个项目的归属与成员资格返回订阅身份，不使用当前项目套餐替代其他项目。
-  const projectPlanLabel = (project: ProjectResponse) =>
-    project.subscribedPlan?.name || project.subscribedPlan?.code || '订阅版本暂不可用'
-
-  const projectPlanTitle = (project: ProjectResponse) => {
-    const plan = project.subscribedPlan
-    if (!plan) return '接口未提供订阅版本，可能无活状态订阅或当前账号不具备租户套餐查看资格'
-    return [plan.name || plan.code, plan.revision, plan.revisionNo ? `v${plan.revisionNo}` : '']
-      .filter(Boolean)
-      .join(' · ')
-  }
 
   const enter = (project: ProjectResponse) => {
     if (!project.id || project.id === currentProjectId.value || switchingId.value) return

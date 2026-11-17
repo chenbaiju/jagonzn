@@ -2,7 +2,7 @@
   <div class="console-page console-developer-workspace console-page--single-panel">
     <ConsoleWorkspaceHeader
       title="租户安全治理"
-      description="查询租户及安全操作历史。封禁与套餐到期、超额分别处理。"
+      description="查询租户及安全操作历史。封禁与额度到期、超额分别处理。"
       :links="[
         { label: '商业运营', path: '/commercial-operations', permission: 'commercial:adjust' }
       ]"

@@ -8,7 +8,7 @@
       description="管理事件订阅与投递，轮换签名密钥；响应不确定时先查询原操作结果。"
       :links="[
         { label: 'API Key', path: '/project/api-keys', permission: 'integration:manage' },
-        { label: '用量与项目设置', path: '/project/settings', permission: 'quota:read' }
+        { label: '项目设置', path: '/project/settings', permission: 'quota:read' }
       ]"
     >
       <template #leading-actions>

@@ -4,7 +4,7 @@
       <h4>项目告警通知</h4>
     </template>
     <p class="console-description">
-      暂停只影响本项目的告警通知，告警仍正常记录。不影响套餐额度预警、到期提醒或直接规则通知。
+      暂停只影响本项目的告警通知，告警仍正常记录。不影响额度预警、到期提醒或直接规则通知。
     </p>
     <p class="console-description">
       已经在途的通知仍可能送达。恢复只影响后续告警，不补发静默期或已被停止的旧通知。
@@ -29,7 +29,7 @@
       <ElButton :disabled="loading || saving" :loading="loading" @click="load"> 重新读取 </ElButton>
     </div>
     <p class="console-description">
-      保存策略不会发送测试通知，也不会开启未配置的供应商或改变套餐权益。
+      保存策略不会发送测试通知，也不会开启未配置的供应商或改变额度配置。
     </p>
   </ElCard>
 </template>

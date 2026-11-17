@@ -47,7 +47,7 @@ it('保存保留大版本且只发一次，收到权威成功前不乐观切换'
   render()
   await flushPromises()
   expect(panel.text()).toContain('告警仍正常记录')
-  expect(panel.text()).toContain('不影响套餐额度预警、到期提醒')
+  expect(panel.text()).toContain('不影响额度预警、到期提醒')
   await button('暂停告警通知').trigger('click')
   await button('暂停告警通知').trigger('click')
   expect(api.updateProjectAlarmNotificationPolicy).toHaveBeenCalledExactlyOnceWith('p', {

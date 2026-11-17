@@ -23,7 +23,12 @@ function render(overview?: ProjectQuotaOverviewResponse, failed = false) {
     }
   })
 }
-it('compares shared usage to the effective shared limit, preserves overage and project-only member count', () => {
+const rowText = (label: string) =>
+  wrapper
+    .findAll('.workbench-plan__row')
+    .find((row) => row.text().includes(label))!
+    .text()
+it('shows shared usage only, without subscription rows or shared limits, and keeps project-only member count', () => {
   render({
     planSummary: {
       subscribedPlan: { name: '免费版' },
@@ -37,12 +42,14 @@ it('compares shared usage to the effective shared limit, preserves overage and p
       dailyMetrics: [{ metric: 'UPLINK_MESSAGE', used: 250, limit: 1000, status: 'NORMAL' }]
     }
   })
-  expect(wrapper.text()).toContain('免费版')
-  expect(wrapper.text()).toContain('生效中')
-  expect(wrapper.text()).toContain('4 / 3')
-  expect(wrapper.text()).not.toContain('1 / 3')
+  expect(wrapper.text()).toContain('项目概况')
+  expect(rowText('设备数')).toContain('4')
+  expect(rowText('设备数')).not.toContain('3')
+  expect(wrapper.text()).not.toContain('免费版')
+  expect(wrapper.findAll('dt').map((label) => label.text())).not.toContain('订阅套餐')
+  expect(wrapper.findAll('dt').map((label) => label.text())).not.toContain('订阅状态')
   expect(wrapper.text()).toContain('2 人')
-  expect(wrapper.text()).toContain('当前生效额度与订阅套餐不同')
+  expect(wrapper.text()).not.toContain('订阅套餐')
   const progress = wrapper.findAllComponents({ name: 'ElProgress' })
   expect(progress.map((node) => node.props('percentage'))).toEqual([100, 25])
   expect(progress[0].props('status')).toBe('exception')
@@ -54,9 +61,10 @@ it('does not invent a plan, zero usage, a member limit or percentages for missin
       dailyMetrics: [{ metric: 'UPLINK_MESSAGE', used: 0, limit: 0 }]
     }
   })
-  expect(wrapper.text()).toContain('暂不可用')
-  expect(wrapper.text()).toContain('5 / 不限')
-  expect(wrapper.text()).toContain('0 / 0')
+  expect(rowText('设备数')).toContain('5')
+  expect(rowText('上行消息 / 日')).toContain('0')
+  expect(wrapper.text()).not.toContain('不限')
+  expect(wrapper.text()).not.toContain('5 /')
   expect(wrapper.text()).toContain('— 人')
   expect(wrapper.findAll('.test-progress')).toHaveLength(0)
   expect(wrapper.text()).not.toContain('免费版')
@@ -64,7 +72,7 @@ it('does not invent a plan, zero usage, a member limit or percentages for missin
 })
 it('exposes retry on failure and resource navigation only through emitted actions', async () => {
   render(undefined, true)
-  expect(wrapper.text()).toContain('套餐概况暂不可用')
+  expect(wrapper.text()).toContain('项目概况暂不可用')
   expect(wrapper.find('.workbench-plan__usage').exists()).toBe(false)
   await wrapper.get('button[aria-label]').trigger('click')
   await wrapper

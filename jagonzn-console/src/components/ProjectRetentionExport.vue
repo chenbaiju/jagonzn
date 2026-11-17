@@ -109,7 +109,7 @@
         if (error instanceof HttpError && !error.outcomeUnknown) {
           notice.value =
             error.code === 50019
-              ? '当前套餐的导出存储额度暂不可用，请联系管理员确认配置。'
+              ? '当前项目的导出存储额度暂不可用，请联系管理员确认配置。'
               : `申请未成功：${error.message}`
           return
         }
